@@ -693,6 +693,18 @@ You have a **custom TCP-based chat application** with backend EC2 instances on p
 
 ---
 
+![image](https://github.com/user-attachments/assets/07e0f726-17a5-4e9a-9db2-7f693d54803d)
+
+![image](https://github.com/user-attachments/assets/f5733d04-3616-4719-bbdc-a89f6e829002)
+
+![image](https://github.com/user-attachments/assets/9bb53613-1550-48d4-bd78-3903ea3737b8)
+
+![image](https://github.com/user-attachments/assets/787ffebc-560f-4a5e-81a9-c2487f7d9c08)
+
+
+
+
+
 
 
 

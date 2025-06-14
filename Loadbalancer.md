@@ -526,9 +526,9 @@ After deployment, Terraform will output the URLs for accessing each server with 
 
 1. Save all files in a directory:
    - `main.tf` (the main Terraform configuration)
-   - `user_data_server1.sh.tpl`
-   - `user_data_server2.sh.tpl`
-   - `user_data_server3.sh.tpl`
+   - `user_data_server1.sh`
+   - `user_data_server2.sh`
+   - `user_data_server3.sh`
 
 2. Initialize Terraform:
    ```bash

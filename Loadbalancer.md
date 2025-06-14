@@ -279,7 +279,8 @@ OR
 
 ---
 
-Let me know if you'd like a **hands-on with screenshots**, or the **Terraform version** to automate the setup.
+![image](https://github.com/user-attachments/assets/c4818507-94a8-4e39-a652-801872c2b80f)
+
 
 
 ## Terraform Configuration for 3 EC2 Instances in Different AZs with Apache HTTPD

@@ -1,7 +1,3 @@
-# Elastic Loadbalancer
-
-## 1. Application LoadBalancer
-
 # Elastic Load Balancer (ELB) and Application Load Balancer (ALB) on AWS
 
 ## What is Elastic Load Balancer (ELB)?

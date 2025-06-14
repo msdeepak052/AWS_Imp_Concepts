@@ -583,4 +583,11 @@ Each server will display its name, IP addresses, and context path with a differe
 
 ### b. Host Based Routing
 
+![image](https://github.com/user-attachments/assets/b6167c27-a4b0-4699-be90-715b8aab2085)
+
+![image](https://github.com/user-attachments/assets/a1573c29-d1b7-44bf-bc5b-b884baff0def)
+
+![image](https://github.com/user-attachments/assets/6c9d5390-f231-4275-9826-b08c4752f365)
+
+
 

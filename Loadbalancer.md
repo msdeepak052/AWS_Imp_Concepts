@@ -561,6 +561,10 @@ After deployment, Terraform will output the URLs for accessing each server with 
 
 Each server will display its name, IP addresses, and context path with a different color scheme for easy identification.
 
+## 1. Application Load Balancer
+
+### a. Path Based Routing
+
 ![image](https://github.com/user-attachments/assets/1d9432c8-5ea8-4cb2-ba5a-194fbbae9bcd)
 
 ![image](https://github.com/user-attachments/assets/867961ad-d9f6-41b0-8e23-c3bf12add46b)
@@ -571,4 +575,8 @@ Each server will display its name, IP addresses, and context path with a differe
 
 
 ![image](https://github.com/user-attachments/assets/d9d93ba3-1dd1-4dfe-80c7-a77324cc18fd)
+
+
+### b. Host Based Routing
+
 

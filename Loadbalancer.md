@@ -590,4 +590,110 @@ Each server will display its name, IP addresses, and context path with a differe
 ![image](https://github.com/user-attachments/assets/6c9d5390-f231-4275-9826-b08c4752f365)
 
 
+## 2. Network Load Balancer
+
+---
+
+### 🔷 What is NLB (Network Load Balancer)?
+
+**Network Load Balancer** is an AWS Elastic Load Balancer (ELB) type that:
+
+* Works at **Layer 4 (Transport Layer)**.
+* Routes traffic based on **IP protocol data** (TCP, TLS, UDP).
+* Supports **static IPs**, **elastic IPs**, and **ultra-high performance**.
+* Can handle **millions of requests per second** with **low latency**.
+* Supports **Zonal DNS**, **Cross-Zone Load Balancing**, and **Target Groups**.
+
+---
+
+### ✅ Use Cases of NLB
+
+| Use Case                 | Description                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------------- |
+| High-performance backend | Microservices that need millions of low-latency connections (e.g., gaming servers, financial services). |
+| TCP/UDP-based apps       | Non-HTTP services (e.g., SMTP, DNS, custom TCP protocols).                                              |
+| Static IP requirement    | Use Elastic IPs (e.g., firewall whitelisting).                                                          |
+| IoT or SIP-based apps    | Handle long-lived TCP connections or VoIP.                                                              |
+
+---
+
+### 📘 Example Scenario
+
+You have a **custom TCP-based chat application** with backend EC2 instances on port **5000**, and you want:
+
+* High performance.
+* Static IPs for firewall.
+* Load balanced traffic using TCP.
+
+---
+
+### 🛠️ Setup NLB via AWS Console
+
+#### ✅ Pre-requisites:
+
+* 2+ EC2 instances in a VPC (running on port 5000).
+* Security group that allows traffic on port 5000.
+
+---
+
+#### 🔹 Step 1: Create Target Group
+
+1. Go to **EC2 Console → Load Balancing → Target Groups**.
+2. Click **Create target group**.
+3. Type: **Instances**
+4. Protocol: **TCP**
+5. Port: **5000**
+6. VPC: Choose the correct VPC.
+7. Name: `chat-tg`
+8. Register targets (select EC2s running TCP app).
+9. Click **Create**.
+
+---
+
+#### 🔹 Step 2: Create NLB
+
+1. Go to **EC2 Console → Load Balancers**.
+2. Click **Create Load Balancer**.
+3. Choose **Network Load Balancer**.
+4. Name: `chat-nlb`
+5. Scheme: **Internet-facing** or **Internal**.
+6. IP type: **IPv4** (or Dualstack for IPv6).
+7. Listener:
+
+   * Protocol: **TCP**
+   * Port: **5000**
+8. Availability Zones:
+
+   * Select VPC and AZs.
+   * Choose subnets (1 per AZ).
+   * Optionally assign **Elastic IPs**.
+9. Select **Target group**: `chat-tg`.
+10. Click **Create Load Balancer**.
+
+---
+
+#### 🔹 Step 3: Test the Setup
+
+* Use the **DNS name** of the NLB (e.g., `chat-nlb-xxxxxxxx.elb.amazonaws.com`) to connect from a client.
+* Make sure client sends TCP traffic on port **5000**.
+
+---
+
+### ✅ Features Recap
+
+| Feature                   | Available in NLB       |
+| ------------------------- | ---------------------- |
+| Layer                     | 4 (TCP, UDP)           |
+| Static IP                 | ✅ Yes                  |
+| Elastic IP                | ✅ Yes                  |
+| Health Checks             | ✅ TCP/HTTP/HTTPS       |
+| TLS Termination           | ✅ (using TLS listener) |
+| IP Target Support         | ✅ Yes                  |
+| Cross-Zone Load Balancing | ✅ (optional)           |
+
+---
+
+
+
+
 

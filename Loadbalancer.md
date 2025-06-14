@@ -295,45 +295,20 @@ provider "aws" {
   region = "ap-south-1"
 }
 
-resource "aws_key_pair" "ec2_key" {
-  key_name   = "httpd-servers-key"
-  public_key = file("~/.ssh/id_rsa.pub") # Replace with your public key path
-}
-
-resource "aws_security_group" "httpd_sg" {
-  name        = "httpd-servers-sg"
-  description = "Allow HTTP and SSH traffic"
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+locals {
+  az_instance_mapping = {
+    "ap-south-1a" = "t2.micro"
+    "ap-south-1b" = "t2.micro"
+    "ap-south-1c" = "t3.micro"
   }
 }
 
 resource "aws_instance" "httpd_servers" {
-  count                  = 3
-  ami                    = "ami-0f5ee92e2d63afc18" # Amazon Linux 2 in ap-south-1
-  instance_type          = "t2.micro"
-  key_name               = aws_key_pair.ec2_key.key_name
-  vpc_security_group_ids = [aws_security_group.httpd_sg.id]
-  availability_zone      = element(["ap-south-1a", "ap-south-1b", "ap-south-1c"], count.index)
-
+  count             = 3
+  ami               = "ami-0b09627181c8d5778" # Amazon Linux 2 in ap-south-1
+  instance_type          = local.az_instance_mapping[element(["ap-south-1a", "ap-south-1b", "ap-south-1c"], count.index)]
+  key_name          = "newawss"
+  availability_zone = element(["ap-south-1a", "ap-south-1b", "ap-south-1c"], count.index)
   user_data = templatefile("${path.module}/user_data_server${count.index + 1}.sh", {
     server_name = "Server ${count.index + 1}"
   })
@@ -347,13 +322,13 @@ output "server_details" {
   description = "Details of the HTTPD servers"
   value = [for i, instance in aws_instance.httpd_servers : {
     "server-${i + 1}" = {
-      public_dns  = instance.public_dns,
-      public_ip   = instance.public_ip,
-      private_ip  = instance.private_ip,
-      az          = instance.availability_zone,
-      url_root    = i == 0 ? "http://${instance.public_dns}/" : null,
-      url_second  = i == 1 ? "http://${instance.public_dns}/second/" : null,
-      url_third   = i == 2 ? "http://${instance.public_dns}/third/" : null
+      public_dns = instance.public_dns,
+      public_ip  = instance.public_ip,
+      private_ip = instance.private_ip,
+      az         = instance.availability_zone,
+      url_root   = i == 0 ? "http://${instance.public_dns}/" : null,
+      url_second = i == 1 ? "http://${instance.public_dns}/second/" : null,
+      url_third  = i == 2 ? "http://${instance.public_dns}/third/" : null
     }
   }]
 }
@@ -372,9 +347,20 @@ systemctl start httpd
 systemctl enable httpd
 
 # Get instance metadata
-PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
-HOSTNAME=$(curl -s http://169.254.169.254/latest/meta-data/hostname)
+# Public IP (via external service)
+PUBLIC_IP=$(curl -s ifconfig.me)
+
+# Private IP (first IP from hostname -I)
+PRIVATE_IP=$(hostname -I | awk '{print $1}')
+
+# Hostname
+HOSTNAME=$(hostname)
+
+TOKEN=$(curl -sX PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone \
+  -H "X-aws-ec2-metadata-token: $TOKEN")
 
 # Create index.html
 cat > /var/www/html/index.html <<EOF
@@ -396,7 +382,7 @@ cat > /var/www/html/index.html <<EOF
         <div class="info"><strong>Public IP:</strong> $PUBLIC_IP</div>
         <div class="info"><strong>Private IP:</strong> $PRIVATE_IP</div>
         <div class="info"><strong>Hostname:</strong> $HOSTNAME</div>
-        <div class="info"><strong>Availability Zone:</strong> $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)</div>
+        <div class="info"><strong>Availability Zone:</strong> $AZ</div>
         <div class="info"><strong>Context Path:</strong> Root (/)</div>
     </div>
 </body>
@@ -423,9 +409,20 @@ systemctl enable httpd
 mkdir -p /var/www/html/second
 
 # Get instance metadata
-PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
-HOSTNAME=$(curl -s http://169.254.169.254/latest/meta-data/hostname)
+# Public IP (via external service)
+PUBLIC_IP=$(curl -s ifconfig.me)
+
+# Private IP (first IP from hostname -I)
+PRIVATE_IP=$(hostname -I | awk '{print $1}')
+
+# Hostname
+HOSTNAME=$(hostname)
+
+TOKEN=$(curl -sX PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone \
+  -H "X-aws-ec2-metadata-token: $TOKEN")
 
 # Create index.html
 cat > /var/www/html/second/index.html <<EOF
@@ -447,7 +444,7 @@ cat > /var/www/html/second/index.html <<EOF
         <div class="info"><strong>Public IP:</strong> $PUBLIC_IP</div>
         <div class="info"><strong>Private IP:</strong> $PRIVATE_IP</div>
         <div class="info"><strong>Hostname:</strong> $HOSTNAME</div>
-        <div class="info"><strong>Availability Zone:</strong> $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)</div>
+        <div class="info"><strong>Availability Zone:</strong> $AZ</div>
         <div class="info"><strong>Context Path:</strong> /second/</div>
     </div>
 </body>
@@ -474,9 +471,20 @@ systemctl enable httpd
 mkdir -p /var/www/html/third
 
 # Get instance metadata
-PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
-PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
-HOSTNAME=$(curl -s http://169.254.169.254/latest/meta-data/hostname)
+# Public IP (via external service)
+PUBLIC_IP=$(curl -s ifconfig.me)
+
+# Private IP (first IP from hostname -I)
+PRIVATE_IP=$(hostname -I | awk '{print $1}')
+
+# Hostname
+HOSTNAME=$(hostname)
+
+TOKEN=$(curl -sX PUT "http://169.254.169.254/latest/api/token" \
+  -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+AZ=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone \
+  -H "X-aws-ec2-metadata-token: $TOKEN")
 
 # Create index.html
 cat > /var/www/html/third/index.html <<EOF
@@ -498,7 +506,7 @@ cat > /var/www/html/third/index.html <<EOF
         <div class="info"><strong>Public IP:</strong> $PUBLIC_IP</div>
         <div class="info"><strong>Private IP:</strong> $PRIVATE_IP</div>
         <div class="info"><strong>Hostname:</strong> $HOSTNAME</div>
-        <div class="info"><strong>Availability Zone:</strong> $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)</div>
+        <div class="info"><strong>Availability Zone:</strong> $AZ</div>
         <div class="info"><strong>Context Path:</strong> /third/</div>
     </div>
 </body>

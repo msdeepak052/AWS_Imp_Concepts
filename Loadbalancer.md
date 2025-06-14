@@ -560,3 +560,15 @@ After deployment, Terraform will output the URLs for accessing each server with 
    - Server 3: `http://<public-dns>/third/`
 
 Each server will display its name, IP addresses, and context path with a different color scheme for easy identification.
+
+![image](https://github.com/user-attachments/assets/1d9432c8-5ea8-4cb2-ba5a-194fbbae9bcd)
+
+![image](https://github.com/user-attachments/assets/867961ad-d9f6-41b0-8e23-c3bf12add46b)
+
+#### Route 53
+
+![image](https://github.com/user-attachments/assets/18f2b01c-0284-4d4c-b6e8-5bac692c41e0)
+
+
+![image](https://github.com/user-attachments/assets/d9d93ba3-1dd1-4dfe-80c7-a77324cc18fd)
+

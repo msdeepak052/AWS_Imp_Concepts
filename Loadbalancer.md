@@ -286,18 +286,19 @@ Let me know if you'd like a **hands-on with screenshots**, or the **Terraform ve
 
 #### Terraform configuration to create 3 t2.micro instances in different availability zones in ap-south-1 region, install Apache HTTPD, and configure the web content as specified:
 
+
+## 1. `main.tf`
+
 ```hcl
 provider "aws" {
   region = "ap-south-1"
 }
 
-# Create a key pair for SSH access
 resource "aws_key_pair" "ec2_key" {
   key_name   = "httpd-servers-key"
   public_key = file("~/.ssh/id_rsa.pub") # Replace with your public key path
 }
 
-# Security group allowing HTTP and SSH
 resource "aws_security_group" "httpd_sg" {
   name        = "httpd-servers-sg"
   description = "Allow HTTP and SSH traffic"
@@ -324,31 +325,6 @@ resource "aws_security_group" "httpd_sg" {
   }
 }
 
-# User data script template for Server 1 (root context)
-data "template_file" "user_data_server1" {
-  template = file("user_data_server1.sh.tpl")
-  vars = {
-    server_name = "Server 1"
-  }
-}
-
-# User data script template for Server 2 (/second/ context)
-data "template_file" "user_data_server2" {
-  template = file("user_data_server2.sh.tpl")
-  vars = {
-    server_name = "Server 2"
-  }
-}
-
-# User data script template for Server 3 (/third/ context)
-data "template_file" "user_data_server3" {
-  template = file("user_data_server3.sh.tpl")
-  vars = {
-    server_name = "Server 3"
-  }
-}
-
-# Create 3 EC2 instances in different AZs
 resource "aws_instance" "httpd_servers" {
   count                  = 3
   ami                    = "ami-0f5ee92e2d63afc18" # Amazon Linux 2 in ap-south-1
@@ -357,44 +333,49 @@ resource "aws_instance" "httpd_servers" {
   vpc_security_group_ids = [aws_security_group.httpd_sg.id]
   availability_zone      = element(["ap-south-1a", "ap-south-1b", "ap-south-1c"], count.index)
 
-  user_data = count.index == 0 ? data.template_file.user_data_server1.rendered : 
-              (count.index == 1 ? data.template_file.user_data_server2.rendered : 
-              data.template_file.user_data_server3.rendered)
+  user_data = templatefile("${path.module}/user_data_server${count.index + 1}.sh", {
+    server_name = "Server ${count.index + 1}"
+  })
 
   tags = {
     Name = "httpd-server-${count.index + 1}"
   }
 }
 
-# Output the public DNS and IP addresses
 output "server_details" {
-  value = {
-    for i, instance in aws_instance.httpd_servers :
-    "server-${i + 1}" => {
-      "public_dns"  = instance.public_dns,
-      "public_ip"   = instance.public_ip,
-      "private_ip"  = instance.private_ip,
-      "az"         = instance.availability_zone
+  description = "Details of the HTTPD servers"
+  value = [for i, instance in aws_instance.httpd_servers : {
+    "server-${i + 1}" = {
+      public_dns  = instance.public_dns,
+      public_ip   = instance.public_ip,
+      private_ip  = instance.private_ip,
+      az          = instance.availability_zone,
+      url_root    = i == 0 ? "http://${instance.public_dns}/" : null,
+      url_second  = i == 1 ? "http://${instance.public_dns}/second/" : null,
+      url_third   = i == 2 ? "http://${instance.public_dns}/third/" : null
     }
-  }
+  }]
 }
 ```
 
-Now create the user data template files:
+## 2. `user_data_server1.sh`
 
-1. `user_data_server1.sh.tpl` (for root context):
 ```bash
 #!/bin/bash
+set -ex
+
+# Update and install HTTPD
 yum update -y
 yum install -y httpd
 systemctl start httpd
 systemctl enable httpd
 
-# Create index.html with server info
+# Get instance metadata
 PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
 PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
 HOSTNAME=$(curl -s http://169.254.169.254/latest/meta-data/hostname)
 
+# Create index.html
 cat > /var/www/html/index.html <<EOF
 <!DOCTYPE html>
 <html>
@@ -402,27 +383,36 @@ cat > /var/www/html/index.html <<EOF
     <title>${server_name}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; background-color: #f0f8ff; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1 { color: #2e8b57; }
-        .info { margin: 15px 0; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; }
+        h1 { color: #2e8b57; text-align: center; }
+        .info { margin: 15px 0; padding: 10px; background: #f8f9fa; border-left: 4px solid #2e8b57; }
+        .highlight { font-weight: bold; color: #2e8b57; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to ${server_name}</h1>
-        <div class="info"><strong>Server Name:</strong> ${server_name}</div>
+        <h1>Welcome to <span class="highlight">${server_name}</span></h1>
         <div class="info"><strong>Public IP:</strong> $PUBLIC_IP</div>
         <div class="info"><strong>Private IP:</strong> $PRIVATE_IP</div>
         <div class="info"><strong>Hostname:</strong> $HOSTNAME</div>
+        <div class="info"><strong>Availability Zone:</strong> $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)</div>
+        <div class="info"><strong>Context Path:</strong> Root (/)</div>
     </div>
 </body>
 </html>
 EOF
+
+# Set permissions
+chmod 644 /var/www/html/index.html
 ```
 
-2. `user_data_server2.sh.tpl` (for /second/ context):
+## 3. `user_data_server2.sh`
+
 ```bash
 #!/bin/bash
+set -ex
+
+# Update and install HTTPD
 yum update -y
 yum install -y httpd
 systemctl start httpd
@@ -431,11 +421,12 @@ systemctl enable httpd
 # Create directory for second context
 mkdir -p /var/www/html/second
 
-# Create index.html with server info
+# Get instance metadata
 PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
 PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
 HOSTNAME=$(curl -s http://169.254.169.254/latest/meta-data/hostname)
 
+# Create index.html
 cat > /var/www/html/second/index.html <<EOF
 <!DOCTYPE html>
 <html>
@@ -443,28 +434,36 @@ cat > /var/www/html/second/index.html <<EOF
     <title>${server_name}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; background-color: #fff0f5; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1 { color: #8b2e65; }
-        .info { margin: 15px 0; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; }
+        h1 { color: #8b2e65; text-align: center; }
+        .info { margin: 15px 0; padding: 10px; background: #f8f9fa; border-left: 4px solid #8b2e65; }
+        .highlight { font-weight: bold; color: #8b2e65; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to ${server_name}</h1>
-        <div class="info"><strong>Server Name:</strong> ${server_name}</div>
+        <h1>Welcome to <span class="highlight">${server_name}</span></h1>
         <div class="info"><strong>Public IP:</strong> $PUBLIC_IP</div>
         <div class="info"><strong>Private IP:</strong> $PRIVATE_IP</div>
         <div class="info"><strong>Hostname:</strong> $HOSTNAME</div>
+        <div class="info"><strong>Availability Zone:</strong> $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)</div>
         <div class="info"><strong>Context Path:</strong> /second/</div>
     </div>
 </body>
 </html>
 EOF
+
+# Set permissions
+chmod 644 /var/www/html/second/index.html
 ```
 
-3. `user_data_server3.sh.tpl` (for /third/ context):
+## 4. `user_data_server3.sh`
+
 ```bash
 #!/bin/bash
+set -ex
+
+# Update and install HTTPD
 yum update -y
 yum install -y httpd
 systemctl start httpd
@@ -473,11 +472,12 @@ systemctl enable httpd
 # Create directory for third context
 mkdir -p /var/www/html/third
 
-# Create index.html with server info
+# Get instance metadata
 PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
 PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
 HOSTNAME=$(curl -s http://169.254.169.254/latest/meta-data/hostname)
 
+# Create index.html
 cat > /var/www/html/third/index.html <<EOF
 <!DOCTYPE html>
 <html>
@@ -485,24 +485,42 @@ cat > /var/www/html/third/index.html <<EOF
     <title>${server_name}</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f0ff; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h1 { color: #4b2e8b; }
-        .info { margin: 15px 0; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto; }
+        h1 { color: #4b2e8b; text-align: center; }
+        .info { margin: 15px 0; padding: 10px; background: #f8f9fa; border-left: 4px solid #4b2e8b; }
+        .highlight { font-weight: bold; color: #4b2e8b; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to ${server_name}</h1>
-        <div class="info"><strong>Server Name:</strong> ${server_name}</div>
+        <h1>Welcome to <span class="highlight">${server_name}</span></h1>
         <div class="info"><strong>Public IP:</strong> $PUBLIC_IP</div>
         <div class="info"><strong>Private IP:</strong> $PRIVATE_IP</div>
         <div class="info"><strong>Hostname:</strong> $HOSTNAME</div>
+        <div class="info"><strong>Availability Zone:</strong> $(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)</div>
         <div class="info"><strong>Context Path:</strong> /third/</div>
     </div>
 </body>
 </html>
 EOF
+
+# Set permissions
+chmod 644 /var/www/html/third/index.html
 ```
+
+## Key Improvements:
+
+1. **Simplified Template Handling**: Used `templatefile()` directly in the resource block
+2. **Better Error Handling**: Added `set -ex` in user data scripts
+3. **Enhanced Output**: Improved output format with direct URLs
+4. **Consistent Styling**: Uniform HTML structure with different color schemes
+5. **Security**: Added proper file permissions
+6. **Metadata**: Added availability zone information
+7. **Path Specification**: Used `${path.module}` for better module compatibility
+8. **Documentation**: Added descriptions for outputs
+
+
+After deployment, Terraform will output the URLs for accessing each server with their specific context paths. Each server will have a distinct color scheme and display its metadata.
 
 ## Deployment Steps
 

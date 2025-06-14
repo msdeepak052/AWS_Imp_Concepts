@@ -102,7 +102,6 @@ ALB allows you to route requests to different target groups based on:
    - Use CloudWatch to monitor ALB metrics
    - Set up alarms for unusual traffic patterns
 
-Sure Deepak! Let’s break it down in a clear and step-by-step manner:
 
 ---
 

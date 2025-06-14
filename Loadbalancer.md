@@ -569,6 +569,9 @@ Each server will display its name, IP addresses, and context path with a differe
 
 ![image](https://github.com/user-attachments/assets/867961ad-d9f6-41b0-8e23-c3bf12add46b)
 
+![image](https://github.com/user-attachments/assets/623ca7cb-adc2-4e3e-98b4-b9a7ab29c822)
+
+
 #### Route 53
 
 ![image](https://github.com/user-attachments/assets/18f2b01c-0284-4d4c-b6e8-5bac692c41e0)

@@ -170,8 +170,18 @@ def lambda_handler(event, context):
 
 ![image](https://github.com/user-attachments/assets/bca17e1c-6cf0-421a-91d6-53ae805e52a3)
 
+![image](https://github.com/user-attachments/assets/5c091e30-4d76-4d09-b196-1daa3f188ee8)
+
+![image](https://github.com/user-attachments/assets/54c0b673-5f40-4923-b083-003c1a62bf6e)
+
+![image](https://github.com/user-attachments/assets/df0eda75-9a44-4a09-bf26-ac9d81cf8e8c)
 
 7. Test by uploading an image to your S3 bucket
+
+![image](https://github.com/user-attachments/assets/fe087ec1-cd45-49f6-9072-ea5b66fdc4a3)
+
+
+
 
 **Explanation**: This demonstrates event-driven architecture where Lambda responds to S3 events. The function processes the image and creates a thumbnail version.
 

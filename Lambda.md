@@ -91,6 +91,12 @@ def lambda_handler(event, context):
    zip -r pillow_layer.zip python
    ```
 
+#### Download the file from the cloudshell using the 3 dots and provide the zip file complete path
+![image](https://github.com/user-attachments/assets/cfd9c9e7-9a9e-4361-bf82-06e7e5fb13da)
+
+![image](https://github.com/user-attachments/assets/3ed5c1a6-9aa3-4bd1-a4ce-ac522dc66fee)
+
+
 4. **Create the Lambda Layer**:
    - Go to AWS Lambda Console → **Layers** → **Create layer**
    - Name: `pillow-layer`
@@ -98,11 +104,21 @@ def lambda_handler(event, context):
    - Select compatible runtimes (Python 3.8, 3.9, etc.)
    - Click **Create**
 
+![image](https://github.com/user-attachments/assets/ba22a366-bbbb-493b-a863-a8725173defd)
+
+![image](https://github.com/user-attachments/assets/806a7a62-dc61-4190-875a-1f93521d40f5)
+
+
 5. **Attach the Layer to your Lambda**:
    - Open your `image-processor` Lambda function
    - Scroll to **Layers** section → Click **Add a layer**
+    ![image](https://github.com/user-attachments/assets/3be2905d-8f67-47de-9c90-1eefb0026262)
+
    - Choose **Custom layers** → Select `pillow-layer`
    - Click **Add**
+
+    ![image](https://github.com/user-attachments/assets/8cdc62d2-d2e4-4f17-ba21-a61173746ddd)
+
 
 ---
 
@@ -142,12 +158,19 @@ def lambda_handler(event, context):
         'body': 'Thumbnail created successfully!'
     }
 ```
+![image](https://github.com/user-attachments/assets/9d81e272-abc0-4165-a956-99a2441bc900)
+
+
 6. Configure S3 trigger in Lambda:
    - In Lambda console, go to "Add trigger"
    - Select S3
    - Choose your bucket
    - Event type: "All object create events"
    - Prefix: "uploads/" (optional)
+
+![image](https://github.com/user-attachments/assets/bca17e1c-6cf0-421a-91d6-53ae805e52a3)
+
+
 7. Test by uploading an image to your S3 bucket
 
 **Explanation**: This demonstrates event-driven architecture where Lambda responds to S3 events. The function processes the image and creates a thumbnail version.

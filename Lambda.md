@@ -456,6 +456,187 @@ id,name,department
 
 ---
 
+## Same configuration with EC2 , SQS and S3 without involvement of Lambda
+
+**complete step-by-step guide** to implement the same CSV processing pipeline using **EC2** instead of Lambda, along with key differences and explanations:
+
+---
+
+## **Example 6: File Processing Pipeline using EC2 (Instead of Lambda)**  
+### **Objective**: Process CSV files automatically when uploaded to S3 using an EC2 instance  
+
+---
+
+### **Key Differences: EC2 vs. Lambda**  
+| Feature               | Lambda (Serverless) | EC2 (Server-based) |
+|-----------------------|---------------------|--------------------|
+| **Infrastructure**    | No servers to manage | Manual setup (VM) |
+| **Scaling**           | Automatic           | Manual (or Auto Scaling) |
+| **Cost**              | Pay per execution   | Pay per hour (always-on) |
+| **Trigger**           | S3 Event Notification | S3 Event + SQS or Polling |
+| **Maintenance**       | Zero                | OS updates, security patches |
+
+---
+
+## **Step-by-Step EC2 Implementation**  
+
+### **Step 1: Create S3 Buckets**  
+1. Go to **AWS S3 Console** → **Create Bucket**.  
+   - **Bucket 1**: `input-csv-files-ec2` (for uploads)  
+   - **Bucket 2**: `processed-csv-files-ec2` (for processed files)  
+
+---
+
+### **Step 2: Launch an EC2 Instance**  
+1. Go to **EC2 Console** → **Launch Instance**.  
+   - **AMI**: Amazon Linux 2023 (or Ubuntu)  
+   - **Instance Type**: `t2.micro` (free tier eligible)  
+   - **Key Pair**: Create/download a `.pem` key for SSH access.  
+   - **Security Group**: Allow **SSH (22)** and **HTTP (80)** inbound.  
+   - **IAM Role**: Attach a role with **S3 full access** (or custom policy from Lambda example).  
+
+---
+
+### **Step 3: Connect to EC2 and Install Dependencies**  
+1. **SSH into the EC2 instance**:  
+   ```bash
+   ssh -i "your-key.pem" ec2-user@<EC2_PUBLIC_IP>
+   ```
+2. **Install Python and AWS CLI**:  
+   ```bash
+   sudo yum update -y
+   sudo yum install python3 -y
+   pip3 install boto3 awscli
+   ```
+
+---
+
+### **Step 4: Set Up S3 Event Notifications (Using SQS)**  
+Since EC2 cannot be triggered directly by S3, we use **SQS** as middleware:  
+
+1. **Create an SQS Queue**:  
+   - Go to **SQS Console** → **Create Queue** → **Standard Queue** (e.g., `csv-upload-notifications`).  
+2. **Configure S3 Bucket to Send Events to SQS**:  
+   - Go to **S3 Bucket** → `input-csv-files-ec2` → **Properties** → **Event Notifications**.  
+   - Add a new notification:  
+     - **Event Type**: `All object create events`  
+     - **Destination**: `SQS Queue` → Select your queue.  
+
+---
+
+### **Step 5: Write the EC2 Processing Script**  
+On the EC2 instance, create a Python script (`/home/ec2-user/csv_processor.py`):  
+```python
+import boto3
+import csv
+import io
+import time
+
+s3 = boto3.client('s3')
+sqs = boto3.client('sqs')
+queue_url = 'YOUR_SQS_QUEUE_URL'
+
+def process_csv(bucket, key):
+    # Download CSV
+    csv_file = s3.get_object(Bucket=bucket, Key=key)
+    csv_content = csv_file['Body'].read().decode('utf-8')
+    
+    # Process CSV (uppercase 'name' column)
+    reader = csv.DictReader(io.StringIO(csv_content))
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=reader.fieldnames)
+    writer.writeheader()
+    
+    for row in reader:
+        if 'name' in row:
+            row['name'] = row['name'].upper()
+        writer.writerow(row)
+    
+    # Upload processed file
+    processed_key = f"processed_{key}"
+    s3.put_object(
+        Bucket='processed-csv-files-ec2',
+        Key=processed_key,
+        Body=output.getvalue()
+    )
+    print(f"Processed {key} -> saved to processed-csv-files-ec2/{processed_key}")
+
+def poll_sqs():
+    while True:
+        response = sqs.receive_message(
+            QueueUrl=queue_url,
+            MaxNumberOfMessages=1,
+            WaitTimeSeconds=10
+        )
+        if 'Messages' in response:
+            for message in response['Messages']:
+                # Parse S3 event from SQS
+                s3_event = eval(message['Body'])
+                bucket = s3_event['Records'][0]['s3']['bucket']['name']
+                key = s3_event['Records'][0]['s3']['object']['key']
+                process_csv(bucket, key)
+                sqs.delete_message(
+                    QueueUrl=queue_url,
+                    ReceiptHandle=message['ReceiptHandle']
+                )
+        time.sleep(5)
+
+if __name__ == '__main__':
+    poll_sqs()
+```
+
+---
+
+### **Step 6: Run the Script Continuously**  
+1. **Make the script executable**:  
+   ```bash
+   chmod +x /home/ec2-user/csv_processor.py
+   ```
+2. **Run it in the background** (e.g., using `tmux` or `nohup`):  
+   ```bash
+   tmux new -s csv-processor
+   python3 /home/ec2-user/csv_processor.py
+   ```
+   (Press `Ctrl+B`, then `D` to detach the session.)  
+
+---
+
+### **Step 7: Test the Pipeline**  
+1. Upload a CSV to `input-csv-files-ec2`:  
+   ```bash
+   aws s3 cp employees.csv s3://input-csv-files-ec2/
+   ```
+2. Check the processed file in `processed-csv-files-ec2`:  
+   ```bash
+   aws s3 ls s3://processed-csv-files-ec2/
+   ```
+
+---
+
+### **EC2-Specific Considerations**  
+1. **Always-On Cost**: EC2 runs 24/7 (unlike Lambda’s pay-per-use).  
+2. **Scalability**:  
+   - Use **Auto Scaling Groups** if workload increases.  
+   - For high throughput, switch to **Spot Instances** or larger instance types.  
+3. **Fault Tolerance**:  
+   - Add **CloudWatch Alerts** to restart the script if it crashes.  
+   - Use **SQS Dead-Letter Queues (DLQ)** for failed processing.  
+
+---
+
+### **When to Use EC2 Over Lambda**  
+- **Long-running jobs** (>15 minutes, Lambda’s timeout).  
+- **Custom software** (e.g., legacy apps not supported in Lambda).  
+- **Persistent storage** (EC2 has local disks; Lambda has ephemeral storage).  
+
+---
+
+### **Final Architecture**  
+```
+S3 Upload → S3 Event → SQS → EC2 (Polling) → Process CSV → S3
+```
+
+
 
 ## Example 7: Lambda with External API Integration
 

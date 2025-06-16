@@ -200,7 +200,7 @@ def lambda_handler(event, context):
 1. Create a new Lambda function named `api-example` with Node.js runtime
 2. Use this code:
 ```javascript
-exports.handler = async (event) => {
+export const handler = async (event) => {
     const response = {
         statusCode: 200,
         headers: {
@@ -214,11 +214,30 @@ exports.handler = async (event) => {
     return response;
 };
 ```
+![image](https://github.com/user-attachments/assets/21ec65f9-c64c-4628-b4ce-dee22b46666e)
+
 3. In API Gateway console, create a new REST API
+
+![image](https://github.com/user-attachments/assets/bbc4ed96-9ab6-4e26-b50b-0931ae83ef0b)
+
 4. Create a resource (e.g., `/hello`)
+
+![image](https://github.com/user-attachments/assets/834ce3a9-0713-4c92-a62b-1c984dd92a13)
+
 5. Create a GET method and connect it to your Lambda function
+![image](https://github.com/user-attachments/assets/3a146d74-e8b8-4d4e-a471-21a25ba7f7a6)
+
 6. Deploy the API to a stage (e.g., "prod")
+![image](https://github.com/user-attachments/assets/df70b8c2-b8d7-4af3-a8a6-a14f7c859e2b)
+
 7. Test the endpoint using the provided URL
+
+![image](https://github.com/user-attachments/assets/10d27fa6-3085-44aa-8d8b-419eb643c894)
+
+![image](https://github.com/user-attachments/assets/eaf41b45-9829-4fd6-83b8-5acf140a6381)
+
+
+
 
 **Explanation**: This shows how to expose Lambda functions as HTTP endpoints. API Gateway handles the HTTP protocol while Lambda processes the business logic.
 

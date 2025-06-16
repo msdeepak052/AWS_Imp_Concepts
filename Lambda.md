@@ -106,24 +106,6 @@ def lambda_handler(event, context):
 
 ---
 
-
-### **Key Notes:**
-1. **Layer vs. Deployment Package**:
-   - Layers are reusable across multiple Lambdas.
-   - Deployment packages are self-contained but larger.
-
-2. **AWS Limits**:
-   - Deployment package (unzipped) must be under **250MB**.
-   - Layers (unzipped) can be up to **250MB total** (max 5 layers per Lambda).
-
-3. **ARM vs. x86**:
-   - If your Lambda uses **ARM/Graviton**, install Pillow on an ARM machine or use AWS CloudShell (which runs on x86).
-
-4. **Alternative**:
-   - Use the **AWS Lambda Powertools** layer if you need additional Python utilities.
-
-Let me know if you'd like me to elaborate on any step!
-
 5. Use this code:
 ```python
 import boto3

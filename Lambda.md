@@ -50,12 +50,80 @@ def lambda_handler(event, context):
 
 **Steps**:
 1. Create an S3 bucket
+
+![image](https://github.com/user-attachments/assets/7dcdd597-e968-4d36-9ef5-b7da52242e9b)
+
 2. Create a new Lambda function named `image-processor` with Python runtime
+
+![image](https://github.com/user-attachments/assets/e01eb1d0-7be8-47e3-a20d-63b75aa69b77)
+
 3. Add the following permissions to the Lambda's execution role:
    - `s3:GetObject`
    - `s3:PutObject`
+
+![image](https://github.com/user-attachments/assets/8c5d0bfe-c52c-41f2-a217-721fe4c3ef43)
+
 4. Install the Pillow library (for image processing):
    - Create a deployment package or use Lambda Layers
+
+#### Here's a detailed step-by-step guide for installing the Pillow library for your S3-triggered image processing Lambda function:
+
+---
+
+#### **Steps to Create a Pillow Lambda Layer:**
+
+1. **Set up your local environment** (Linux recommended, or use AWS CloudShell):
+   ```bash
+   mkdir pillow_layer
+   cd pillow_layer
+   python3 -m venv venv
+   source venv/bin/activate
+   ```
+
+2. **Install Pillow in a specific directory**:
+   ```bash
+   mkdir python
+   pip install pillow -t python/
+   ```
+
+3. **Zip the layer contents**:
+   ```bash
+   zip -r pillow_layer.zip python
+   ```
+
+4. **Create the Lambda Layer**:
+   - Go to AWS Lambda Console → **Layers** → **Create layer**
+   - Name: `pillow-layer`
+   - Upload your `pillow_layer.zip` file
+   - Select compatible runtimes (Python 3.8, 3.9, etc.)
+   - Click **Create**
+
+5. **Attach the Layer to your Lambda**:
+   - Open your `image-processor` Lambda function
+   - Scroll to **Layers** section → Click **Add a layer**
+   - Choose **Custom layers** → Select `pillow-layer`
+   - Click **Add**
+
+---
+
+
+### **Key Notes:**
+1. **Layer vs. Deployment Package**:
+   - Layers are reusable across multiple Lambdas.
+   - Deployment packages are self-contained but larger.
+
+2. **AWS Limits**:
+   - Deployment package (unzipped) must be under **250MB**.
+   - Layers (unzipped) can be up to **250MB total** (max 5 layers per Lambda).
+
+3. **ARM vs. x86**:
+   - If your Lambda uses **ARM/Graviton**, install Pillow on an ARM machine or use AWS CloudShell (which runs on x86).
+
+4. **Alternative**:
+   - Use the **AWS Lambda Powertools** layer if you need additional Python utilities.
+
+Let me know if you'd like me to elaborate on any step!
+
 5. Use this code:
 ```python
 import boto3

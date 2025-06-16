@@ -72,24 +72,26 @@ def lambda_handler(event, context):
 
 #### **Steps to Create a Pillow Lambda Layer:**
 
-1. **Set up your local environment** (Linux recommended, or use AWS CloudShell):
-   ```bash
-   mkdir pillow_layer
-   cd pillow_layer
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
+# 1. Create the directory structure
+```bash
+mkdir -p pillow_layer/python
+cd pillow_layer
+```
 
-2. **Install Pillow in a specific directory**:
-   ```bash
-   mkdir python
-   pip install pillow -t python/
-   ```
+# 2. Run the correct Docker command (using AWS's official build image)
+```bash
+docker run -v "$PWD":/var/task "public.ecr.aws/sam/build-python3.10" /bin/sh -c "pip install pillow -t python/ && chmod -R 755 python; exit"
+```
 
-3. **Zip the layer contents**:
-   ```bash
-   zip -r pillow_layer.zip python
-   ```
+# 3. Verify the contents
+```bash
+ls -la python/
+```
+
+# 4. Create the zip file
+```bash
+zip -r pillow_layer.zip python
+```
 
 #### Download the file from the cloudshell using the 3 dots and provide the zip file complete path
 ![image](https://github.com/user-attachments/assets/cfd9c9e7-9a9e-4361-bf82-06e7e5fb13da)

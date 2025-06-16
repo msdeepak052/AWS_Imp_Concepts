@@ -310,15 +310,61 @@ exports.handler = async (event) => {
 
 **Explanation**: This shows how to build real-time applications that react to database changes.
 
-## Example 6: Serverless File Processing Pipeline
+---
 
-**Objective**: Process CSV files with Lambda and S3
+## **Example 6: Serverless File Processing Pipeline**  
+### **Objective**: Process CSV files automatically when uploaded to S3 using Lambda  
 
-**Steps**:
-1. Create two S3 buckets: `input-csv-files` and `processed-csv-files`
-2. Create a Lambda function named `csv-processor` with Python runtime
-3. Add S3 read/write permissions to the Lambda's execution role
-4. Use this code:
+---
+
+### **Step 1: Create S3 Buckets**  
+1. Go to **AWS S3 Console** → **Create Bucket**.  
+   - **Bucket 1**: `input-csv-files` (stores raw CSV uploads)  
+   - **Bucket 2**: `processed-csv-files` (stores processed CSVs)  
+   - *Leave default settings (Region: Your preferred region, e.g., `ap-south-1`)*.  
+
+---
+
+### **Step 2: Create Lambda Function**  
+1. Go to **AWS Lambda Console** → **Create Function**.  
+   - **Name**: `csv-processor`  
+   - **Runtime**: `Python 3.12` (or latest supported)  
+   - **Permissions**:  
+     - Choose *"Create a new role with basic Lambda permissions"*.  
+     - After creation, attach **S3 read/write policies** (see **Step 3**).  
+
+---
+
+### **Step 3: Add S3 Permissions to Lambda Role**  
+1. Open the **IAM Console** → **Roles**.  
+2. Find the role created for `csv-processor` (e.g., `csv-processor-role-xyz`).  
+3. Click **Add Permissions** → **Attach Policies**.  
+   - Add:  
+     - `AmazonS3FullAccess` (for testing)  
+     - *Or create a custom policy* with:  
+       ```json
+       {
+           "Version": "2012-10-17",
+           "Statement": [
+               {
+                   "Effect": "Allow",
+                   "Action": [
+                       "s3:GetObject",
+                       "s3:PutObject"
+                   ],
+                   "Resource": [
+                       "arn:aws:s3:::input-csv-files/*",
+                       "arn:aws:s3:::processed-csv-files/*"
+                   ]
+               }
+           ]
+       }
+       ```
+
+---
+
+### **Step 4: Paste Lambda Code**  
+Replace the default code with:  
 ```python
 import boto3
 import csv
@@ -327,7 +373,7 @@ import io
 s3 = boto3.client('s3')
 
 def lambda_handler(event, context):
-    # Get the uploaded CSV file
+    # Get the uploaded CSV file details
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = event['Records'][0]['s3']['object']['key']
     
@@ -335,35 +381,80 @@ def lambda_handler(event, context):
     csv_file = s3.get_object(Bucket=bucket, Key=key)
     csv_content = csv_file['Body'].read().decode('utf-8')
     
-    # Process CSV
+    # Process CSV (convert "name" column to uppercase)
     reader = csv.DictReader(io.StringIO(csv_content))
-    
-    # Example: Convert all names to uppercase
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=reader.fieldnames)
     writer.writeheader()
     
     for row in reader:
-        row['name'] = row['name'].upper()  # Assuming there's a 'name' column
+        if 'name' in row:  # Check if 'name' column exists
+            row['name'] = row['name'].upper()
         writer.writerow(row)
     
-    # Upload processed CSV
+    # Upload processed CSV to the "processed-csv-files" bucket
+    processed_key = f"processed_{key}"
     s3.put_object(
         Bucket='processed-csv-files',
-        Key=f"processed_{key}",
+        Key=processed_key,
         Body=output.getvalue()
     )
     
     return {
         'statusCode': 200,
-        'body': 'CSV processed successfully!'
+        'body': f'CSV processed! Saved to processed-csv-files/{processed_key}'
     }
 ```
-5. Configure S3 trigger for the input bucket
-6. Test by uploading a CSV file to the input bucket
-7. Check the processed bucket for the transformed file
+**Click "Deploy"** to save.
 
-**Explanation**: This demonstrates a common ETL (Extract, Transform, Load) pattern using serverless components.
+---
+
+### **Step 5: Configure S3 Trigger**  
+1. In the Lambda function, go to **Configuration** → **Triggers** → **Add Trigger**.  
+2. Select **S3**.  
+   - **Bucket**: `input-csv-files`  
+   - **Event Type**: `All object create events` (or `Put`)  
+   - **Prefix**: Optional (e.g., `raw/` to only process files in `raw/` folder).  
+3. Click **Add**.  
+
+---
+
+### **Step 6: Test with a Sample CSV**  
+#### **Sample CSV (`employees.csv`)**  
+```csv
+id,name,department
+1,john doe,IT
+2,jane smith,HR
+3,alex brown,Finance
+```
+**Upload to S3**:  
+1. Go to `input-csv-files` bucket → **Upload** → Select `employees.csv`.  
+2. Lambda will trigger automatically.  
+
+#### **Expected Processed Output**  
+Check `processed-csv-files` bucket for `processed_employees.csv`:  
+```csv
+id,name,department
+1,JOHN DOE,IT
+2,JANE SMITH,HR
+3,ALEX BROWN,Finance
+``` 
+
+---
+
+### **Explanation**  
+- **S3 Triggers Lambda**: Automatically invokes Lambda when a CSV is uploaded.  
+- **Lambda Processes CSV**: Reads the file, transforms data (e.g., uppercase names), and saves to another bucket.  
+- **Fully Serverless**: No servers to manage; scales automatically.  
+
+---
+
+### **Next Steps**  
+- Add **error handling** (e.g., invalid CSV formats).  
+- Use **DynamoDB** to store processed data.  
+- Add **SNS notifications** for completion alerts.  
+
+Let me know if you need further customizations! 🚀
 
 ## Example 7: Lambda with External API Integration
 

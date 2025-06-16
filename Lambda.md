@@ -322,6 +322,9 @@ exports.handler = async (event) => {
    - **Bucket 1**: `input-csv-files` (stores raw CSV uploads)  
    - **Bucket 2**: `processed-csv-files` (stores processed CSVs)  
    - *Leave default settings (Region: Your preferred region, e.g., `ap-south-1`)*.  
+![image](https://github.com/user-attachments/assets/4305609e-06cc-467b-a6ae-0babbed502df)
+![image](https://github.com/user-attachments/assets/c91b742b-e2f9-4204-ad33-01db8c846761)
+![image](https://github.com/user-attachments/assets/b893e6f2-b668-467c-9a08-80341b9e12fa)
 
 ---
 
@@ -332,6 +335,7 @@ exports.handler = async (event) => {
    - **Permissions**:  
      - Choose *"Create a new role with basic Lambda permissions"*.  
      - After creation, attach **S3 read/write policies** (see **Step 3**).  
+![image](https://github.com/user-attachments/assets/1757fd5d-8d5a-4e90-b2e9-4260225fd372)
 
 ---
 
@@ -360,6 +364,7 @@ exports.handler = async (event) => {
            ]
        }
        ```
+![image](https://github.com/user-attachments/assets/5dc104d7-cfd6-408c-af60-a19599a89f5a)
 
 ---
 
@@ -406,6 +411,7 @@ def lambda_handler(event, context):
     }
 ```
 **Click "Deploy"** to save.
+![image](https://github.com/user-attachments/assets/e46c8f73-16d9-4374-9719-d841ff339b38)
 
 ---
 
@@ -416,6 +422,8 @@ def lambda_handler(event, context):
    - **Event Type**: `All object create events` (or `Put`)  
    - **Prefix**: Optional (e.g., `raw/` to only process files in `raw/` folder).  
 3. Click **Add**.  
+
+![image](https://github.com/user-attachments/assets/bfa2bd58-6173-43ca-8eb4-c3328b30379b)
 
 ---
 
@@ -431,6 +439,9 @@ id,name,department
 1. Go to `input-csv-files` bucket → **Upload** → Select `employees.csv`.  
 2. Lambda will trigger automatically.  
 
+![image](https://github.com/user-attachments/assets/311099e4-b223-4a67-9200-1dbc7e59502a)
+
+
 #### **Expected Processed Output**  
 Check `processed-csv-files` bucket for `processed_employees.csv`:  
 ```csv
@@ -439,22 +450,12 @@ id,name,department
 2,JANE SMITH,HR
 3,ALEX BROWN,Finance
 ``` 
+![image](https://github.com/user-attachments/assets/cb6c11ea-9025-40f5-aaf3-df4a5da92dc7)
+![image](https://github.com/user-attachments/assets/09efd48f-7dd2-45ce-ae75-ef035aafc1cb)
+![image](https://github.com/user-attachments/assets/b9d4658f-3135-4afc-a191-ee150d1374bc)
 
 ---
 
-### **Explanation**  
-- **S3 Triggers Lambda**: Automatically invokes Lambda when a CSV is uploaded.  
-- **Lambda Processes CSV**: Reads the file, transforms data (e.g., uppercase names), and saves to another bucket.  
-- **Fully Serverless**: No servers to manage; scales automatically.  
-
----
-
-### **Next Steps**  
-- Add **error handling** (e.g., invalid CSV formats).  
-- Use **DynamoDB** to store processed data.  
-- Add **SNS notifications** for completion alerts.  
-
-Let me know if you need further customizations! 🚀
 
 ## Example 7: Lambda with External API Integration
 

@@ -1198,8 +1198,110 @@ AWS ensures durability through:
 | **Multi-AZ Instance**   | Standard HA in production (like banking)   |
 | **Multi-AZ DB Cluster** | Need HA **and** read scaling (modern apps) |
 
+
 ---
 
+## 📘 **How to Choose RDS Availability Deployment Options using RTO & RPO**
+
+---
+
+### 🔹 Step 1: Understand Key Terms
+
+| Term                               | Meaning                                                   |
+| ---------------------------------- | --------------------------------------------------------- |
+| **RTO (Recovery Time Objective)**  | How quickly must the database recover (downtime allowed)? |
+| **RPO (Recovery Point Objective)** | How much data loss is acceptable (in minutes/seconds)?    |
+
+> ✅ Shorter RTO = faster recovery
+![image](https://github.com/user-attachments/assets/b1dcefab-2237-4be5-af29-29b525ef50f8)
+![image](https://github.com/user-attachments/assets/b4d3f876-c378-4df7-ab0a-9be230ddd0f9)
+![image](https://github.com/user-attachments/assets/3ba21a9f-9028-4465-9058-ad3d8d08adf8)
+
+> ✅ Shorter RPO = minimal or no data loss
+![image](https://github.com/user-attachments/assets/177305e0-e1b9-4c65-9ad5-a3a46e7df661)
+
+![image](https://github.com/user-attachments/assets/2e0e32e5-85f0-43dc-a41e-57c4a0876833)
+![image](https://github.com/user-attachments/assets/cc6a5fa1-1de9-4509-b862-dce269248d3b)
+
+
+---
+
+### 🔹 Step 2: Map Use Case to RTO/RPO
+
+| Workload Type                  | Example                              | RTO      | RPO     |
+| ------------------------------ | ------------------------------------ | -------- | ------- |
+| **Critical (banking, health)** | Financial transactions, patient data | < 1 min  | \~0 sec |
+| **Moderate (eCommerce)**       | Orders, inventory                    | \~5 min  | < 5 min |
+| **Non-critical (dev/test)**    | Test environments, staging           | Flexible | Hours   |
+
+---
+
+## 🧠 **Step 3: Choose RDS Deployment Based on RTO/RPO Needs**
+
+---
+
+### 1️⃣ **Single-AZ DB Instance**
+
+| Feature             | Value                       |
+| ------------------- | --------------------------- |
+| **RTO**             | High (\~hours if failed)    |
+| **RPO**             | Medium (since daily backup) |
+| **Recommended for** | Dev/Test only               |
+| **Failover**        | Manual restore              |
+| **Cost**            | 💰 Lowest                   |
+
+📌 Use when downtime and some data loss is acceptable
+
+---
+
+### 2️⃣ **Multi-AZ DB Instance**
+
+| Feature             | Value                     |
+| ------------------- | ------------------------- |
+| **RTO**             | Medium (\~60–120 seconds) |
+| **RPO**             | Low (real-time sync)      |
+| **Recommended for** | Most production workloads |
+| **Failover**        | Automatic to standby      |
+| **Cost**            | 💰💰 Medium               |
+
+📌 Use when **high availability** is needed but read scaling isn't critical.
+
+---
+
+### 3️⃣ **Multi-AZ DB Cluster**
+
+| Feature             | Value                                  |
+| ------------------- | -------------------------------------- |
+| **RTO**             | Very Low (<30 seconds)                 |
+| **RPO**             | Near zero                              |
+| **Recommended for** | Critical apps needing HA + performance |
+| **Failover**        | Fast failover to reader                |
+| **Cost**            | 💰💰💰 High                            |
+
+📌 Use when both **fast failover and horizontal scaling** are needed.
+
+---
+
+## ✅ Decision Flow Summary
+
+| If You Need...                      | Use This Option      |
+| ----------------------------------- | -------------------- |
+| 💡 Lowest cost, no HA needed        | Single-AZ Instance   |
+| ⚙️ High availability (Prod-safe)    | Multi-AZ DB Instance |
+| ⚡ Ultra-low downtime + read scaling | Multi-AZ DB Cluster  |
+
+---
+
+## 📌 Use Case Mapping
+
+| Application Type     | RTO     | RPO     | Recommended Option            |
+| -------------------- | ------- | ------- | ----------------------------- |
+| Banking App          | < 1 min | \~0 sec | Multi-AZ DB Cluster           |
+| Inventory System     | \~5 min | < 5 min | Multi-AZ DB Instance          |
+| Dev/Test Environment | >1 hour | 1 day   | Single-AZ DB Instance         |
+| Real-Time Analytics  | < 30s   | \~0 sec | Multi-AZ DB Cluster + Readers |
+
+---
 
 
 

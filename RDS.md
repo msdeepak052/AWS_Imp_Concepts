@@ -1,5 +1,3 @@
-Great choice to begin with, Deepak! Here's a clean and concise explanation of **AWS Relational Database Service (RDS)** with examples and supporting AWS services.
-
 ---
 
 ### 📘 **Relational Database Service (RDS) – Overview**

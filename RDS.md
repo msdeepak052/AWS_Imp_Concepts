@@ -836,6 +836,9 @@ SELECT * FROM employee;
 * Select your DB → **Actions > Delete**
 * Choose option to delete final snapshot (for labs)
 
+![image](https://github.com/user-attachments/assets/e5f07ba9-67c0-4fa5-8d1d-696d7066c2ee)
+
+
 ---
 
 ## 🧠 Summary for Notes
@@ -850,5 +853,149 @@ SELECT * FROM employee;
 | Cleanup       | RDS Console → Delete DB        |
 
 ---
+
+
+## 🧪 **Lab: EC2 to RDS MySQL Connection – Full Steps via AWS Console**
+
+---
+
+### ✅ **Goal**
+
+* Create a **MySQL RDS instance**
+* Launch an **EC2 instance**
+* **Connect to the RDS** from EC2 using MySQL client
+
+---
+
+## 🔧 **Step-by-Step Instructions**
+
+---
+
+### 🔹 **Step 1: Create RDS MySQL Instance**
+
+1. Go to **Amazon RDS Console** → Click **Create database**
+2. Choose:
+
+   * Creation method: ✅ *Standard create*
+   * Engine: ✅ *MySQL*
+   * Version: Default or latest 8.x
+   * Template: ✅ *Free tier*
+3. Settings:
+
+   * DB instance identifier: `deepak-rds-mysql`
+   * Username: `admin`
+   * Password: `StrongPassword123!`
+4. DB instance size:
+
+   * Instance class: `db.t3.micro`
+   * Storage: General Purpose (20 GiB)
+5. Connectivity:
+
+   * VPC: Select default or custom
+   * Public access: ❌ *No*
+   * VPC Security Group: **Create new or choose existing**, allow **port 3306**
+6. DB name: `deepak_db` (optional)
+7. Click **Create database**
+8. Wait for **status = available** and note the **endpoint** (e.g., `deepak-rds-mysql.abcxyz.rds.amazonaws.com`)
+
+---
+
+### 🔹 **Step 2: Create EC2 Instance (Linux)**
+
+1. Go to **EC2 Console** → Launch Instance
+2. Name: `deepak-ec2-mysql-client`
+3. AMI: ✅ *Amazon Linux 2*
+4. Instance type: `t2.micro`
+5. Key pair: Select or create new
+6. Network settings:
+
+   * VPC: Same as RDS
+   * Subnet: Choose one in same AZ (optional)
+   * Security Group:
+
+     * Allow SSH (port 22)
+     * Allow **outbound access** to **RDS port 3306**
+7. Launch instance
+8. Connect to instance:
+
+   ```bash
+   ssh -i "your-key.pem" ec2-user@<EC2-Public-IP>
+   ```
+
+---
+
+### 🔹 **Step 3: Install MySQL Client on EC2**
+
+```bash
+sudo yum update -y
+sudo yum install mysql -y
+```
+
+---
+
+### 🔹 **Step 4: Modify RDS Security Group to Allow EC2 Access**
+
+1. Go to **EC2 Console** → Instances → Note the **private IP** of your EC2
+2. Go to **RDS Console** → Your DB → Find its **Security Group**
+3. Edit **Inbound Rules**:
+
+   * Type: MySQL/Aurora
+   * Port: 3306
+   * Source: ✅ *EC2's Security Group* OR *EC2’s Private IP/32*
+
+✅ This allows EC2 to talk to the RDS.
+
+---
+
+### 🔹 **Step 5: Connect to RDS from EC2**
+
+1. Run:
+
+   ```bash
+   mysql -h <RDS-ENDPOINT> -u admin -p
+   ```
+
+   * Enter password: `StrongPassword123!`
+
+2. Once connected:
+
+   ```sql
+   SHOW DATABASES;
+
+   CREATE DATABASE deepak_db;
+   USE deepak_db;
+
+   CREATE TABLE users (
+     id INT PRIMARY KEY,
+     name VARCHAR(100)
+   );
+
+   INSERT INTO users VALUES (1, 'Deepak');
+   SELECT * FROM users;
+   ```
+
+✅ You’re now connected from EC2 to RDS securely using internal networking.
+
+---
+
+## 🧹 **Clean Up (Optional)**
+
+* Terminate EC2 instance
+* Delete RDS instance (disable final snapshot if not needed)
+
+---
+
+## 🧠 Summary for Notes
+
+| Component          | Value                                            |
+| ------------------ | ------------------------------------------------ |
+| EC2 Role           | MySQL Client                                     |
+| RDS Role           | MySQL Server                                     |
+| Secure Access      | RDS Security Group allows EC2 IP/SG on port 3306 |
+| Connection Command | `mysql -h <RDS-ENDPOINT> -u admin -p`            |
+
+---
+
+
 
 

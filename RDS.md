@@ -974,6 +974,8 @@ sudo dnf install mariadb105
 
 ✅ You’re now connected from EC2 to RDS securely using internal networking.
 
+![image](https://github.com/user-attachments/assets/d55aebbd-8fc2-4a58-86a7-13818b60a6f1)
+
 ---
 
 ## 🧹 **Clean Up (Optional)**

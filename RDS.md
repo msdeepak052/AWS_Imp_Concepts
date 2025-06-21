@@ -1,5 +1,3 @@
----
-
 ### 📘 **Relational Database Service (RDS) – Overview**
 
 **AWS RDS (Relational Database Service)** is a **managed service** that makes it easier to **set up, operate, and scale** a relational database in the cloud.

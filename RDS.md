@@ -925,6 +925,8 @@ SELECT * FROM employee;
 ```bash
 sudo yum update -y
 sudo yum install mysql -y
+# if not working we can install using mariadb as mariadb and mysql are almost same
+sudo dnf install mariadb105
 ```
 
 ---

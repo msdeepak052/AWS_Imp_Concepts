@@ -1138,6 +1138,9 @@ AWS ensures durability through:
   * AZ failures
   * DB crash
   * Manual reboot with failover
+ 
+ ![image](https://github.com/user-attachments/assets/add0f4e0-698e-41bd-b446-0a5a1e6f6b95)
+
 
 ### ✅ Supported For:
 
@@ -1168,6 +1171,8 @@ AWS ensures durability through:
 ✅ High-performance, high-availability apps
 ✅ Want both failover **and** read scaling
 ✅ Aurora-like benefits on standard engines
+
+![image](https://github.com/user-attachments/assets/99c8183a-5a2a-4918-b61f-fff72318fc42)
 
 ---
 

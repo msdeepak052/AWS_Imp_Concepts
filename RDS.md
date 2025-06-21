@@ -158,3 +158,238 @@ Say you're building a **fitness tracking app**:
 ---
 
 
+---
+
+## 📘 **What is a Relational Database (RDB) & Relational Database Service (RDS)?**
+
+### 🔹 **Relational Database (RDB)**
+
+A **Relational Database** organizes data into **tables** (rows and columns), where each table is related to others through **keys**.
+
+> Example: In a banking app, you may have a `Users` table and a `Transactions` table linked by `user_id`.
+
+---
+
+### 🔹 **Relational Database Service (RDS)**
+
+**Amazon RDS** is a **fully managed service** for relational databases in AWS. It takes care of:
+
+* Hardware provisioning
+* DB installation and setup
+* Backups, patching, monitoring
+* Replication and scaling
+
+✅ It supports popular relational DB engines: **MySQL, PostgreSQL, MariaDB, Oracle, SQL Server**, and **Aurora**.
+
+---
+
+## ✅ **Common Use Cases for RDS**
+
+| Use Case                             | Description                                     |
+| ------------------------------------ | ----------------------------------------------- |
+| **Web & Mobile Apps**                | Store user data, sessions, and profiles         |
+| **eCommerce Platforms**              | Store products, orders, transactions            |
+| **ERP/CRM Systems**                  | Manage employees, customers, inventory, finance |
+| **Content Management Systems (CMS)** | Blogs, publishing, media platforms              |
+| **Financial Applications**           | Store secure and consistent transactional data  |
+| **Healthcare/HR Systems**            | Relational, structured, compliant data storage  |
+
+---
+
+## 🏷️ **Key RDS Terminologies with Explanation & Examples**
+
+| Term                    | Description                                                       | Example                                        |
+| ----------------------- | ----------------------------------------------------------------- | ---------------------------------------------- |
+| **DB Instance**         | A single RDS database environment (like a virtual machine for DB) | `db.t3.medium` running MySQL 8.0               |
+| **DB Engine**           | The type of database (MySQL, PostgreSQL, etc.)                    | Aurora PostgreSQL                              |
+| **Multi-AZ Deployment** | High availability setup with standby in another AZ                | Automatic failover in case of outage           |
+| **Read Replica**        | Read-only copy of DB for scaling read queries                     | Reporting or analytics queries                 |
+| **Storage Type**        | The storage backend used (GP2, GP3, IO1)                          | General Purpose SSD (gp3)                      |
+| **Parameter Group**     | Configuration settings for the DB engine                          | Turn on slow query logging                     |
+| **Option Group**        | Additional features for engines like Oracle/SQL Server            | Enable Oracle TDE                              |
+| **Subnet Group**        | Set of subnets in VPC where DB can be launched                    | Public vs Private subnet                       |
+| **Security Group**      | Acts as a firewall to control inbound/outbound DB access          | Allow app server IP on port 3306               |
+| **Snapshot**            | Backup of the entire DB instance at a point in time               | Daily backups at midnight                      |
+| **Endpoint**            | Hostname used by app to connect to the database                   | `mydb.abcdefg123.ap-south-1.rds.amazonaws.com` |
+
+---
+
+## 🧠 Summary (For Your Notes)
+
+* **RDS** is a **managed service** to run relational databases like MySQL, PostgreSQL, and Aurora.
+* It’s used in **web apps, financial systems, CMS, ERP**, and more.
+* Key concepts include: **DB Instance, Engine, Multi-AZ, Read Replica, Snapshots, Security Group, Parameter Group**.
+* AWS **abstracts away infrastructure management** so you can focus on the application layer.
+
+---
+
+✅ **Real Example Scenario**
+
+> You're deploying a CRM application for a company:
+>
+> * You choose **RDS PostgreSQL**.
+> * Configure it as **Multi-AZ** for high availability.
+> * Add a **Read Replica** for analytics.
+> * Enable **automated backups** with a 7-day retention period.
+> * Use **CloudWatch** for monitoring DB performance.
+
+---
+
+
+---
+
+## 📘 **Core Terminologies in Relational Databases (RDBMS)**
+
+These concepts apply whether you're using MySQL, PostgreSQL, Oracle, or any relational system — including RDS.
+
+---
+
+### 🧱 **1. Table**
+
+* A **table** is a collection of related data in rows and columns.
+* Each table represents a single entity (like customers, orders, etc.).
+
+📌 *Example:*
+
+```sql
+CREATE TABLE Customers (
+  id INT PRIMARY KEY,
+  name VARCHAR(100),
+  email VARCHAR(100)
+);
+```
+
+---
+
+### 🔑 **2. Primary Key**
+
+* A **primary key** uniquely identifies each row in a table.
+* It must be **unique** and **not null**.
+
+📌 *Example:* `id` in the `Customers` table.
+
+---
+
+### 🔗 **3. Foreign Key**
+
+* A **foreign key** links one table to another.
+* It enforces **referential integrity** between related tables.
+
+📌 *Example:* `customer_id` in `Orders` referencing `Customers(id)`
+
+---
+
+### 📚 **4. Schema**
+
+* A **schema** is a logical container for database objects like tables, views, and procedures.
+* Think of it as a **namespace** or folder.
+
+📌 *Example:* `public.customers` in PostgreSQL
+
+---
+
+### 🧾 **5. Row (Record)**
+
+* A **row** is a single entry in a table.
+* It contains data for all columns defined.
+
+📌 *Example:* One customer: `(1, 'Deepak', 'deepak@email.com')`
+
+---
+
+### 📐 **6. Column (Field)**
+
+* A **column** defines a data type and name for an attribute.
+* Columns make up the structure of the table.
+
+📌 *Example:* `name VARCHAR(100)` in the Customers table.
+
+---
+
+### 📋 **7. SQL (Structured Query Language)**
+
+* Language used to **interact with relational databases**.
+* Includes commands like:
+
+  * `SELECT` (read data)
+  * `INSERT` (add data)
+  * `UPDATE` (modify)
+  * `DELETE` (remove)
+
+📌 *Example:*
+
+```sql
+SELECT * FROM Customers WHERE id = 1;
+```
+
+---
+
+### 🔄 **8. Normalization**
+
+* Process of **organizing data** to reduce redundancy and improve integrity.
+* Involves splitting data into multiple related tables.
+
+📌 *Example:* Instead of storing customer info in every order row, use a separate `Customers` table.
+
+---
+
+### 🧠 **9. Index**
+
+* An **index** speeds up search queries on one or more columns.
+* Acts like a book index — you find data faster.
+
+📌 *Example:* Index on `email` for fast user lookup.
+
+---
+
+### 🔍 **10. View**
+
+* A **view** is a **virtual table** created by a query.
+* It doesn't store data but presents data in a structured form.
+
+📌 *Example:* A view showing active customers:
+
+```sql
+CREATE VIEW ActiveCustomers AS
+SELECT * FROM Customers WHERE is_active = true;
+```
+
+---
+
+### 🔒 **11. Transaction**
+
+* A **transaction** is a group of SQL operations treated as a single unit.
+* Follows **ACID** properties: Atomicity, Consistency, Isolation, Durability.
+
+📌 *Example:* Transferring money between accounts (debit + credit)
+
+---
+
+### 🧾 **12. Constraint**
+
+* Rules applied to columns or tables to enforce data integrity.
+* Types: `NOT NULL`, `UNIQUE`, `CHECK`, `DEFAULT`, `PRIMARY KEY`, `FOREIGN KEY`
+
+📌 *Example:* `email UNIQUE` ensures no duplicates.
+
+---
+
+## 🧠 Summary for Notes
+
+| Term          | Description                             |
+| ------------- | --------------------------------------- |
+| Table         | Structure to store data in rows/columns |
+| Row           | A record in a table                     |
+| Column        | A field/attribute in the table          |
+| Primary Key   | Unique identifier for rows              |
+| Foreign Key   | Link between two related tables         |
+| SQL           | Language to manage DB                   |
+| Schema        | Logical group of DB objects             |
+| Index         | Speed up data lookup                    |
+| View          | Virtual table from a SELECT query       |
+| Transaction   | Unit of work with ACID properties       |
+| Constraint    | Rule for data integrity                 |
+| Normalization | Process to reduce redundancy            |
+
+---
+

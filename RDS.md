@@ -4326,9 +4326,18 @@ Auto Minor Version Upgrade: Enabled
 1. **Enable auto minor version upgrade** (security patches)  
 2. **Set maintenance window** (e.g., Sunday 2 AM)  
 3. **Enable deletion protection**  
-4. **Use Multi-AZ** for zero-downtime patching  
+4. **Use Multi-AZ** for zero-downtime patching
+
+![image](https://github.com/user-attachments/assets/364b170c-3cb4-46f4-b17f-155ad23601b8)
+
+![image](https://github.com/user-attachments/assets/782e8851-06dd-49e5-8a6f-fd2f34489cd5)
+
+![image](https://github.com/user-attachments/assets/98184f65-3a7a-4412-9973-be3a496acab1)
+
+
+ ---
 # **AWS RDS Read Replicas - Complete Guide with Examples**
----
+
 ## **What are RDS Read Replicas?**
 Read replicas are **asynchronous copies** of your primary RDS database that:
 - Serve **read-only** traffic (SELECT queries)

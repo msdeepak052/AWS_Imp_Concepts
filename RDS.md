@@ -4328,14 +4328,23 @@ Auto Minor Version Upgrade: Enabled
 3. **Enable deletion protection**  
 4. **Use Multi-AZ** for zero-downtime patching
 
+
 ![image](https://github.com/user-attachments/assets/364b170c-3cb4-46f4-b17f-155ad23601b8)
+
 
 ![image](https://github.com/user-attachments/assets/782e8851-06dd-49e5-8a6f-fd2f34489cd5)
 
+
 ![image](https://github.com/user-attachments/assets/98184f65-3a7a-4412-9973-be3a496acab1)
 
+---
+### Options avaialable after creation of Database
 
- ---
+![image](https://github.com/user-attachments/assets/eb3db3be-7a2e-4673-99f4-618ed2c296be)
+
+
+---
+---
 # **AWS RDS Read Replicas - Complete Guide with Examples**
 
 ## **What are RDS Read Replicas?**

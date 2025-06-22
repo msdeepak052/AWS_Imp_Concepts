@@ -2410,7 +2410,7 @@ Here’s a **concise, accurate guide** based on AWS’s official [RDS SSL/TLS do
 ### **7. Official AWS References**
 - [RDS SSL/TLS Docs](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html)
 - [Download Root Certificates](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html#UsingWithRDS.SSL.RegionCertificates)
--[How to Get and Install the Certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html)
+- [How to Get and Install the Certificate](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html)
 
 ---
 

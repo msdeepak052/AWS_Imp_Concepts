@@ -4368,6 +4368,8 @@ Read replicas are **asynchronous copies** of your primary RDS database that:
 2. **Reduced Primary DB Load** - Offload reporting/analytics queries
 3. **Disaster Recovery** - Cross-region replicas for failover
 4. **Migration Helper** - Minimize downtime during upgrades
+5. **High Scalability**
+6. **Realibility & Backups**
 
 ## **How Read Replicas Work**
 ```mermaid

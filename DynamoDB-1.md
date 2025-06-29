@@ -153,4 +153,133 @@ resource "aws_dynamodb_table" "users" {
 
 ---
 
+Let’s break down the **Primary Key**, **Partition Key**, and **Sort Key** in **Amazon DynamoDB**, using **clear examples** to make everything crystal clear.
+
+---
+
+## ✅ 1. What is a **Primary Key** in DynamoDB?
+
+In DynamoDB, the **Primary Key uniquely identifies each item** in a table.
+
+It can be of two types:
+
+| Type                      | Description                                   |
+| ------------------------- | --------------------------------------------- |
+| **Simple Primary Key**    | Only the **Partition Key**                    |
+| **Composite Primary Key** | A combination of **Partition Key + Sort Key** |
+
+---
+
+## ✅ 2. What is a **Partition Key**?
+
+* It's used to **determine the partition** where the data will be stored.
+* Think of it like a "hash key" — items with the same partition key are stored together.
+* Must be **unique** if there's **no sort key**.
+
+---
+
+## ✅ 3. What is a **Sort Key**?
+
+* Optional but powerful.
+* Allows **multiple items to share the same Partition Key** but be **distinguished by the Sort Key**.
+* Allows **range queries**, sorting, and filtering within a partition.
+
+---
+
+## ✅ Example 1: **Simple Primary Key (Only Partition Key)**
+
+```plaintext
+Table: Users
+Primary Key = user_id (Partition Key)
+```
+
+| user\_id | name   | email                                       |
+| -------- | ------ | ------------------------------------------- |
+| u001     | Deepak | [deepak@email.com](mailto:deepak@email.com) |
+| u002     | Ramesh | [ramesh@email.com](mailto:ramesh@email.com) |
+| u003     | Sita   | [sita@email.com](mailto:sita@email.com)     |
+
+* Each `user_id` is **unique**
+* You can **get item** using `user_id`
+
+---
+
+## ✅ Example 2: **Composite Primary Key (Partition Key + Sort Key)**
+
+```plaintext
+Table: Orders
+Partition Key = customer_id  
+Sort Key = order_date
+```
+
+| customer\_id | order\_date | order\_id | total\_amount |
+| ------------ | ----------- | --------- | ------------- |
+| c001         | 2024-01-01  | o1001     | ₹1,200        |
+| c001         | 2024-02-01  | o1002     | ₹2,100        |
+| c002         | 2024-01-01  | o1003     | ₹1,800        |
+
+### ✅ How it works:
+
+* Partition key groups all orders for a customer
+* Sort key **orders data within the partition**
+* You can query:
+
+  * All orders for customer `c001`
+  * All orders after `2024-01-15` for customer `c001`
+  * Order placed on exact date
+
+---
+
+## ✅ Querying by Key Types
+
+| Operation          | Key Type      | Query Pattern                                             |
+| ------------------ | ------------- | --------------------------------------------------------- |
+| Get one item       | Simple key    | Get by Partition Key only                                 |
+| Get multiple items | Composite key | Query by Partition Key and filter on Sort Key             |
+| Range queries      | Composite key | Query all items where Sort Key is between two dates, etc. |
+
+---
+
+## ✅ Terraform Example: Table with Composite Key
+
+```hcl
+resource "aws_dynamodb_table" "orders" {
+  name           = "orders"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "customer_id"
+  range_key      = "order_date"
+
+  attribute {
+    name = "customer_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "order_date"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "expire_at"
+    enabled        = true
+  }
+
+  point_in_time_recovery {
+    enabled = true
+  }
+}
+```
+
+---
+
+## ✅ Summary Table
+
+| Term              | Description                                          | Required?  |
+| ----------------- | ---------------------------------------------------- | ---------- |
+| **Partition Key** | Determines the partition (physical storage location) | ✅ Yes      |
+| **Sort Key**      | Optional – allows multiple items per partition       | ❌ Optional |
+| **Primary Key**   | Either Partition Key alone or Partition + Sort Key   | ✅ Yes      |
+
+---
+
 

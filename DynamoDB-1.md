@@ -497,4 +497,160 @@ resource "aws_dynamodb_table" "orders" {
 
 ---
 
+Let’s dive into the **DynamoDB storage architecture** — how data is stored, managed, and scaled behind the scenes. This helps understand **how it achieves high availability, low latency, and virtually infinite scalability**.
+
+---
+
+## ✅ Overview of DynamoDB Storage Architecture
+
+At a high level, DynamoDB is:
+
+* A **distributed, partitioned key-value store**
+* Built on **Amazon’s custom SSD-based storage engine**
+* Automatically replicates data across **multiple Availability Zones**
+* Designed to scale horizontally using **partitions (shards)**
+
+---
+
+## ✅ Key Components of the Architecture
+
+### 1. **Tables**
+
+* Logical containers that hold **items (rows)**.
+* Internally divided into **partitions** based on the **Partition Key**.
+
+---
+
+### 2. **Partitions**
+
+* Physical storage units (think of them like shards).
+* **Each partition handles a portion of table data**.
+* A single partition can handle:
+
+  * Up to **10 GB** of storage
+  * **3,000 RCU** (Read Capacity Units)
+  * **1,000 WCU** (Write Capacity Units)
+
+---
+
+### 3. **Partition Key Role**
+
+* Partition Key is **hashed using an internal algorithm** to determine which partition an item goes to.
+* Ensures even data distribution.
+
+> ⚠️ Poor partition key design can lead to **hot partitions** → uneven load and throttling.
+
+---
+
+### 4. **Storage Engine**
+
+* Data is stored on **SSD-backed infrastructure**
+* Replicated across **3 Availability Zones (AZs)**
+* **Eventually consistent** or **strongly consistent** reads (user’s choice)
+
+---
+
+### 5. **Replication**
+
+* **Synchronous replication across 3 AZs** for durability and fault tolerance.
+* DynamoDB uses **multi-leader replication**, meaning any replica can handle writes.
+
+---
+
+### 6. **Data Model Storage**
+
+* Data is stored in **key-value format** under the hood:
+
+  * Partition Key (PK)
+  * Sort Key (optional)
+  * Attributes (can be JSON-like flexible structure)
+* You can store **strings, numbers, maps, lists, sets**.
+
+---
+
+### 7. **Secondary Index Storage**
+
+* **GSI (Global Secondary Index)** and **LSI (Local Secondary Index)** are stored in **separate partitions** but share the same underlying data model.
+* GSIs can span partitions; LSIs cannot.
+
+---
+
+### 8. **Streams and Change Logs**
+
+* DynamoDB Streams maintain a **change log** in separate infrastructure.
+* Used for Lambda triggers, CDC, event-driven pipelines.
+
+---
+
+### 9. **Backup and PITR (Point-in-Time Recovery)**
+
+* Snapshots and PITR data are stored outside the live partitions.
+* Doesn't affect table performance during backup/restore.
+
+---
+
+## ✅ Architecture Diagram (Textual)
+
+```
+             +---------------------------+
+             |       DynamoDB Table      |
+             +-------------+-------------+
+                           |
+      +--------------------+--------------------+
+      |         Partition (Shard) 1             |
+      | - Handles PK hash range A-M             |
+      | - 3x replicated across AZs              |
+      +----------------+------------------------+
+                       |
+        +--------------+--------------+
+        |  AZ-1       |  AZ-2        |  AZ-3
+        |  SSD Store  |  SSD Store   |  SSD Store
+        +-------------+--------------+-------------+
+
+      +--------------------+--------------------+
+      |         Partition (Shard) 2             |
+      | - Handles PK hash range N-Z             |
+      | - 3x replicated                          |
+      +-----------------------------------------+
+```
+
+---
+
+## ✅ Automatic Scaling (Horizontal Scaling)
+
+DynamoDB auto-scales by:
+
+| Scaling Trigger                        | Action                  |
+| -------------------------------------- | ----------------------- |
+| Item size > 10 GB                      | Creates a new partition |
+| WCU or RCU exceed per-partition limits | Splits partition        |
+| Table grows rapidly                    | Adds more partitions    |
+
+---
+
+## ✅ Real-World Analogy
+
+Think of DynamoDB like a **massive warehouse (table)** with **bins (partitions)**.
+
+* Each item has a label (Partition Key)
+* The label tells which bin to place the item in
+* Bins are duplicated across **3 buildings (AZs)** for safety
+
+---
+
+## ✅ Key Takeaways
+
+| Feature          | How DynamoDB Handles It                         |
+| ---------------- | ----------------------------------------------- |
+| **Durability**   | 3x replication across AZs                       |
+| **Scalability**  | Partitions auto-split and scale                 |
+| **Performance**  | Low-latency access via SSDs                     |
+| **Resilience**   | Multi-AZ fault tolerance                        |
+| **Elasticity**   | On-demand or auto-scaling provisioning          |
+| **Consistency**  | Tunable (eventual or strong)                    |
+| **Multi-tenant** | Each table is isolated in its own storage space |
+
+---
+
+
 

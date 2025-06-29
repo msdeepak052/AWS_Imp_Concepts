@@ -283,3 +283,218 @@ resource "aws_dynamodb_table" "orders" {
 ---
 
 
+Sure Deepak! Let’s go over **DynamoDB table settings** in detail—with a **realistic example**, so you understand every option and how to use it in production.
+
+---
+
+## ✅ DynamoDB Table Settings Overview
+
+When you create a table in DynamoDB, you configure the following **table-level settings**:
+
+| Setting Category              | Key Options/Fields                              |
+| ----------------------------- | ----------------------------------------------- |
+| Primary Key                   | Partition Key, Sort Key (optional)              |
+| Table Class                   | Standard or Standard-IA (infrequent access)     |
+| Capacity Mode                 | Provisioned or On-Demand                        |
+| Encryption                    | AWS managed, customer managed                   |
+| Auto Scaling                  | Only for provisioned mode                       |
+| TTL (Time to Live)            | Automatically delete expired items              |
+| PITR (Point-in-Time Recovery) | Restore to any point in the last 35 days        |
+| Streams                       | Track real-time changes (for Lambda, analytics) |
+| Tags                          | Metadata (for billing, ownership, etc.)         |
+| Global Tables                 | Optional cross-region replication               |
+| Secondary Indexes             | GSI (global), LSI (local)                       |
+
+---
+
+## 🧪 Example Scenario: Orders Table for an E-commerce App
+
+Let’s say we’re building a table to store **orders**.
+We want to:
+
+* Use **composite keys** (`customer_id` + `order_id`)
+* Enable **PITR**, **TTL**, and **DynamoDB Streams**
+* Use **On-Demand capacity** to auto-scale
+* Add a **Global Secondary Index** for querying by product\_id
+
+---
+
+## ✅ Table Settings in Detail (with Example)
+
+### 1. **Table Name**
+
+```txt
+orders
+```
+
+---
+
+### 2. **Primary Key**
+
+```plaintext
+Partition Key: customer_id (String)
+Sort Key: order_id (String)
+```
+
+> This lets us query all orders for a customer and sort them by order ID or date.
+
+---
+
+### 3. **Table Class**
+
+```plaintext
+Standard (default)
+```
+
+> Use `Standard-IA` if access is rare but you want cost savings.
+
+---
+
+### 4. **Capacity Mode**
+
+```plaintext
+On-Demand
+```
+
+> Automatically scales read/write capacity. Ideal for unpredictable workloads.
+
+---
+
+### 5. **Encryption**
+
+```plaintext
+AWS managed key (default)
+```
+
+> You can use KMS custom key if needed for compliance.
+
+---
+
+### 6. **TTL (Time to Live)**
+
+```plaintext
+Attribute name: expire_at
+```
+
+> This attribute must store **UNIX timestamp** after which the item will be deleted.
+
+---
+
+### 7. **Point-in-Time Recovery (PITR)**
+
+```plaintext
+Enabled
+```
+
+> Enables recovery to any second in the last 35 days.
+
+---
+
+### 8. **Streams**
+
+```plaintext
+Enabled (NEW_AND_OLD_IMAGES)
+```
+
+> Useful for triggering AWS Lambda on insert/update/delete.
+
+---
+
+### 9. **Global Secondary Index (GSI)**
+
+```plaintext
+GSI Name: product-index
+Partition Key: product_id
+Sort Key: order_date
+Projection: ALL attributes
+```
+
+> This lets us query orders by product and sort by date.
+
+---
+
+### 10. **Tags**
+
+```plaintext
+Environment = dev
+Project     = ecommerce
+Owner       = deepak
+```
+
+---
+
+## ✅ Final Terraform Example
+
+```hcl
+resource "aws_dynamodb_table" "orders" {
+  name           = "orders"
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = "customer_id"
+  range_key      = "order_id"
+
+  attribute {
+    name = "customer_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "order_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "product_id"
+    type = "S"
+  }
+
+  attribute {
+    name = "order_date"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "expire_at"
+    enabled        = true
+  }
+
+  point_in_time_recovery {
+    enabled = true
+  }
+
+  stream_enabled   = true
+  stream_view_type = "NEW_AND_OLD_IMAGES"
+
+  global_secondary_index {
+    name               = "product-index"
+    hash_key           = "product_id"
+    range_key          = "order_date"
+    projection_type    = "ALL"
+  }
+
+  tags = {
+    Environment = "dev"
+    Owner       = "deepak"
+    Project     = "ecommerce"
+  }
+}
+```
+
+---
+
+## ✅ Summary Table
+
+| Setting      | Value                           |
+| ------------ | ------------------------------- |
+| Table Name   | `orders`                        |
+| Primary Key  | `customer_id` + `order_id`      |
+| Table Class  | `STANDARD`                      |
+| Billing Mode | `PAY_PER_REQUEST`               |
+| TTL          | Enabled on `expire_at`          |
+| PITR         | Enabled                         |
+| Streams      | Enabled (NEW\_AND\_OLD\_IMAGES) |
+| GSI          | `product_id + order_date`       |
+| Tags         | Dev, Owner, Project             |
+
+---
+
+

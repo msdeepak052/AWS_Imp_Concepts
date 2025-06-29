@@ -117,3 +117,150 @@ dynamodb.transact_get_items(
 | Transactional         | ✅ Always fresh       | 🚫 Highest        | 💲💲💲 Expensive | Multi-item ACID apps |
 
 ---
+
+Great question, Deepak! Let's break down **DynamoDB Write Consistency** — what it means, how it works, and where you'd use different write strategies.
+
+---
+
+## ✅ What is **Write Consistency** in DynamoDB?
+
+DynamoDB always uses **strongly consistent writes** internally — meaning:
+
+> ✅ When a `PutItem`, `UpdateItem`, or `DeleteItem` operation returns success, the data is **fully replicated across all Availability Zones (AZs)** and is immediately visible to strongly consistent read operations.
+
+So, **writes are always consistent** — but how fast that change becomes visible in **reads** depends on **read consistency**, not write consistency.
+
+---
+
+## ✅ Key Write Operations in DynamoDB
+
+| Operation            | Description                                  |
+| -------------------- | -------------------------------------------- |
+| `PutItem`            | Insert or replace an item                    |
+| `UpdateItem`         | Modify attributes of an item                 |
+| `DeleteItem`         | Remove an item                               |
+| `BatchWriteItem`     | Insert/delete multiple items (no update)     |
+| `TransactWriteItems` | ACID-compliant multi-item, multi-table write |
+
+---
+
+## ✅ Write Guarantees
+
+| Write Type                                         | Guarantees                                        | Latency | Cost                 | Use Case                                |
+| -------------------------------------------------- | ------------------------------------------------- | ------- | -------------------- | --------------------------------------- |
+| **Standard Write** (`PutItem`, `UpdateItem`, etc.) | Strongly consistent replication across 3 AZs      | Low     | Standard             | Most workloads                          |
+| **Conditional Write**                              | Enforced condition on item exists/attribute match | Low     | Same as normal write | Prevent overwrites, enforce constraints |
+| **Transactional Write** (`TransactWriteItems`)     | ACID: Atomic, Consistent, Isolated, Durable       | Higher  | Higher               | Financial, multi-step updates           |
+
+---
+
+## ✅ 1. **Standard Writes** (Default)
+
+* Data is **written to all 3 AZs before success is returned**
+* Safe for general use
+* Writes are **strongly consistent**
+
+### 🧪 Example (Python – Boto3):
+
+```python
+table.put_item(
+    Item={
+        'user_id': 'u001',
+        'name': 'Deepak'
+    }
+)
+```
+
+✅ You can now immediately use a **strongly consistent read** to retrieve this item.
+
+---
+
+## ✅ 2. **Conditional Writes**
+
+* Ensures that a write **only happens if a condition is true**
+* Helps prevent **accidental overwrites** or **enforce uniqueness**
+
+### ✅ Use Cases:
+
+* Prevent double booking (seat, hotel room)
+* Ensure "create if not exists"
+* Only update price if previous price matches
+
+### 🧪 Example:
+
+```python
+table.put_item(
+    Item={'user_id': 'u001', 'name': 'Deepak'},
+    ConditionExpression='attribute_not_exists(user_id)'  # Insert only if not present
+)
+```
+
+---
+
+## ✅ 3. **Transactional Writes** (`TransactWriteItems`)
+
+* Groups multiple write actions into a **single ACID transaction**
+* **Either all succeed, or none do**
+
+### ✅ Use Cases:
+
+* Transfer money (debit + credit)
+* Update inventory + create order
+* Multi-table consistency
+
+### 🧪 Example:
+
+```python
+dynamodb.transact_write_items(
+    TransactItems=[
+        {
+            'Put': {
+                'TableName': 'orders',
+                'Item': {'order_id': {'S': 'o001'}, 'total': {'N': '500'}}
+            }
+        },
+        {
+            'Update': {
+                'TableName': 'inventory',
+                'Key': {'item_id': {'S': 'item123'}},
+                'UpdateExpression': 'SET stock = stock - :dec',
+                'ExpressionAttributeValues': {':dec': {'N': '1'}}
+            }
+        }
+    ]
+)
+```
+
+---
+
+## ✅ Write Throughput (WCU)
+
+* **1 WCU** = 1 write/sec of item up to 1 KB
+* For larger items, more WCUs are consumed
+* **Transactional writes cost 2x**
+
+---
+
+## ✅ Best Practices
+
+| Situation                            | Use                                                  |
+| ------------------------------------ | ---------------------------------------------------- |
+| Normal create/update/delete          | Standard write                                       |
+| Prevent duplicate inserts            | Conditional write (`attribute_not_exists`)           |
+| Ensure integrity across items/tables | Transactional write                                  |
+| High write throughput                | Use On-Demand or provisioned with auto-scaling       |
+| Idempotent writes                    | Use deterministic keys (e.g., `user_id + timestamp`) |
+
+---
+
+## ✅ Summary
+
+| Write Type          | Consistency           | Complexity | Use Case                         |
+| ------------------- | --------------------- | ---------- | -------------------------------- |
+| Standard Write      | ✅ Strong (Always)     | Simple     | General usage                    |
+| Conditional Write   | ✅ Strong + conditions | Medium     | Prevent duplicates, safe updates |
+| Transactional Write | ✅ ACID (Strongest)    | Complex    | Finance, multi-table ops         |
+
+---
+
+

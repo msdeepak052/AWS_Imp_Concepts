@@ -1,7 +1,3 @@
-Certainly Deepak! Here's a **comprehensive explanation** of **Amazon Aurora**, including its **features, parameters, and real-world use cases**—tailored for someone with a DevOps/Cloud background like you.
-
----
-
 ## ✅ What is **Amazon Aurora**?
 
 **Amazon Aurora** is a **fully managed relational database engine** built by AWS, designed for **high performance, scalability, and availability**.

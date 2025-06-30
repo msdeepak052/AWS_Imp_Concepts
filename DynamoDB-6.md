@@ -102,4 +102,4 @@ aws dynamodb restore-table-to-point-in-time \
 
 ---
 
-Would you like a diagram showing PITR flow and restoration steps or an automation example using Lambda and CloudWatch Events?
+

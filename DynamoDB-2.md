@@ -366,3 +366,142 @@ Required RCU = (Item size in KB / 4) * Number of reads per second * Consistency 
 * **On-demand mode**: AWS auto-scales RCUs, charges based on actual usage.
 
 ---
+
+Here's a clear explanation of **DynamoDB WCU (Write Capacity Unit)** with examples and practical use cases:
+
+---
+
+## 📘 What is a WCU (Write Capacity Unit)?
+
+In **Amazon DynamoDB**, a **Write Capacity Unit (WCU)** represents:
+
+* **One write per second** for an item up to **1 KB** in size using **standard writes** (i.e., non-transactional writes).
+
+---
+
+## 🔸 Key Characteristics
+
+| Write Type          | WCU Consumption                 |
+| ------------------- | ------------------------------- |
+| Standard write      | 1 WCU per 1 KB item             |
+| Transactional write | 2 WCUs per 1 KB item            |
+| Item size > 1 KB    | Rounds **up** to the nearest KB |
+
+---
+
+## 🔹 Formula
+
+```text
+Required WCU = (Item size in KB / 1) * Number of writes per second * Write type multiplier
+```
+
+* Write Type Multiplier:
+
+  * 1 for **standard writes**
+  * 2 for **transactional writes**
+
+---
+
+## ✅ Example 1: Standard Write
+
+* **Item size**: 0.7 KB
+* **Write requests per second**: 100
+* **Write type**: Standard
+
+**Calculation**:
+
+* Rounded size = 1 KB → 1 WCU per write
+* 100 writes/sec × 1 WCU = **100 WCUs**
+
+---
+
+## ✅ Example 2: Large Item Write
+
+* **Item size**: 2.5 KB
+* **Write requests per second**: 200
+* **Write type**: Standard
+
+**Calculation**:
+
+* Rounded size = 3 KB
+* 3 WCUs per write × 200 = **600 WCUs**
+
+---
+
+## ✅ Example 3: Transactional Write
+
+* **Item size**: 1 KB
+* **Write requests per second**: 50
+* **Write type**: Transactional
+
+**Calculation**:
+
+* 1 KB → 1 WCU (standard) → 2 WCUs (transactional)
+* 50 × 2 = **100 WCUs**
+
+---
+
+## 🔸 Use Cases
+
+### 🔹 **1. Financial Transactions**
+
+* Requires **transactional consistency** (e.g., transferring funds).
+* Each operation must succeed or fail completely.
+* Uses **2 WCUs per KB**.
+
+### 🔹 **2. IoT Device Data Ingestion**
+
+* Millions of small (sub-1KB) writes per second.
+* Use **standard write** to keep costs low.
+* Horizontal scale based on expected throughput.
+
+### 🔹 **3. Chat Application**
+
+* Each message is a new write.
+* If messages are <1KB, each write = 1 WCU.
+* Scale WCUs based on chat traffic volume.
+
+---
+
+## 🔹 Important Notes
+
+* **Provisioned Mode**: You manually configure WCUs.
+* **On-Demand Mode**: AWS auto-scales WCUs based on usage.
+* Exceeding WCUs causes **write throttling** (WriteThroughputExceeded error).
+
+---
+
+Here's a **cheat-sheet table** comparing **RCU vs WCU** in DynamoDB, including key parameters, examples, and usage patterns:
+
+---
+
+## 📊 DynamoDB RCU vs WCU Cheat-Sheet
+
+| Feature                      | **RCU (Read Capacity Unit)**                   | **WCU (Write Capacity Unit)**                |
+| ---------------------------- | ---------------------------------------------- | -------------------------------------------- |
+| **Definition**               | One strongly consistent read of up to 4 KB/sec | One standard write of up to 1 KB/sec         |
+| **Unit Size**                | 4 KB per read                                  | 1 KB per write                               |
+| **Strongly Consistent Read** | 1 RCU                                          | —                                            |
+| **Eventually Consistent**    | 0.5 RCU                                        | —                                            |
+| **Transactional Read**       | 2 RCUs                                         | —                                            |
+| **Transactional Write**      | —                                              | 2 WCUs                                       |
+| **Large Item Handling**      | Round up to nearest 4 KB                       | Round up to nearest 1 KB                     |
+| **Example 1**                | 3 KB read (strong) = 1 RCU                     | 0.7 KB write = 1 WCU                         |
+| **Example 2**                | 8 KB read (eventual) = 1 RCU                   | 2.5 KB write = 3 WCUs                        |
+| **Example 3**                | 2 KB read (transactional) = 2 RCUs             | 1 KB write (transactional) = 2 WCUs          |
+| **Use Case 1**               | Product catalog, user profile lookup           | IoT data ingestion, message storage          |
+| **Use Case 2**               | Real-time dashboard, analytics reads           | E-commerce orders, banking transactions      |
+| **Overage Impact**           | Throttling / `ProvisionedThroughputExceeded`   | Throttling / `ProvisionedThroughputExceeded` |
+| **Provisioning Mode**        | Manual or On-Demand                            | Manual or On-Demand                          |
+
+---
+
+## 🔹 Tips
+
+* Use **Eventually Consistent Reads** where possible to **cut RCU usage in half**.
+* Use **On-Demand mode** if your workload is unpredictable.
+* Monitor with **CloudWatch metrics** like `ConsumedReadCapacityUnits` and `ThrottledWriteRequests`.
+
+---
+
+

@@ -700,5 +700,155 @@ resource "aws_cloudfront_distribution" "cdn" {
 
 ---
 
+## 🧠 **Case Scenario: Why, Where, and When "Allowed HTTP Methods" Are Required**
+
+### 🎯 Scenario:
+
+You're deploying:
+
+* A **static e-commerce website** (HTML, CSS, JS) from **S3**
+* A **REST API backend** behind an **ALB** at `/api/*`
+
+You use **CloudFront** to cache and secure the entire site including `/api`.
+
+### ⚠️ Problem:
+
+* Static files require only **GET/HEAD**
+* Your API supports **GET**, **POST**, and **PUT**
+* By default, CloudFront only allows `GET` and `HEAD`, so your `POST` requests to `/api/login` are failing
+
+### ✅ Solution:
+
+Configure:
+
+* **Default Cache Behavior**: Only allow `GET`, `HEAD`
+* **Ordered Cache Behavior (`/api/*`)**: Allow `GET, POST, PUT, DELETE, OPTIONS`
+
+---
+
+## 📘 **What Are Allowed HTTP Methods in CloudFront?**
+
+This setting controls which HTTP methods CloudFront accepts from **viewers (clients)** and **forwards to the origin**.
+
+It’s configured per **cache behavior** (default or ordered).
+
+---
+
+## 🔍 **Where and When to Use**
+
+| Use Case                          | Allowed Methods                          |
+| --------------------------------- | ---------------------------------------- |
+| Static website                    | `GET`, `HEAD`                            |
+| API Gateway or REST APIs          | `GET, POST, PUT, DELETE, OPTIONS, PATCH` |
+| HTML form submissions             | At least `POST`                          |
+| CORS preflight handling           | Must include `OPTIONS`                   |
+| Secure signed URLs                | Usually `GET`, `HEAD`                    |
+| Lambda\@Edge authenticated routes | Depends on method support                |
+
+---
+
+## ⚙️ **CloudFront Allowed HTTP Methods: Parameters Explained**
+
+CloudFront supports three levels of method sets:
+
+| Option                                         | HTTP Methods Included             |
+| ---------------------------------------------- | --------------------------------- |
+| `GET, HEAD`                                    | Basic read-only content (default) |
+| `GET, HEAD, OPTIONS`                           | Add support for CORS preflight    |
+| `GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE` | Full method set for APIs          |
+
+📌 **Note**:
+If CloudFront doesn’t allow a method, it returns `403 Forbidden` even before hitting the origin.
+
+---
+
+## 🧪 **Example Setup in AWS Console**
+
+1. Go to CloudFront Distribution → Behaviors.
+2. For Default Behavior:
+
+   * Allowed Methods → `GET, HEAD`
+3. Add **new behavior** with Path Pattern `/api/*`
+
+   * Allowed Methods → `GET, HEAD, OPTIONS, POST, PUT, PATCH, DELETE`
+   * Cache Based on Headers → `All` (if APIs are user-specific)
+   * TTLs → set to 0 (for dynamic content)
+
+---
+
+## 📜 **Terraform Example: Cache Behavior with Allowed Methods**
+
+```hcl
+ordered_cache_behavior {
+  path_pattern           = "/api/*"
+  target_origin_id       = "APIOrigin"
+  viewer_protocol_policy = "https-only"
+  
+  allowed_methods        = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
+  cached_methods         = ["GET", "HEAD"]
+
+  cache_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # CachingDisabled
+  origin_request_policy_id = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # AllViewer
+
+  compress = true
+}
+```
+
+---
+
+## 📦 **Use Cases for Different Method Sets**
+
+### ✅ Static Website (S3)
+
+| Methods       | Reason                                   |
+| ------------- | ---------------------------------------- |
+| `GET`, `HEAD` | Safe, idempotent methods to fetch assets |
+
+### ✅ API (POST/PUT)
+
+| Methods                                 | Reason                                  |
+| --------------------------------------- | --------------------------------------- |
+| `GET`, `POST`, `PUT`, `DELETE`, `PATCH` | Needed for full REST support            |
+| `OPTIONS`                               | Required for CORS preflight in browsers |
+
+### ✅ Lambda\@Edge Auth
+
+| Methods                  | Reason                                         |
+| ------------------------ | ---------------------------------------------- |
+| `POST`, `GET`, `OPTIONS` | Depends on form submissions & API requirements |
+
+---
+
+## 🔐 **Security Note**
+
+* CloudFront will **block disallowed methods** at the edge — this protects your backend.
+* Avoid allowing all methods unless **specifically needed**.
+
+---
+
+## 📌 **Summary Table**
+
+| Setting                  | Description                       |
+| ------------------------ | --------------------------------- |
+| `allowed_methods`        | Methods accepted from clients     |
+| `cached_methods`         | Which of those methods are cached |
+| `viewer_protocol_policy` | Enforce HTTPS?                    |
+| Default Behavior         | Usually `GET`, `HEAD`             |
+| API Behavior             | Requires full method set          |
+| Terraform Attribute      | `allowed_methods = [...]`         |
+
+---
+
+## ✅ Recommendation
+
+| Scenario         | What to Set                                                |
+| ---------------- | ---------------------------------------------------------- |
+| Basic website    | `GET`, `HEAD`                                              |
+| Static + CORS    | `GET`, `HEAD`, `OPTIONS`                                   |
+| Full backend/API | All HTTP methods                                           |
+| Save cache       | Only cache `GET`, `HEAD` — never cache `POST`, `PUT`, etc. |
+
+---
+
 
 

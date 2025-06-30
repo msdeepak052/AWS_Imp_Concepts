@@ -263,4 +263,106 @@ dynamodb.transact_write_items(
 
 ---
 
+### 📘 **DynamoDB RCU (Read Capacity Unit) – Explained with Examples and Use Cases**
 
+---
+
+## 🔸 What is RCU?
+
+In **Amazon DynamoDB**, a **Read Capacity Unit (RCU)** represents **one strongly consistent read request per second** for an item **up to 4 KB in size**, or **two eventually consistent read requests per second** for the same item size.
+
+---
+
+## 🔹 Key Concepts
+
+| Consistency Type          | RCU Consumption                 |
+| ------------------------- | ------------------------------- |
+| **Strongly consistent**   | 1 RCU per 4KB read per second   |
+| **Eventually consistent** | 0.5 RCU per 4KB read per second |
+| **Transactional read**    | 2 RCUs per 4KB read             |
+
+---
+
+## 🔸 Formula
+
+### 🔹 To calculate required RCUs:
+
+```text
+Required RCU = (Item size in KB / 4) * Number of reads per second * Consistency multiplier
+```
+
+* Consistency Multiplier:
+
+  * 1 for **strongly consistent**
+  * 0.5 for **eventually consistent**
+  * 2 for **transactional read**
+
+---
+
+## 🔹 Example 1: Strongly Consistent Read
+
+* **Item size**: 3 KB
+* **Read requests per second**: 100
+* **Consistency**: Strong
+
+**Calculation:**
+
+* 3 KB < 4 KB, so each read = 1 RCU
+* 100 reads/sec × 1 = **100 RCUs**
+
+---
+
+## 🔹 Example 2: Eventually Consistent Read
+
+* **Item size**: 6 KB
+* **Read requests per second**: 200
+* **Consistency**: Eventually consistent
+
+**Calculation:**
+
+* 6 KB = 2 × 4KB blocks ⇒ each read = 2 RCUs (strong) → 1 RCU (eventual)
+* 200 reads/sec × 1 = **200 RCUs**
+
+---
+
+## 🔹 Example 3: Transactional Read
+
+* **Item size**: 2 KB
+* **Read requests per second**: 50
+* **Consistency**: Transactional
+
+**Calculation:**
+
+* 2 KB < 4 KB → 1 RCU (strong) → 2 RCUs (transactional)
+* 50 × 2 = **100 RCUs**
+
+---
+
+## 🔸 Use Cases
+
+### ✅ **Use Case 1: E-commerce product catalog**
+
+* Eventual consistency is sufficient.
+* Many reads, low latency requirement.
+* Cost-effective: 0.5 RCU per read.
+
+### ✅ **Use Case 2: Banking application**
+
+* Requires **strong consistency** to reflect the latest account balance.
+* RCUs must be calculated with strict accuracy.
+* Might use transactional reads for operations like fund transfer.
+
+### ✅ **Use Case 3: Real-time dashboards**
+
+* Requires strong or transactional consistency.
+* Data is read frequently and must be current.
+* Allocate sufficient RCUs to avoid throttling.
+
+---
+
+## 🔸 Notes
+
+* **Provisioned mode**: You set RCUs manually.
+* **On-demand mode**: AWS auto-scales RCUs, charges based on actual usage.
+
+---

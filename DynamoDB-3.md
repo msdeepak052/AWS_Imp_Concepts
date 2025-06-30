@@ -208,4 +208,84 @@ resource "aws_dynamodb_table" "my_provisioned_table" {
 ---
 
 
+Let’s explore **DynamoDB Warm Throughput** — a lesser-known but critical concept when dealing with performance and scaling in provisioned capacity mode.
+
+---
+
+## 📘 What is **Warm Throughput** in DynamoDB?
+
+**Warm throughput** refers to DynamoDB's ability to **quickly serve traffic at the full provisioned capacity**, **after the table or partition has already been receiving traffic** (i.e., it’s “warm” or active).
+
+### ❄️ Opposite: **Cold Start**
+
+When a table or partition hasn’t received traffic for a while, it may become **cold**, and suddenly ramping up traffic can cause **throttling**, even if you're within your provisioned limits.
+
+---
+
+## 🔥 Warm vs. Cold Throughput Analogy
+
+| Concept  | Behavior                                                               |
+| -------- | ---------------------------------------------------------------------- |
+| **Warm** | Table is actively being read/written. Traffic is stable and sustained. |
+| **Cold** | Table/partition is idle, and suddenly high traffic arrives (burst).    |
+
+---
+
+## 📊 Example
+
+### Scenario:
+
+* You provision 1,000 WCUs for a table.
+* It remains **idle** (cold) for 6 hours.
+* Suddenly, you send 800 write requests per second.
+
+### What Happens:
+
+* Even though you’re **under the 1,000 WCU limit**, DynamoDB may **throttle** some requests for a short time.
+* Reason: AWS **ramps up partitions slowly** when waking from cold state (to prevent abuse and ensure fairness).
+
+---
+
+## ✅ How to Keep Throughput Warm
+
+### 🛠️ Strategies:
+
+1. **Ping the table periodically**:
+
+   * Send dummy reads/writes every few minutes to keep it “warm”.
+
+2. **Auto scaling with minimum capacity**:
+
+   * Set a base threshold (e.g., 200 RCUs and WCUs) to prevent full cold states.
+
+3. **Use On-Demand mode**:
+
+   * Automatically handles cold-to-hot transitions better than provisioned mode.
+
+---
+
+## 📦 Use Cases & Impacts
+
+| Use Case                         | Impact of Warm Throughput                        | Recommendation                       |
+| -------------------------------- | ------------------------------------------------ | ------------------------------------ |
+| **Retail App** (burst traffic)   | Sudden spikes can hit cold partitions            | Use warm-up writes or on-demand mode |
+| **IoT Devices** (stable traffic) | Table remains warm due to consistent input       | Provisioned mode with stable usage   |
+| **Scheduled batch jobs**         | May face throttling if table is idle most of day | Send pre-job warm-up requests        |
+| **Periodic backup/check**        | Idle table accessed rarely                       | Consider on-demand or warm-up pings  |
+
+---
+
+## 🧠 Summary
+
+* **Warm throughput** means your provisioned table is already active and can serve full RCU/WCU instantly.
+* **Cold tables** need time to ramp up, risking throttling.
+* To maintain performance:
+
+  * Periodically send small requests.
+  * Use **on-demand mode** for unpredictable workloads.
+  * Use **auto scaling** with sensible minimums.
+
+---
+
+
 

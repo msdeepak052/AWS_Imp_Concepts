@@ -142,8 +142,13 @@ Removing pods when average CPU drops below 30%.
 
 ![image](https://github.com/user-attachments/assets/b21d0c8e-2c84-4507-9e41-cd2e00e4d56c)
 
+#### Vertical Scaling not supported by AWS
+
 ![image](https://github.com/user-attachments/assets/08b1e488-d67f-4375-bccc-e8c1f0a9c781)
 
+#### Horizontal Scaling supported by AWS
+
+![image](https://github.com/user-attachments/assets/66a53b54-b88a-4a47-912a-d8af41b927e5)
 
 
 ---

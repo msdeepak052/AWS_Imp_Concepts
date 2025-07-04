@@ -398,5 +398,314 @@ terraform apply
 
 ---
 
+## Practical 
+Here's a **step-by-step guide to configure AWS EC2 Auto Scaling with Load Balancer via the AWS Console**, including setting up a **dummy Apache web app** and using `stress` to **test Auto Scaling**.
+
+---
+
+## ✅ **Objective**
+
+* Launch EC2 instances in an **Auto Scaling Group (ASG)**
+* Attach them to an **Application Load Balancer (ALB)**
+* Install a **dummy web app (Apache)**
+* Simulate **CPU load** using `stress`
+* See how AWS **scales automatically**
+
+---
+
+## 🧰 **Pre-requisites**
+
+* AWS Account
+* AWS Region (e.g., `ap-south-1`)
+* A Key Pair (for SSH access)
+* A VPC with 2 public subnets
+* Internet Gateway, Route Table setup
+
+---
+
+## 🛠️ **Step-by-Step Configuration via AWS Console**
+
+---
+
+### 🔹 Step 1: Create Security Group
+
+1. Go to **EC2 > Security Groups > Create Security Group**
+2. Name: `asg-web-sg`
+3. Inbound Rules:
+
+   * HTTP (port 80) from `0.0.0.0/0`
+   * SSH (port 22) from your IP
+4. Outbound Rule: Allow all
+5. Attach it to your default VPC or your custom VPC
+
+![image](https://github.com/user-attachments/assets/b77bea36-c590-4c39-a2fa-4b6b06ccaeb6)
+
+---
+
+### 🔹 Step 2: Create Launch Template
+
+1. Go to **EC2 > Launch Templates > Create launch template**
+
+![image](https://github.com/user-attachments/assets/0efcf6ae-b81b-4781-86cf-01d510718373)
+
+2. Name: `web-template`
+
+![image](https://github.com/user-attachments/assets/95e04b3f-2903-4c6c-b228-28b88481de19)
+
+3. AMI: Choose **Amazon Linux 2**
+
+![image](https://github.com/user-attachments/assets/6f8c09c3-a61d-41a2-a8f7-25cc21998a05)
+
+4. Instance Type: `t2.micro`
+5. Key Pair: Choose existing or create a new one
+
+![image](https://github.com/user-attachments/assets/fcd25478-d2a3-41b7-9f82-9c85c266dff3)
+
+6. Security Group: Select the one you just created
+
+![image](https://github.com/user-attachments/assets/c288818e-9cfe-41cc-a496-d229a13d792d)
+
+
+7. Advanced > User Data:
+
+```bash
+#!/bin/bash
+yum update -y
+yum install -y httpd stress
+systemctl start httpd
+systemctl enable httpd
+
+# Create a beautiful HTML page with your name and ASG info
+cat <<EOF > /var/www/html/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AWS ASG Instance - Deepak Yadav</title>
+  <style>
+    body {
+      background: linear-gradient(to right, #4facfe, #00f2fe);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      padding: 50px;
+      color: white;
+    }
+    h1 {
+      font-size: 48px;
+      animation: glow 2s ease-in-out infinite alternate;
+    }
+    h2 {
+      font-size: 28px;
+      margin-top: 40px;
+    }
+    .box {
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      display: inline-block;
+    }
+    @keyframes glow {
+      from {
+        text-shadow: 0 0 10px #fff, 0 0 20px #0ff;
+      }
+      to {
+        text-shadow: 0 0 20px #fff, 0 0 40px #0ff;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>🚀 Hello from Auto Scaling Instance</h1>
+    <h2>👤 Created by: <strong>Deepak Yadav</strong></h2>
+    <h2>📘 Topic: <strong>AWS Auto Scaling Group (ASG)</strong></h2>
+    <h2>🖥️ Hostname: <strong>$(hostname)</strong></h2>
+  </div>
+</body>
+</html>
+EOF
+
+```
+8. Click **Create launch template**
+
+![image](https://github.com/user-attachments/assets/5f87e012-508b-4024-893f-04687c4ecd15)
+
+![image](https://github.com/user-attachments/assets/ffcc8f80-46d4-42d0-b8ec-038978c5ad5c)
+
+---
+
+### 🔹 Step 3: Create Target Group
+
+1. Go to **EC2 > Target Groups > Create target group**
+2. Choose **Instances**
+3. Protocol: HTTP, Port: 80
+4. VPC: Select your VPC
+5. Health check path: `/`
+6. Click **Create target group**
+
+---
+
+### 🔹 Step 4: Create Application Load Balancer
+
+1. Go to **EC2 > Load Balancers > Create Load Balancer**
+2. Choose **Application Load Balancer**
+3. Name: `web-alb`
+4. Scheme: Internet-facing
+5. Listeners: HTTP, Port 80
+6. VPC & Subnets: Select your VPC and **2 public subnets**
+7. Security Group: Use the same group from Step 1
+8. Target Group:
+
+   * Select **existing target group** (from Step 3)
+9. Click **Create**
+
+---
+
+### 🔹 Step 5: Create Auto Scaling Group
+
+1. Go to **EC2 > Auto Scaling Groups > Create Auto Scaling group**
+2. Name: `web-asg`
+3. Launch Template: Select `web-template`
+4. VPC & Subnets: Select **2 subnets**
+5. Attach to Load Balancer:
+
+   * Choose existing Target Group (from Step 3)
+6. Desired Capacity: 2, Min: 1, Max: 4
+7. Scaling Policies:
+
+   * Select **Target tracking scaling policy**
+   * Metric type: Average CPU utilization
+   * Target value: 50%
+8. Click **Create Auto Scaling Group**
+
+---
+
+## 🔍 **Step 6: Test the Setup**
+
+### ✅ Check App:
+
+1. Go to **EC2 > Load Balancers > web-alb > DNS name**
+2. Open it in browser: `http://<ALB-DNS-name>`
+3. You should see:
+
+   ```
+   Hello from Auto Scaling Instance - ip-xxxxxx
+   ```
+
+---
+
+## 🔥 **Step 7: Simulate Load with stress**
+
+1. SSH into an EC2 instance in the ASG:
+
+   ```bash
+   ssh -i your-key.pem ec2-user@<EC2-Public-IP>
+   ```
+
+2. Run:
+
+   ```bash
+   stress --cpu 2 --timeout 300
+   ```
+
+3. This will trigger **high CPU usage**, and after \~5–10 minutes, **Auto Scaling should launch more instances** (up to max size).
+
+---
+
+## ✅ **Verify Scaling**
+
+1. Go to **EC2 > Auto Scaling Groups > web-asg**
+2. Check the **Instance count increasing**
+3. Once CPU drops, it should **scale back down**
+
+---
+
+Yes ✅ **it can and should be done that way!**
+
+---
+
+## 🔍 **Clarification:**
+
+You **do not need to create EC2 instances manually**.
+
+When you create an **Auto Scaling Group (ASG)** using a **Launch Template**, **the ASG itself will launch and manage EC2 instances automatically** — **no need to create EC2 instances manually**.
+
+---
+
+## 🧩 **How it Works**
+
+| Component           | Purpose                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| **Launch Template** | Blueprint for creating EC2 instances (AMI, instance type, user data, etc.)                 |
+| **ASG**             | Uses the launch template to automatically create/terminate EC2 instances based on policies |
+| **Scaling Policy**  | Tells ASG *when* to scale (e.g., based on CPU)                                             |
+
+---
+
+## ✅ **What You Do:**
+
+1. **Create Launch Template** (includes:
+
+   * AMI ID
+   * Instance Type
+   * Security Group
+   * User Data (install web app/stress)
+   * Key Pair
+
+2. **Create Target Group** (for ALB)
+
+3. **Create Application Load Balancer**
+
+4. **Create Auto Scaling Group**:
+
+   * Attach launch template
+   * Attach target group (via ALB)
+   * Define Min, Max, Desired EC2 count
+   * Configure scaling policy (like target CPU = 50%)
+
+---
+
+## 🧪 Then What Happens:
+
+* ASG automatically creates EC2 instances using the **Launch Template**
+* ALB distributes traffic to these EC2s
+* When CPU > 50%, ASG adds more EC2s
+* When CPU < 30%, ASG removes EC2s
+* You don’t manually create/destroy EC2s at all!
+
+---
+
+## 📌 Real-World Tip:
+
+Even in production:
+
+> ✅ You **never create EC2 manually** in Auto Scaling scenarios.
+> 🔄 Auto Scaling Group + Launch Template is your "source of truth."
+
+---
+
+
+## 🧹 **Optional Cleanup**
+
+To avoid charges:
+
+* Delete the Auto Scaling Group
+* Delete the Load Balancer and Target Group
+* Delete Launch Template and Security Groups
+
+---
+
+## 📌 Summary
+
+| Component       | Purpose                                    |
+| --------------- | ------------------------------------------ |
+| Launch Template | Defines how EC2s are created               |
+| ASG             | Scales EC2s based on CPU load              |
+| ALB             | Distributes traffic to EC2s                |
+| User Data       | Installs Apache & test page                |
+| `stress`        | Simulates high CPU load to trigger scaling |
+
+---
 
 

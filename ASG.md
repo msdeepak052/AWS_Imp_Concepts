@@ -471,7 +471,8 @@ Here's a **step-by-step guide to configure AWS EC2 Auto Scaling with Load Balanc
 ```bash
 #!/bin/bash
 yum update -y
-yum install -y httpd stress
+amazon-linux-extras install epel -y
+yum install stress -
 systemctl start httpd
 systemctl enable httpd
 
@@ -544,6 +545,10 @@ EOF
 5. Health check path: `/`
 6. Click **Create target group**
 
+![image](https://github.com/user-attachments/assets/0ec50e14-6522-4c64-beb5-c23e3199be51)
+![image](https://github.com/user-attachments/assets/9e6f5b9a-6db2-4aff-8a47-58a5fc6d7f05)
+
+
 ---
 
 ### 🔹 Step 4: Create Application Load Balancer
@@ -560,6 +565,9 @@ EOF
    * Select **existing target group** (from Step 3)
 9. Click **Create**
 
+![image](https://github.com/user-attachments/assets/30d273d3-1cd6-4bdb-b77e-2f7cc25ec4d7)
+
+
 ---
 
 ### 🔹 Step 5: Create Auto Scaling Group
@@ -567,10 +575,17 @@ EOF
 1. Go to **EC2 > Auto Scaling Groups > Create Auto Scaling group**
 2. Name: `web-asg`
 3. Launch Template: Select `web-template`
+
+![image](https://github.com/user-attachments/assets/adfcaad9-5c09-49c9-a669-479f0f6f24ed)
+
+
 4. VPC & Subnets: Select **2 subnets**
 5. Attach to Load Balancer:
 
    * Choose existing Target Group (from Step 3)
+
+![image](https://github.com/user-attachments/assets/d42a0d3d-46ed-45bf-87b2-e75cedae6722)
+
 6. Desired Capacity: 2, Min: 1, Max: 4
 7. Scaling Policies:
 
@@ -578,6 +593,9 @@ EOF
    * Metric type: Average CPU utilization
    * Target value: 50%
 8. Click **Create Auto Scaling Group**
+
+![image](https://github.com/user-attachments/assets/2da0ed1d-a6e1-40a8-a1ef-5975927aad44)
+
 
 ---
 
@@ -592,6 +610,7 @@ EOF
    ```
    Hello from Auto Scaling Instance - ip-xxxxxx
    ```
+![image](https://github.com/user-attachments/assets/3d32ecbf-e539-4d76-bbb2-676c601e00ae)
 
 ---
 
@@ -611,6 +630,12 @@ EOF
 
 3. This will trigger **high CPU usage**, and after \~5–10 minutes, **Auto Scaling should launch more instances** (up to max size).
 
+![image](https://github.com/user-attachments/assets/f4d45266-2974-40c0-be05-0a371966492a)
+
+![image](https://github.com/user-attachments/assets/f9d16077-f25a-4754-aec6-192f0b6f329f)
+
+![image](https://github.com/user-attachments/assets/4e2d41e6-e341-4329-a352-3b1dcf4ef486)
+
 ---
 
 ## ✅ **Verify Scaling**
@@ -618,6 +643,9 @@ EOF
 1. Go to **EC2 > Auto Scaling Groups > web-asg**
 2. Check the **Instance count increasing**
 3. Once CPU drops, it should **scale back down**
+
+
+![image](https://github.com/user-attachments/assets/85c7a4e2-9431-4f44-9813-1cb25c8cbbdb)
 
 ---
 

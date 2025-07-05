@@ -296,5 +296,159 @@ resource "aws_autoscaling_group" "custom_termination_policy" {
 * Avoid conflicting logic, e.g., `OldestInstance` + `NewestInstance`.
 * Pair with **Instance Maintenance Policy** for controlled scale-in.
 
+
+---
+
+## ✅ **Custom Termination Policy Using Lambda (Workaround Architecture)**
+
+### 🔁 **Workflow Overview:**
+
+1. **ASG Lifecycle Hook (on scale-in)** triggers a **Lambda function**.
+2. Lambda inspects all ASG instances.
+3. Based on **custom logic** (CPU, memory, tags, uptime, AZ, etc.), it decides which instance to terminate.
+4. Lambda **calls EC2 terminate-instance** or **completes the lifecycle action** with the instance ID.
+5. ASG proceeds with the termination.
+
+---
+
+## 🧠 **Why Use Lambda for Custom Termination?**
+
+* Terminate instances based on **custom metrics** (e.g., memory, cost, AZ traffic, instance age).
+* Integrate with **CloudWatch, Cost Explorer, Tag-based filtering, or external systems**.
+* Extend ASG with **application-aware intelligence**.
+
+---
+
+## 🧩 **Components Involved**
+
+| Component                       | Purpose                                                                           |
+| ------------------------------- | --------------------------------------------------------------------------------- |
+| **ASG Lifecycle Hook**          | Pauses termination at scale-in                                                    |
+| **Lambda Function**             | Runs custom logic to pick instance                                                |
+| **CloudWatch Event** or **SNS** | Triggers Lambda                                                                   |
+| **IAM Role**                    | Grants Lambda permission to complete the lifecycle action and terminate instances |
+
+---
+
+## 🛠️ **Step-by-Step: Build a Custom Termination Logic with Lambda**
+
+---
+
+### ✅ 1. Create a Lifecycle Hook on ASG
+
+```bash
+aws autoscaling put-lifecycle-hook \
+  --lifecycle-hook-name CustomScaleInHook \
+  --auto-scaling-group-name my-asg \
+  --lifecycle-transition autoscaling:EC2_INSTANCE_TERMINATING \
+  --heartbeat-timeout 300 \
+  --default-result CONTINUE
+```
+
+* Transition: `autoscaling:EC2_INSTANCE_TERMINATING`
+* Timeout: 300 seconds (how long to wait for Lambda to act)
+
+---
+
+### ✅ 2. Create a Lambda Function
+
+Sample logic:
+
+```python
+import boto3
+
+asg_client = boto3.client('autoscaling')
+ec2_client = boto3.client('ec2')
+
+def lambda_handler(event, context):
+    asg_name = event['detail']['AutoScalingGroupName']
+    lifecycle_hook_name = event['detail']['LifecycleHookName']
+    instance_id = event['detail']['EC2InstanceId']
+    lifecycle_token = event['detail']['LifecycleActionToken']
+
+    # Custom logic: terminate another instance (e.g., based on age, tag, metric, etc.)
+    # In this example, we'll just complete the action on the original instance.
+    
+    asg_client.complete_lifecycle_action(
+        LifecycleHookName=lifecycle_hook_name,
+        AutoScalingGroupName=asg_name,
+        LifecycleActionToken=lifecycle_token,
+        LifecycleActionResult='CONTINUE'
+    )
+```
+
+---
+
+### ✅ 3. Trigger Lambda Using CloudWatch or SNS
+
+* Create a CloudWatch rule:
+
+  * Event pattern:
+
+    ```json
+    {
+      "source": ["aws.autoscaling"],
+      "detail-type": ["EC2 Instance-terminate Lifecycle Action"]
+    }
+    ```
+  * Target: your Lambda function
+
+---
+
+### ✅ 4. Attach IAM Role to Lambda
+
+Lambda requires:
+
+```json
+{
+  "Effect": "Allow",
+  "Action": [
+    "autoscaling:CompleteLifecycleAction",
+    "autoscaling:DescribeAutoScalingGroups",
+    "ec2:DescribeInstances",
+    "ec2:TerminateInstances"
+  ],
+  "Resource": "*"
+}
+```
+
+---
+
+## 🔁 **How This Works**
+
+| Step | Action                                                                 |
+| ---- | ---------------------------------------------------------------------- |
+| 1    | ASG triggers scale-in                                                  |
+| 2    | Lifecycle hook pauses termination                                      |
+| 3    | Lambda is triggered                                                    |
+| 4    | Lambda applies custom rules to choose instance                         |
+| 5    | Lambda completes the action, possibly terminating a different instance |
+
+---
+
+## 🎯 Use Cases
+
+* **Avoid terminating specific tagged instances** (`DoNotTerminate = true`)
+* **Choose lowest CPU-load instance to terminate**
+* **Rebalance based on custom AZ or zone performance**
+* **Drain pods gracefully on EKS or ECS before termination**
+
+---
+
+## ⚠️ Things to Keep in Mind
+
+* **Lambda execution time** must stay within the lifecycle hook timeout.
+* **Don’t forget to complete the lifecycle action** — else the instance gets stuck.
+* If you terminate a different instance than the one in the lifecycle event, **still complete the lifecycle action for the original** to avoid ASG timeout issues.
+
+---
+
+## 🧠 Bonus
+
+For Kubernetes on EC2 (e.g., EKS), you can:
+
+* Add a **lifecycle hook to drain the node gracefully**
+* Run `kubectl drain` inside the Lambda before completing lifecycle action
+
 ---
 

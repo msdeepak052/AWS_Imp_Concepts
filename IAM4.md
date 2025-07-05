@@ -509,6 +509,9 @@ Access Advisor shows:
 * "Is this role assumed by another AWS account?"
 * "Is this KMS key shared with external users?"
 
+![image](https://github.com/user-attachments/assets/bd3f7c09-d676-4f56-b7f8-d8123ceea3bd)
+
+
 ---
 
 ## 📦 What Can Access Analyzer Analyze?

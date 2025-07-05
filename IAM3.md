@@ -25,6 +25,10 @@ This allows a **user or role in one AWS account** (Account A) to **assume a role
 
 ---
 
+![image](https://github.com/user-attachments/assets/97e4c9c8-a807-4c31-9739-30cc91934c32)
+
+
+
 ## 🛠 Step-by-Step Setup: Cross-Account Role Access
 
 ### Scenario:
@@ -387,4 +391,248 @@ No need for 24/7 elevated access ✅
 
 ---
 
+## **IAM Roles with Web Identity Federation and SAML 2.0 Federation**
 
+These roles allow **external users** (such as mobile app users or corporate employees) to **access AWS services** securely **without needing IAM users** or long-term credentials.
+
+---
+
+## 🔷 Part 1: IAM Roles with **Web Identity Federation (OIDC)**
+
+---
+
+### ✅ Use Case:
+
+Allow users **authenticated via Amazon Cognito, Google, or GitHub** to access AWS services **(e.g., S3)** via temporary credentials.
+
+---
+
+### 🧠 Key Concepts:
+
+| Term                       | Description                                          |
+| -------------------------- | ---------------------------------------------------- |
+| Web identity provider      | OIDC-compatible (e.g., Cognito, Google, GitHub)      |
+| IAM Role with Web Identity | Role assumed via `sts:AssumeRoleWithWebIdentity`     |
+| Temporary credentials      | No long-term access keys needed                      |
+| Condition                  | Restrict access to only specific user groups or apps |
+
+---
+
+### 🎯 Scenario:
+
+You want users authenticated via **Amazon Cognito** to **upload objects to an S3 bucket**.
+
+---
+
+### 🛠 Hands-On Steps from AWS Console:
+
+---
+
+#### 🔹 Step 1: Create Cognito Identity Pool
+
+1. Go to **Amazon Cognito** → Identity Pools
+
+2. Click **Create new identity pool**
+
+   * Name: `MyWebAppIdentityPool`
+   * Enable **unauthenticated identities** (optional)
+
+3. Choose authentication provider (e.g., Cognito User Pool, Google OIDC)
+
+4. Click **Create Pool**
+   Cognito **automatically creates IAM roles**:
+
+   * `Cognito_MyWebAppIdentityPoolAuth_Role` (for signed-in users)
+   * `Cognito_MyWebAppIdentityPoolUnauth_Role` (optional)
+
+---
+
+#### 🔹 Step 2: Modify IAM Role (Trust Policy)
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "cognito-identity.amazonaws.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "cognito-identity.amazonaws.com:aud": "REGION:POOL-ID",
+          "cognito-identity.amazonaws.com:amr": "authenticated"
+        }
+      }
+    }
+  ]
+}
+```
+
+---
+
+#### 🔹 Step 3: Attach Permissions Policy to Role
+
+Example: Allow upload to specific S3 bucket
+
+```json
+{
+  "Effect": "Allow",
+  "Action": ["s3:PutObject"],
+  "Resource": ["arn:aws:s3:::webapp-user-data/*"]
+}
+```
+
+---
+
+#### 🔹 Step 4: Access AWS via Temporary Credentials
+
+On the client-side (JavaScript, Android, iOS), use AWS SDK to **exchange the identity token for temporary credentials**. Then call AWS services like this:
+
+```js
+AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+  IdentityPoolId: 'REGION:POOL-ID',
+  Logins: {
+    'cognito-idp.REGION.amazonaws.com/USER_POOL_ID': ID_TOKEN
+  }
+});
+```
+
+---
+
+### 🔐 Output:
+
+* App users don’t need AWS keys
+* All access is via secure, short-lived tokens
+* Permissions are controlled via IAM Role + Trust Policy
+
+---
+
+## 🔶 Part 2: IAM Role with **SAML 2.0 Federation (SSO)**
+
+---
+
+### ✅ Use Case:
+
+Allow **enterprise users** to sign into AWS Console or CLI using **Azure AD**, **Okta**, or **Google Workspace** via **SAML 2.0 SSO**.
+
+---
+
+### 🧠 Key Concepts:
+
+| Term               | Description                                     |
+| ------------------ | ----------------------------------------------- |
+| Identity Provider  | SAML 2.0-compliant (Azure AD, Okta, ADFS, etc.) |
+| SAML assertion     | Token received from the IdP after login         |
+| IAM Role with SAML | Role assumed via `sts:AssumeRoleWithSAML`       |
+| Role session       | Temporary AWS session from federated login      |
+
+---
+
+### 🎯 Scenario:
+
+Allow users in Azure AD group `AWS-Admin` to assume `AdminAccessRole` in AWS.
+
+---
+
+### 🛠 Hands-On Steps from AWS Console:
+
+---
+
+#### 🔹 Step 1: Configure Identity Provider in IAM
+
+1. Go to **IAM → Identity Providers → Add Provider**
+
+   * Provider Type: `SAML`
+   * Name: `AzureADProvider`
+   * Upload **metadata XML** from Azure AD or other IdP
+
+✅ Creates:
+`arn:aws:iam::<account_id>:saml-provider/AzureADProvider`
+
+---
+
+#### 🔹 Step 2: Create IAM Role with SAML Trust Policy
+
+1. Go to IAM → Roles → Create Role
+2. Choose `SAML 2.0 federation` as trusted entity
+3. Select `AzureADProvider`
+
+Choose `Allow programmatic and AWS Management Console access`
+
+4. Add Trust Policy like:
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "Federated": "arn:aws:iam::123456789012:saml-provider/AzureADProvider"
+  },
+  "Action": "sts:AssumeRoleWithSAML",
+  "Condition": {
+    "StringEquals": {
+      "SAML:aud": "https://signin.aws.amazon.com/saml"
+    }
+  }
+}
+```
+
+---
+
+#### 🔹 Step 3: Attach Permissions Policy
+
+Attach a permission like `AdministratorAccess` or create your own.
+
+---
+
+#### 🔹 Step 4: Configure SAML Application in Azure AD or Okta
+
+1. Add AWS as an enterprise application
+2. Upload AWS SAML metadata or enter manually:
+
+   * ACS URL: `https://signin.aws.amazon.com/saml`
+   * Entity ID: `urn:amazon:webservices`
+3. Map claim:
+
+   * `https://aws.amazon.com/SAML/Attributes/Role`
+     → `arn:aws:iam::<account_id>:role/AdminAccessRole,arn:aws:iam::<account_id>:saml-provider/AzureADProvider`
+
+---
+
+### 🔐 Final Flow
+
+```plaintext
+[User] --> [Login to Azure AD / Okta]
+       --> [Gets SAML assertion]
+       --> [Redirect to AWS Sign-in SAML]
+       --> [STS:AssumeRoleWithSAML]
+       --> [Access Console or AWS APIs]
+```
+
+---
+
+## 📊 Summary: Web Identity vs SAML
+
+| Feature            | Web Identity                    | SAML 2.0 Federation              |
+| ------------------ | ------------------------------- | -------------------------------- |
+| For                | Apps, mobile users              | Corporate employees              |
+| Protocol           | OIDC                            | SAML 2.0                         |
+| Roles Assumed Via  | `sts:AssumeRoleWithWebIdentity` | `sts:AssumeRoleWithSAML`         |
+| Identity Providers | Cognito, Google, GitHub         | Azure AD, Okta, Google Workspace |
+| Primary Use Case   | App-level access                | Console/CLI access with SSO      |
+| Credential Type    | Temporary STS                   | Temporary STS                    |
+
+---
+
+## ✅ Best Practices
+
+| Practice                                      | Benefit                 |
+| --------------------------------------------- | ----------------------- |
+| 🔐 Use least privilege                        | Secure scoped access    |
+| 🎯 Restrict by `aud`, `sub`, group membership | Fine-grained control    |
+| ⏳ Short session durations                     | Better security         |
+| 🧪 Test with policy simulator                 | Avoid unintended access |
+| 🔎 Monitor with CloudTrail                    | Full traceability       |
+
+---

@@ -557,5 +557,213 @@ aws sso login --profile devops-admin
 
 ---
 
+## If you want to **keep using Keycloak with OIDC**, and integrate it with AWS for authentication/access management, here’s a **clear breakdown of how to do it** — while **Keycloak remains your Identity Provider (IdP)**.
+
+---
+
+## ✅ Objective
+
+**Use Keycloak (OIDC)** as the **central IdP** and integrate it with AWS to:
+
+* Authenticate users using Keycloak
+* Authorize access to **AWS Console, CLI, or SDK**
+* Or authenticate users to your **applications (via Cognito or directly)**
+
+---
+
+## 🔄 Integration Options (Keycloak + OIDC)
+
+| Target                              | Integration Method                                                        |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| AWS Console / CLI / SDK (Workforce) | 🔸 IAM Identity Center + SAML (indirect OIDC via SAML bridge)             |
+| AWS API access for apps             | 🔸 Cognito Identity Pool with OIDC Federation to Keycloak                 |
+| Custom application login            | ✅ Direct OIDC login via Keycloak (OAuth2/JWT)                             |
+| Federate into IAM Role              | 🔸 Web Identity Federation via IAM Role with Trust Policy (OIDC provider) |
+
+---
+
+# 🧭 Option 1: **Federate Keycloak with Cognito (OIDC)** for Application Auth
+
+This is ideal for customer- or user-facing **web/mobile apps**.
+
+---
+
+### ✅ Architecture
+
+```
+[User] → [Keycloak (OIDC)] → [Cognito User Pool Federation] → [App]
+```
+
+---
+
+### 🔹 Steps to Implement
+
+#### 1. Create a **Cognito User Pool**
+
+* AWS Console → Cognito → User Pools → Create User Pool
+* Name it (e.g., `app-auth`)
+
+#### 2. Add Keycloak as an **OIDC IdP**
+
+* Go to **Federation > Identity providers**
+* Choose **OIDC provider**
+* Enter:
+
+  * **Provider name**: `keycloak`
+  * **Client ID/Secret** (created in Keycloak)
+  * **Issuer URL**: e.g., `https://keycloak.example.com/realms/dev`
+  * OIDC endpoints (`.well-known/openid-configuration`)
+
+#### 3. Map Attributes
+
+* Map Keycloak claims like `email`, `name`, `groups`, etc., to Cognito attributes
+
+#### 4. Create an **App Client**
+
+* Enable `Authorization Code` flow
+* Enable `client_secret` if needed
+
+#### 5. Add Domain
+
+* Create a Cognito domain (or use a custom one)
+
+#### 6. Test the Flow
+
+* Navigate to:
+  `https://<your-domain>.auth.<region>.amazoncognito.com/login?response_type=code&client_id=...`
+* You will be redirected to **Keycloak** for login
+
+---
+
+# 🧭 Option 2: **Use Cognito Identity Pool + Keycloak (OIDC)** to Get Temporary AWS Credentials
+
+This allows users authenticated via Keycloak to assume **IAM roles** and call AWS APIs.
+
+---
+
+### ✅ Architecture
+
+```
+[User] → [Keycloak OIDC Token] → [Cognito Identity Pool] → [IAM Role] → [AWS Services]
+```
+
+---
+
+### 🔹 Steps to Implement
+
+#### 1. Create Cognito Identity Pool
+
+* Go to **Cognito → Federated Identities**
+* Create new Identity Pool (name: `keycloak-access`)
+
+#### 2. Choose **OIDC Provider**
+
+* Add **Keycloak OIDC provider**
+
+  * `Issuer`: `https://keycloak.example.com/realms/dev`
+  * Set audience/client ID to match Keycloak app
+
+#### 3. Create IAM Roles
+
+* Create IAM role with trust policy:
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "Federated": "cognito-identity.amazonaws.com"
+  },
+  "Action": "sts:AssumeRoleWithWebIdentity",
+  "Condition": {
+    "StringEquals": {
+      "cognito-identity.amazonaws.com:aud": "<identity-pool-id>",
+      "cognito-identity.amazonaws.com:amr": "authenticated"
+    }
+  }
+}
+```
+
+* Attach this role to authenticated users
+
+#### 4. Get Token from Keycloak
+
+* Call:
+
+```bash
+curl -X POST https://keycloak.example.com/realms/dev/protocol/openid-connect/token \
+ -d "grant_type=password" \
+ -d "client_id=myapp" \
+ -d "username=alice" \
+ -d "password=secret"
+```
+
+* Extract the `id_token` (JWT)
+
+#### 5. Get AWS Credentials
+
+```bash
+aws sts assume-role-with-web-identity \
+  --role-arn arn:aws:iam::<account-id>:role/KeycloakWebAccess \
+  --role-session-name test-session \
+  --web-identity-token file://id_token.jwt
+```
+
+---
+
+# 🧭 Option 3: **Federate Keycloak Directly with IAM Role (OIDC Trust)**
+
+This works **without Cognito** — you register Keycloak as an **OIDC provider** in IAM.
+
+---
+
+### 🔹 Steps
+
+#### 1. In IAM, create an OIDC Provider
+
+```bash
+aws iam create-open-id-connect-provider \
+  --url https://keycloak.example.com/realms/dev \
+  --client-id-list my-client-id \
+  --thumbprint-list <cert-thumbprint>
+```
+
+#### 2. Create IAM Role with Trust Policy:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::<account-id>:oidc-provider/keycloak.example.com/realms/dev"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "keycloak.example.com/realms/dev:aud": "my-client-id"
+        }
+      }
+    }
+  ]
+}
+```
+
+#### 3. Use Keycloak ID Token to Assume Role
+
+* Use STS CLI as above
+
+---
+
+# ✅ Summary Table
+
+| Use Case                 | Service                                                | Notes                                       |
+| ------------------------ | ------------------------------------------------------ | ------------------------------------------- |
+| AWS access for employees | IAM Identity Center (via SAML, OIDC bridge not native) | Indirect — use SAML via Keycloak            |
+| Application login        | Cognito User Pool (OIDC Federation)                    | Best for hosted web/mobile apps             |
+| AWS API access           | Cognito Identity Pool or STS with Web Identity         | Use Keycloak JWT to get temporary AWS creds |
+| Direct IAM role access   | IAM OIDC Provider + STS                                | Bypass Cognito, more control                |
+
+---
 
 

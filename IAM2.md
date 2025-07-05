@@ -722,4 +722,817 @@ Unlike managed policies, inline policies are **tied to one principal** and **del
 
 ---
 
+## 👥 What Are **IAM Groups**?
+
+An **IAM Group** is a **collection of IAM users** that you manage as a single unit. You **attach policies** (AWS Managed or Customer Managed) to the group, and all users in that group automatically inherit those permissions.
+
+📌 You **can’t log in as a group** — groups are just **permission containers**.
+
+---
+
+## ✅ Why Use IAM Groups?
+
+| Benefit                             | Description                                        |
+| ----------------------------------- | -------------------------------------------------- |
+| 🔄 Centralized Permissions          | Attach policy once — applies to all users in group |
+| ⏱️ Time-Saving                      | Add/remove users without updating permissions      |
+| 📘 Role-Based Access Control (RBAC) | Map groups to DevOps, QA, Admin, Audit, etc.       |
+| 🔒 Enforce Least Privilege          | Easier to audit and manage who can do what         |
+
+---
+
+## 🛠️ Steps to Create and Use IAM Groups (From AWS Console)
+
+---
+
+### 🎯 Example Use Case: DevOps group with access to EC2 and S3
+
+#### 👉 Step 1: Go to IAM Console
+
+* Open [https://console.aws.amazon.com/iam](https://console.aws.amazon.com/iam)
+
+---
+
+### 👉 Step 2: Create Group
+
+1. Click **Groups** → **Create group**
+2. Name it: `DevOpsTeam`
+
+---
+
+### 👉 Step 3: Attach Permissions (Policy)
+
+You can either:
+
+* Attach **AWS Managed Policies** (e.g., `AmazonEC2ReadOnlyAccess`)
+* Attach **Customer Managed Policies** (your own)
+* Skip and attach later
+
+✅ Example:
+
+* Attach `AmazonEC2FullAccess`
+* Attach `AmazonS3ReadOnlyAccess`
+
+Click **Next** → **Create group**
+
+---
+
+### 👉 Step 4: Add Users to Group
+
+1. Go to **IAM → Users**
+2. Select a user (e.g., `deepak.dev`)
+3. Go to **Groups** tab
+4. Click **Add user to groups**
+5. Choose `DevOpsTeam`
+
+Now the user inherits the group's permissions.
+
+---
+
+## 📘 JSON Example (Customer Managed Policy for DevOps)
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ec2:*",
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+You could attach this policy to your `DevOpsTeam` group.
+
+---
+
+## 📊 IAM Group Options & Features
+
+| Feature                    | Description                          |
+| -------------------------- | ------------------------------------ |
+| ✅ Add/Remove users         | Easily manage group membership       |
+| ✅ Attach multiple policies | Combine multiple permission sets     |
+| ✅ List users in group      | See who inherits access              |
+| ✅ Nested groups            | ❌ Not supported (no group of groups) |
+| ✅ Tag groups               | Add metadata for automation/auditing |
+
+---
+
+## 📦 Example Grouping Strategy
+
+| Group Name     | Permissions                             |
+| -------------- | --------------------------------------- |
+| `DevOpsTeam`   | EC2 full, S3 read-only, CloudWatch logs |
+| `FinanceUsers` | Billing and Cost Explorer               |
+| `Developers`   | Read/write to CodeCommit, S3, Lambda    |
+| `Auditors`     | Read-only to CloudTrail, S3, IAM        |
+
+---
+
+## 🛡️ Best Practices
+
+| Best Practice                               | Why                                                    |
+| ------------------------------------------- | ------------------------------------------------------ |
+| 🔒 Follow least privilege                   | Avoid attaching `AdministratorAccess` unless necessary |
+| 🧠 Use clear group names                    | e.g., `QA_ReadOnly`, `Dev_Admin`                       |
+| 📦 Combine with tagging                     | For automation and auditing (`Environment`, `Team`)    |
+| 🔁 Review group memberships                 | Remove ex-employees or rotated roles                   |
+| ❌ Don’t use groups for cross-account access | Use **roles** for that purpose                         |
+
+---
+
+
+# **IAM Roles**
+
+---
+
+## 🔐 What is an IAM Role?
+
+An **IAM Role** is an **identity with a set of permissions** that **can be assumed by trusted entities**, such as:
+
+* IAM Users
+* AWS Services (like EC2, Lambda, ECS, etc.)
+* Other AWS accounts
+* Federated users (SSO, OIDC, SAML)
+* Applications (via AssumeRole API)
+
+✅ Unlike IAM users, **roles do not have long-term credentials**. They issue **temporary credentials** via **STS (Security Token Service)**.
+
+---
+
+## 🔄 When to Use IAM Roles?
+
+| Use Case                             | Example                                 |
+| ------------------------------------ | --------------------------------------- |
+| ✅ Grant permissions to EC2 instances | EC2 accessing S3, CloudWatch, DynamoDB  |
+| ✅ Cross-account access               | Role in Prod assumed from Dev account   |
+| ✅ Service-to-service access          | Lambda calling DynamoDB                 |
+| ✅ Temporary access                   | Security audit with 12-hour credentials |
+| ✅ Federated identity access          | IAM Identity Center (AWS SSO), AD       |
+
+---
+
+## 🛠 How to Create and Use IAM Roles via AWS Console
+
+---
+
+### 🧑‍💻 **Example**: EC2 instance uploads files to S3
+
+### 🔹 Step 1: Go to IAM → **Roles** → Click **Create role**
+
+---
+
+### 🔹 Step 2: Select **Trusted Entity**
+
+Choose:
+
+* `AWS service` (for EC2, Lambda, etc.)
+* `Another AWS account`
+* `Web identity` (OIDC)
+* `SAML 2.0 federation`
+
+For this example, choose:
+➡️ **AWS Service** → **EC2**
+
+---
+
+### 🔹 Step 3: Attach Permissions Policy
+
+Attach a policy like:
+
+* `AmazonS3FullAccess`
+* Or a **custom policy** (example below)
+
+---
+
+### 🔹 Step 4: Name the Role
+
+* Name: `EC2ToS3Role`
+* Add tags (optional)
+* Create role ✅
+
+---
+
+### 🔹 Step 5: Attach Role to EC2
+
+1. Go to **EC2 Console**
+2. Select your EC2 instance
+3. Actions → Security → Modify IAM Role
+4. Attach `EC2ToS3Role`
+
+Now the EC2 instance has the S3 permissions you defined.
+
+---
+
+## 📘 Example: JSON Policy for IAM Role (S3 Read/Write)
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject"],
+      "Resource": ["arn:aws:s3:::my-dev-bucket/*"]
+    }
+  ]
+}
+```
+
+---
+
+## 🛡 Trust Policy (for EC2 or Lambda)
+
+Each role has a **trust policy** that defines **who can assume it**:
+
+### ▶️ Trust Policy for EC2
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
+---
+
+## 🧑‍🤝‍🧑 Trust Policy for Cross-Account Access
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::123456789012:root"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
+Use this when an IAM user or role from **another account** needs to assume this role.
+
+---
+
+## ⚙️ Types of Roles in AWS
+
+| Role Type                | Description                                           | Example                    |
+| ------------------------ | ----------------------------------------------------- | -------------------------- |
+| Service role             | Used by AWS services (EC2, Lambda, ECS)               | EC2 uploads to S3          |
+| Service-linked role      | Managed by AWS, linked to a service                   | `AWSServiceRoleForEC2Spot` |
+| Cross-account role       | Assumed by a user or role in another AWS account      | Prod team accesses Dev     |
+| Identity Federation role | Used by external identity providers (SSO, SAML, OIDC) | Google or AD logins        |
+| Role chaining            | Temporary role assumes another role                   | Lambda assumes admin role  |
+
+---
+
+## 📊 IAM Role Options in Console
+
+| Option               | Description                           |
+| -------------------- | ------------------------------------- |
+| Trusted entities     | Defines who can assume the role       |
+| Permissions policies | Attached policies (inline or managed) |
+| Tags                 | Metadata for tracking/auditing        |
+| Inline policies      | Unique to this role only              |
+| Session duration     | Up to 12 hours (default 1 hour)       |
+| Role last used       | Tracks usage for auditing             |
+
+---
+
+## ✅ Best Practices for IAM Roles
+
+| Best Practice                                     | Reason                            |
+| ------------------------------------------------- | --------------------------------- |
+| 🧠 Use roles over users for services              | No long-term keys                 |
+| 🔒 Follow least privilege                         | Only needed actions and resources |
+| 📍 Add session tags                               | For audit and access controls     |
+| ⏳ Set session timeout appropriately               | Prevent token abuse               |
+| 🧪 Test with IAM Policy Simulator                 | Validate access before using      |
+| 🧼 Rotate credentials if using AssumeRole via SDK | Handle STS limits properly        |
+
+---
+
+## 🧠 Extra
+
+* Use **IAM roles with EC2 Instance Profiles** for app-level permissions instead of storing secrets in code
+* For **multi-account organizations**, roles + AWS Organizations + SCPs provide scalable security
+* Integrate **CloudTrail** to monitor who assumed which role and when
+
+---
+
+#### Let’s now explore the **three other IAM Role trusted entity types** in AWS IAM:
+
+1. 🧑‍🤝‍🧑 **Another AWS Account**
+2. 🌐 **Web Identity Federation (OIDC – Google, Cognito, etc.)**
+3. 🔐 **SAML 2.0 Federation (Corporate SSO like Azure AD, Okta)**
+
+We’ll follow the **same format** as before: explanation, use case, trust policy example, how to create via Console, and real-world scenario.
+
+---
+
+## 🧑‍🤝‍🧑 1. IAM Role Trusted by **Another AWS Account**
+
+### 📘 What It Means:
+
+Allows users/roles in **Account A** to assume a role in **Account B** using `sts:AssumeRole`.
+
+### 📦 Common Use Case:
+
+* Centralized security access (audit/account team accessing prod)
+* Shared DevOps roles
+* Cross-account CI/CD pipelines
+
+---
+
+### 🎯 Example: Account A (DevOps) assumes a role in Account B (Prod)
+
+#### 👉 Step-by-Step: In Account B (where role is created)
+
+1. Go to **IAM → Roles → Create role**
+2. Choose **Trusted entity type** → `Another AWS Account`
+3. Enter the AWS Account ID of Account A (e.g., `123456789012`)
+4. Attach policy (e.g., `AmazonEC2FullAccess`)
+5. Name the role: `CrossAccountEC2Access`
+6. Create role ✅
+
+---
+
+### 🔐 Trust Policy Example:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::123456789012:root"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
+---
+
+### 🔄 In Account A (caller):
+
+1. IAM user or role uses AWS CLI:
+
+```bash
+aws sts assume-role \
+  --role-arn arn:aws:iam::098765432109:role/CrossAccountEC2Access \
+  --role-session-name DevOpsAccess
+```
+
+---
+
+## 🌐 2. IAM Role for **Web Identity Federation (OIDC)**
+
+### 📘 What It Means:
+
+Allows **external identities (like Google, Facebook, GitHub, Cognito)** to assume an IAM role using **OpenID Connect (OIDC)**.
+
+### 📦 Common Use Cases:
+
+* Cognito-authenticated mobile/web apps accessing AWS resources
+* GitHub Actions deploying to AWS using GitHub’s OIDC provider
+
+---
+
+### 🎯 Example: A mobile app authenticated with Cognito uploads to S3
+
+#### 👉 Step-by-Step:
+
+1. Go to **IAM → Roles → Create role**
+2. Choose **Web identity** → Choose `Cognito`, `Google`, etc.
+3. Select Identity Pool or Provider
+4. Choose OIDC Condition (e.g., `aud` or `sub`)
+5. Attach policy (e.g., `AmazonS3PutObject`)
+6. Name the role: `CognitoS3Uploader`
+7. Create role ✅
+
+---
+
+### 🔐 Trust Policy for Cognito:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "cognito-identity.amazonaws.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "cognito-identity.amazonaws.com:aud": "us-east-1:pool-id",
+          "cognito-identity.amazonaws.com:amr": "authenticated"
+        }
+      }
+    }
+  ]
+}
+```
+
+✅ This role is assumed using `AssumeRoleWithWebIdentity` API via the app.
+
+---
+
+## 🔐 3. IAM Role for **SAML 2.0 Federation**
+
+### 📘 What It Means:
+
+Allows enterprise users to authenticate into AWS using a **SAML 2.0-compatible identity provider** like:
+
+* Azure Active Directory
+* Okta
+* ADFS
+* Google Workspace
+
+This enables **Single Sign-On (SSO)** into AWS Console or STS APIs.
+
+---
+
+### 📦 Common Use Cases:
+
+* Enabling SSO for internal teams
+* Temporary access for contractors via ADFS/Okta
+
+---
+
+### 🎯 Example: Azure AD user signs into AWS console
+
+#### 👉 Step-by-Step:
+
+### 🔹 In IAM Console (AWS):
+
+1. Go to **IAM → Identity Providers**
+2. Click **Add provider**
+
+   * Provider type: `SAML`
+   * Provider name: `AzureADProvider`
+   * Upload **SAML metadata XML** from Azure AD
+3. Create IAM **role for SAML 2.0 Federation**
+
+   * Trusted entity: `SAML 2.0 Federation`
+   * Choose `AzureADProvider`
+   * Specify SAML condition (`SAML:aud` = `https://signin.aws.amazon.com/saml`)
+4. Attach permissions (e.g., `ReadOnlyAccess`)
+5. Name it: `AzureADSSORole`
+
+---
+
+### 🔐 Trust Policy for SAML Federation:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::123456789012:saml-provider/AzureADProvider"
+      },
+      "Action": "sts:AssumeRoleWithSAML",
+      "Condition": {
+        "StringEquals": {
+          "SAML:aud": "https://signin.aws.amazon.com/saml"
+        }
+      }
+    }
+  ]
+}
+```
+
+---
+
+### 🧑‍💼 End User Flow (SSO Login):
+
+1. Go to the corporate identity provider (e.g., Okta or Azure AD)
+2. Click the **AWS application tile**
+3. SAML assertion is sent → AWS STS issues temporary credentials
+4. User is logged into AWS Console with assigned role
+
+---
+
+## 🧠 Summary Table: IAM Role Trusted Entity Types
+
+| Trusted Entity Type          | Method                          | Example                |
+| ---------------------------- | ------------------------------- | ---------------------- |
+| 🧑‍🤝‍🧑 Another AWS Account | `sts:AssumeRole`                | Cross-account CI/CD    |
+| 🌐 Web Identity (OIDC)       | `sts:AssumeRoleWithWebIdentity` | Cognito, GitHub OIDC   |
+| 🔐 SAML Federation           | `sts:AssumeRoleWithSAML`        | Azure AD, Okta, ADFS   |
+| 🤖 AWS Services              | `sts:AssumeRole` by service     | EC2, Lambda            |
+| 🧑 Federated Users           | Via SSO/STS                     | Login without IAM user |
+
+
+---
+
+## 📜 The Two Policies You Shared:
+
+---
+
+### **1. Permissions Policy (Identity Policy or Inline Policy)**
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject"],
+      "Resource": ["arn:aws:s3:::my-dev-bucket/*"]
+    }
+  ]
+}
+```
+
+✅ **Purpose**:
+Grants permissions to **perform specific actions** on AWS resources (in this case, S3).
+
+✅ **Attached To**:
+An IAM **user, role, or group**.
+
+✅ **Use Case**:
+A role or user needs **access to an S3 bucket** — this policy defines **what actions** (`PutObject`, `GetObject`) they can do **on what resources** (objects in the bucket).
+
+🧑‍💻 **Example**:
+You attach this policy to an EC2 role called `EC2ToS3Uploader`, so when an EC2 instance uses this role, it can upload/download files to `my-dev-bucket`.
+
+---
+
+### **2. Trust Policy (Assume Role Policy / Role Trust Relationship)**
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ec2.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+```
+
+✅ **Purpose**:
+Defines **who (which trusted entity)** is allowed to **assume the role** — it **does not grant access to AWS resources** directly.
+
+✅ **Attached To**:
+Always part of an **IAM Role definition**.
+
+✅ **Use Case**:
+Allows **EC2 instances** to assume the IAM role that has this trust policy.
+
+🧑‍💻 **Example**:
+You create a role `EC2ToS3Uploader` and define this trust policy. This tells AWS,
+
+> "Only EC2 instances (via EC2 service) are allowed to use this role."
+
+---
+
+## 🔁 How These Work Together in a Role
+
+Let’s combine both in one flow:
+
+### 🚀 Scenario:
+
+You want EC2 instances to upload logs to S3 (`my-dev-bucket`).
+
+---
+
+### ✅ Step-by-Step:
+
+#### 1. **Create IAM Role**: `EC2ToS3Uploader`
+
+#### 2. **Attach Permissions Policy**:
+
+Gives permission to interact with S3:
+
+```json
+{
+  "Effect": "Allow",
+  "Action": ["s3:PutObject", "s3:GetObject"],
+  "Resource": ["arn:aws:s3:::my-dev-bucket/*"]
+}
+```
+
+#### 3. **Attach Trust Policy**:
+
+Allows EC2 instances to assume the role:
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "Service": "ec2.amazonaws.com"
+  },
+  "Action": "sts:AssumeRole"
+}
+```
+
+#### 4. **Assign Role to EC2 Instance**:
+
+Go to EC2 → Actions → Modify IAM Role → Select `EC2ToS3Uploader`
+
+---
+
+## 🧠 Summary Table: Key Differences
+
+| Feature                         | Permissions Policy                      | Trust Policy                |
+| ------------------------------- | --------------------------------------- | --------------------------- |
+| 🔐 Grants Permissions           | ✅ Yes                                   | ❌ No                        |
+| 🔓 Controls Who Can Assume Role | ❌ No                                    | ✅ Yes                       |
+| 📦 Attached To                  | IAM Role/User/Group                     | IAM Role only               |
+| 🎯 Example Action               | `s3:GetObject`, `ec2:DescribeInstances` | `sts:AssumeRole`            |
+| 👥 Principal                    | None (implicit)                         | Required                    |
+| 🧑 Use Case                     | Define what a role can do               | Define who can use the role |
+
+---
+
+## ✅ Real-World Analogy
+
+> Think of a **trust policy** as the **door policy** of a secure room — who’s allowed to enter.
+>
+> Think of a **permissions policy** as **what actions someone can do** inside the room once they’re in.
+
+---
+
+
+## ✅ Scenario
+
+**Goal:**
+You want your EC2 instance to **upload files to an S3 bucket** named `my-dev-bucket`.
+
+---
+
+### ❓ Problem
+
+By default, **EC2 instances have no permissions to access S3**.
+You cannot give IAM user credentials directly to EC2 for security reasons.
+
+🔐 Solution: Use an **IAM Role** with:
+
+1. A **Trust Policy** → Allows EC2 to assume the role
+2. A **Permissions Policy** → Allows the role to access S3
+
+---
+
+## 🛠️ Step-by-Step Example (with Explanations)
+
+---
+
+### **Step 1: Create IAM Role**
+
+* Go to AWS Console → IAM → Roles → Create role
+
+#### 🔸 Select Trusted Entity
+
+* Select **AWS service**
+* Choose **EC2**
+* ✅ This automatically adds the **trust policy**:
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "Service": "ec2.amazonaws.com"
+  },
+  "Action": "sts:AssumeRole"
+}
+```
+
+📌 **Why this is needed?**
+This tells AWS:
+
+> “Only EC2 instances can use (assume) this role.”
+
+✅ \*\*This is the **trust policy**.
+
+---
+
+### **Step 2: Attach Permissions Policy**
+
+Next screen: **Attach Permissions**
+
+* Choose: **Create inline policy** (or pick from AWS Managed policies)
+* Use this **permissions policy**:
+
+```json
+{
+  "Effect": "Allow",
+  "Action": ["s3:PutObject", "s3:GetObject"],
+  "Resource": ["arn:aws:s3:::my-dev-bucket/*"]
+}
+```
+
+📌 **Why this is needed?**
+This defines **what the role is allowed to do**:
+
+> "This role can read/write to `my-dev-bucket` in S3."
+
+✅ This is the **permissions policy**.
+
+---
+
+### **Step 3: Name and Create the Role**
+
+* Name: `EC2S3UploadRole`
+* Click **Create role**
+
+---
+
+### **Step 4: Attach the Role to an EC2 Instance**
+
+1. Go to **EC2 → Instances**
+2. Select your EC2 instance
+3. Click **Actions → Security → Modify IAM Role**
+4. Select `EC2S3UploadRole`
+5. Save ✅
+
+📌 Now your EC2 instance can **assume this role automatically** when it starts.
+
+---
+
+### ✅ Final Result:
+
+| Layer                    | What It Does                                                  |
+| ------------------------ | ------------------------------------------------------------- |
+| **Trust Policy**         | Allows EC2 to **assume the role**                             |
+| **Permissions Policy**   | Allows the role (and thus EC2) to **put/get objects** from S3 |
+| **IAM Role**             | Acts as the **identity** that glues both together             |
+| **EC2 Instance Profile** | Automatically **injects the role** into the EC2 instance      |
+
+---
+
+## 🔄 What Happens at Runtime?
+
+1. EC2 instance boots up.
+2. Instance metadata service gives it **temporary credentials** from the role.
+3. The app/script inside EC2 calls S3 using SDK/CLI (no hardcoded keys).
+4. S3 checks:
+
+   * 🟢 "Is this a valid session from a trusted principal (EC2)?"
+   * 🟢 "Does the session have permission to put/get objects?"
+
+✅ If both are YES → Access granted.
+
+---
+
+## 📦 Diagram Summary
+
+```plaintext
+[EC2 Instance]
+     |
+     |----> IAM Role: EC2S3UploadRole
+                 |           |
+     Trust Policy    Permissions Policy
+     (Who can use?)   (What can they do?)
+         |                   |
+     ec2.amazonaws.com   s3:PutObject, GetObject
+                           on my-dev-bucket/*
+```
+
+---
+
+## 🧪 Test the setup
+
+SSH into EC2:
+
+```bash
+aws s3 cp testfile.txt s3://my-dev-bucket/
+```
+
+🎉 If configured correctly, this will succeed — with **no AWS credentials stored on the EC2**.
+
+---
+
+
+
+
+
 

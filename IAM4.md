@@ -97,6 +97,9 @@ Use **AWS CloudTrail** to detect root user actions:
 | Activate IAM access to billing console                          | Initial setup       |
 | Enable/Disable AWS services like Organizations or Control Tower | Root-only           |
 
+![image](https://github.com/user-attachments/assets/c9ba2589-5481-4cd7-923b-103c9f04c09d)
+
+
 ---
 
 ## 🧠 Summary: Secure Root with MFA
@@ -110,11 +113,156 @@ Use **AWS CloudTrail** to detect root user actions:
 | IAM used for daily work | ✅ Yes, avoid using root |
 
 ---
+### Here's a **Terraform example** that sets up **CloudTrail + CloudWatch Logs + Alarm + SNS Notification** to alert you **whenever the AWS Root user performs any action** (e.g., login, API call).
 
-Would you like:
+---
 
-* ✅ Bash script to check if root account has MFA enabled?
-* ✅ Terraform example for alerting on root activity?
-* ✅ AWS CLI commands to verify root account security posture?
+## ✅ What We’ll Deploy
 
-Let me know how you'd like to follow up!
+| Resource                                       | Purpose                         |
+| ---------------------------------------------- | ------------------------------- |
+| `aws_cloudtrail`                               | Tracks all AWS account activity |
+| `aws_cloudwatch_log_group`                     | Stores CloudTrail logs          |
+| `aws_cloudwatch_metric_filter`                 | Looks for root user usage       |
+| `aws_cloudwatch_alarm`                         | Triggers on root activity       |
+| `aws_sns_topic` + `aws_sns_topic_subscription` | Sends email alert               |
+
+---
+
+## 📦 Terraform Structure
+
+```hcl
+provider "aws" {
+  region = "us-east-1"
+}
+
+# 🔔 SNS Topic
+resource "aws_sns_topic" "root_activity_alert" {
+  name = "root-activity-alert-topic"
+}
+
+# 📧 Email Subscription
+resource "aws_sns_topic_subscription" "email_alert" {
+  topic_arn = aws_sns_topic.root_activity_alert.arn
+  protocol  = "email"
+  endpoint  = "your-email@example.com" # Replace with your email
+}
+
+# 📂 CloudWatch Log Group for CloudTrail
+resource "aws_cloudwatch_log_group" "trail_log_group" {
+  name              = "/aws/cloudtrail/root-alerts"
+  retention_in_days = 30
+}
+
+# 🕵️ CloudTrail Logging
+resource "aws_cloudtrail" "root_trail" {
+  name                          = "root-activity-trail"
+  s3_bucket_name                = aws_s3_bucket.trail_bucket.id
+  cloud_watch_logs_group_arn    = "${aws_cloudwatch_log_group.trail_log_group.arn}:*"
+  cloud_watch_logs_role_arn     = aws_iam_role.trail_role.arn
+  include_global_service_events = true
+  is_multi_region_trail         = true
+  enable_logging                = true
+}
+
+# 🪣 S3 Bucket for CloudTrail logs
+resource "aws_s3_bucket" "trail_bucket" {
+  bucket = "my-cloudtrail-logs-${random_id.bucket_suffix.hex}"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+
+# 🔐 IAM Role for CloudTrail to write logs
+resource "aws_iam_role" "trail_role" {
+  name = "cloudtrail-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Service = "cloudtrail.amazonaws.com"
+        },
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "trail_policy" {
+  name = "cloudtrail-logs"
+  role = aws_iam_role.trail_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "${aws_cloudwatch_log_group.trail_log_group.arn}:*"
+      }
+    ]
+  })
+}
+
+# 🧠 Metric Filter to detect Root usage
+resource "aws_cloudwatch_log_metric_filter" "root_activity_filter" {
+  name           = "root-user-activity"
+  log_group_name = aws_cloudwatch_log_group.trail_log_group.name
+
+  pattern = "{ $.userIdentity.type = \"Root\" }"
+
+  metric_transformation {
+    name      = "RootUsageMetric"
+    namespace = "RootUsage"
+    value     = "1"
+  }
+}
+
+# 🔔 Alarm for Root activity
+resource "aws_cloudwatch_metric_alarm" "root_activity_alarm" {
+  alarm_name                = "RootUserActivityAlarm"
+  comparison_operator       = "GreaterThanOrEqualToThreshold"
+  evaluation_periods        = 1
+  metric_name               = "RootUsageMetric"
+  namespace                 = "RootUsage"
+  period                    = 300
+  statistic                 = "Sum"
+  threshold                 = 1
+  alarm_description         = "Triggers when root user is used"
+  alarm_actions             = [aws_sns_topic.root_activity_alert.arn]
+  treat_missing_data        = "notBreaching"
+}
+```
+
+---
+
+## 📧 After Terraform Apply
+
+* You will receive a **confirmation email** to the address you used in `aws_sns_topic_subscription`.
+* Once you **confirm**, the SNS will be active.
+* Any **root login or API call** will trigger the alarm and send you an alert.
+
+---
+
+## 🔐 Bonus Security Tip
+
+You can also trigger **AWS Lambda or EventBridge automation** from the alarm for:
+
+* Disabling root access keys (if any exist)
+* Revoking sessions
+* Triggering an incident workflow
+
+---
+
+

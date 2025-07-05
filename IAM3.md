@@ -395,6 +395,14 @@ No need for 24/7 elevated access ✅
 
 These roles allow **external users** (such as mobile app users or corporate employees) to **access AWS services** securely **without needing IAM users** or long-term credentials.
 
+![image](https://github.com/user-attachments/assets/1fba70bc-d38a-4ead-8746-c30d1018c8ad)
+
+![image](https://github.com/user-attachments/assets/af3495e3-fffb-42d6-965d-026996a57ba7)
+
+![image](https://github.com/user-attachments/assets/ecabb44c-0ff2-483a-bcbe-d089c5d262cd)
+
+![image](https://github.com/user-attachments/assets/d49624da-d6eb-4d78-84eb-e03ce7e3d557)
+
 ---
 
 ## 🔷 Part 1: IAM Roles with **Web Identity Federation (OIDC)**

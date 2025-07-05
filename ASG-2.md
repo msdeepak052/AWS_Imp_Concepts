@@ -185,6 +185,116 @@ resource "aws_autoscaling_group" "example" {
 | `AllocationStrategy`        | Least desired type in mixed policy      |
 | `Default`                   | AZ-balanced fallback logic              |
 
+
+
 ---
 
-Would you like a **real-time test strategy** or **example use case in production** (e.g., blue/green deployment)?
+## 🧩 **What is a Custom Termination Policy in ASG (Conceptually)?**
+
+A **custom termination policy** is simply a **user-defined ordered list** of AWS-supported policies that dictates how Auto Scaling should choose which instances to terminate **when scaling in**.
+
+You can **combine multiple built-in policies** in a specific order to match your unique business logic.
+
+---
+
+## ✅ **Supported Built-in Termination Policies**
+
+| Policy                      | Description                                                  |
+| --------------------------- | ------------------------------------------------------------ |
+| `OldestInstance`            | Terminates the oldest launched instance                      |
+| `NewestInstance`            | Terminates the most recently launched instance               |
+| `OldestLaunchConfiguration` | Terminates instances using the oldest launch config/template |
+| `OldestLaunchTemplate`      | Terminates instances with the oldest launch template version |
+| `ClosestToNextInstanceHour` | Cost-aware termination (rarely used now)                     |
+| `AllocationStrategy`        | Used with mixed instances policy                             |
+| `Default`                   | AZ-rebalancing logic                                         |
+
+---
+
+## 🛠️ **Example: Custom Termination Policy Strategy**
+
+### 🎯 Scenario:
+
+You want to:
+
+* Always remove **old-template-based instances** first
+* Among them, pick the **oldest** instance (longest running)
+* Preserve AZ balance
+
+### ✅ Custom Termination Policy:
+
+```text
+["OldestLaunchTemplate", "OldestInstance", "Default"]
+```
+
+### 🔁 Behavior:
+
+1. AWS filters all instances using the **oldest launch template version**.
+2. Among those, picks the **oldest** instance.
+3. If none matches, falls back to **default AZ-balancing** logic.
+
+---
+
+## 🔧 **Steps to Set Custom Termination Policy from AWS Console**
+
+1. **Go to AWS Console > EC2 > Auto Scaling Groups**
+2. Select your ASG
+3. Under **Details** tab → scroll to **Termination Policies**
+4. Click **Edit**
+5. In the dropdown, **add multiple policies** in your desired order
+
+   * For example:
+
+     1. `OldestLaunchTemplate`
+     2. `OldestInstance`
+     3. `Default`
+6. Click **Update**
+
+📌 **Order matters** — AWS follows your order *top to bottom*.
+
+---
+
+## ✅ **More Custom Strategies (Real-world)**
+
+| Use Case                           | Termination Policy                                  |
+| ---------------------------------- | --------------------------------------------------- |
+| Rolling update to newest AMI       | `OldestLaunchTemplate`, `OldestInstance`, `Default` |
+| Revert bad rollout                 | `NewestInstance`, `Default`                         |
+| Cost optimization with rebalancing | `ClosestToNextInstanceHour`, `Default`              |
+| Blue/Green deployment cleanup      | `OldestLaunchTemplate`, `OldestInstance`, `Default` |
+
+---
+
+## 🧱 **Terraform Snippet – Custom Termination Policy**
+
+```hcl
+resource "aws_autoscaling_group" "custom_termination_policy" {
+  name                 = "custom-asg"
+  max_size             = 5
+  min_size             = 2
+  desired_capacity     = 3
+  vpc_zone_identifier  = ["subnet-xxxxxx"]
+
+  launch_template {
+    id      = aws_launch_template.app.id
+    version = "$Latest"
+  }
+
+  termination_policies = [
+    "OldestLaunchTemplate",
+    "OldestInstance",
+    "Default"
+  ]
+}
+```
+
+---
+
+## 🧠 Pro Tips
+
+* **Always end with `Default`** for AZ balance.
+* Avoid conflicting logic, e.g., `OldestInstance` + `NewestInstance`.
+* Pair with **Instance Maintenance Policy** for controlled scale-in.
+
+---
+

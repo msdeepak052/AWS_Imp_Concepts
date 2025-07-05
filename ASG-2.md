@@ -622,5 +622,269 @@ At 6 PM → set desired capacity = 2
 | **Instance Refresh Warm-up**  | Throttles instance refresh speed | Instance refresh config   |
 
 ---
+Perfect, Deepak! Here's a **Terraform example** that covers all the major **ASG "timers"** we discussed:
+
+---
+
+## ✅ **Terraform Snippet – ASG with All Timer Options**
+
+```hcl
+provider "aws" {
+  region = "ap-south-1"
+}
+
+# Launch Template
+resource "aws_launch_template" "example" {
+  name_prefix   = "asg-launch-template-"
+  image_id      = "ami-0abcdef1234567890"
+  instance_type = "t3.micro"
+}
+
+# Auto Scaling Group with Timer Settings
+resource "aws_autoscaling_group" "example" {
+  name                      = "asg-timer-example"
+  desired_capacity          = 2
+  max_size                  = 4
+  min_size                  = 1
+  vpc_zone_identifier       = ["subnet-xxxxxxxx"] # replace with your subnet IDs
+  health_check_type         = "EC2"
+  health_check_grace_period = 300                     # Health Check Grace Period
+  default_cooldown          = 180                     # Cooldown Period
+
+  launch_template {
+    id      = aws_launch_template.example.id
+    version = "$Latest"
+  }
+
+  termination_policies = ["OldestInstance"]
+
+  # Instance Maintenance Policy (affects instance refresh)
+  instance_maintenance_policy {
+    min_healthy_percentage = 75
+    max_healthy_percentage = 125
+  }
+
+  tag {
+    key                 = "Name"
+    value               = "asg-instance"
+    propagate_at_launch = true
+  }
+}
+```
+
+---
+
+## ✅ **Scheduled Scaling Action (Timer-based scaling)**
+
+```hcl
+resource "aws_autoscaling_schedule" "scale_up_morning" {
+  scheduled_action_name  = "scale-up-morning"
+  min_size               = 2
+  max_size               = 4
+  desired_capacity       = 3
+  recurrence             = "0 3 * * *"  # 8:30 AM IST (UTC+5:30)
+  autoscaling_group_name = aws_autoscaling_group.example.name
+}
+
+resource "aws_autoscaling_schedule" "scale_down_evening" {
+  scheduled_action_name  = "scale-down-evening"
+  min_size               = 1
+  max_size               = 2
+  desired_capacity       = 1
+  recurrence             = "0 15 * * *" # 8:30 PM IST (UTC+5:30)
+  autoscaling_group_name = aws_autoscaling_group.example.name
+}
+```
+
+---
+
+## ✅ **Target Tracking Policy with Instance Warm-up**
+
+```hcl
+resource "aws_autoscaling_policy" "cpu_target_tracking" {
+  name                   = "cpu-tracking"
+  policy_type            = "TargetTrackingScaling"
+  autoscaling_group_name = aws_autoscaling_group.example.name
+
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ASGAverageCPUUtilization"
+    }
+    target_value       = 50
+    disable_scale_in   = false
+    estimated_instance_warmup = 300   # Instance Warm-up time
+  }
+}
+```
+
+---
+
+## 🧠 Optional: Lifecycle Hook with Timeout (via Lambda or SQS integration)
+
+```hcl
+resource "aws_autoscaling_lifecycle_hook" "example" {
+  name                   = "custom-terminate-hook"
+  autoscaling_group_name = aws_autoscaling_group.example.name
+  lifecycle_transition   = "autoscaling:EC2_INSTANCE_TERMINATING"
+  heartbeat_timeout      = 300
+  default_result         = "CONTINUE"
+}
+```
+
+---
+
+## 📦 Summary of What This TF Does
+
+| Feature                 | Configuration   | Resource                         |
+| ----------------------- | --------------- | -------------------------------- |
+| Health check grace      | 300 sec         | `health_check_grace_period`      |
+| Cooldown                | 180 sec         | `default_cooldown`               |
+| Instance warm-up        | 300 sec         | `estimated_instance_warmup`      |
+| Instance refresh policy | 75–125%         | `instance_maintenance_policy`    |
+| Scheduled scaling       | Morning/evening | `aws_autoscaling_schedule`       |
+| Lifecycle hook timeout  | 300 sec         | `aws_autoscaling_lifecycle_hook` |
+
+---
+### Let’s simulate a **real-world timeline of ASG behavior** over **1 hour** with the settings you provided:
+
+---
+
+## 🧾 **ASG Configuration Summary**
+
+| Setting                       | Value                                             |
+| ----------------------------- | ------------------------------------------------- |
+| **Initial EC2 Instances**     | 2                                                 |
+| **Instance Warm-up**          | 5 minutes (300s)                                  |
+| **Cooldown Period**           | 10 minutes (600s)                                 |
+| **Health Check Grace Period** | 3 minutes (180s)                                  |
+| **Target Tracking Policy**    | Scale out when CPU > 70%, scale in when CPU < 30% |
+
+---
+
+## 🧪 **Simulated Timeline (60 Minutes)**
+
+> Each event assumes AWS CloudWatch checks every 1-minute period for average CPU utilization.
+
+---
+
+### **00:00 → 00:05** – ASG Starts with 2 Instances
+
+* **CPU Usage:** 40% average
+* **No scaling occurs.**
+* Health checks delayed by 3 min, but both instances become healthy.
+
+---
+
+### **00:05 → 00:10** – CPU Spikes to 85%
+
+* Average CPU > 70% → **Trigger scale-out**
+* ASG adds **1 new instance** (Total: 3)
+* **Warm-up timer for new instance starts (5 mins)**
+* **Cooldown timer also starts (10 mins)**
+
+📌 **Next scaling action cannot happen before 00:20 due to cooldown**
+
+---
+
+### **00:10 → 00:15** – CPU = 75%, but ASG in Cooldown
+
+* **No scaling allowed** due to 10-min cooldown
+* New instance still in warm-up
+* Total capacity = 3 (2 active, 1 warming up)
+
+---
+
+### **00:15 → 00:20** – New instance finishes warm-up
+
+* ASG now counts 3 full-capacity instances
+* CPU load drops to 55% average
+* **Still in cooldown — no action taken**
+
+---
+
+### **00:20 → 00:25** – CPU drops to 25% (low load)
+
+* Cooldown period expired ✅
+* CPU < 30% → **Trigger scale-in**
+* ASG terminates **1 instance** → Total = 2
+* **Cooldown starts again (10 mins)**
+
+---
+
+### **00:25 → 00:35** – CPU stable at 30–40%
+
+* Still in cooldown from scale-in
+* No scaling actions allowed
+* ASG stays at **2 instances**
+
+---
+
+### **00:35 → 00:40** – Sudden traffic → CPU hits 78%
+
+* Cooldown expired
+* CPU > 70% → **Trigger scale-out**
+* New instance launched (Total = 3)
+* **Warm-up starts for 5 mins**
+* **Cooldown restarts for 10 mins**
+
+---
+
+### **00:40 → 00:45** – CPU still high, but ASG in cooldown
+
+* Instance warming up
+* No additional scaling
+
+---
+
+### **00:45 → 00:50** – Warm-up ends, CPU drops to 50%
+
+* Now 3 active instances
+* Load distributed
+* Still within cooldown → No change
+
+---
+
+### **00:50 → 00:55** – CPU drops further to 25%
+
+* Cooldown expired
+* CPU < 30% → **Scale-in triggered**
+* Instance terminated → Total = 2
+* Cooldown restarts
+
+---
+
+### **00:55 → 01:00** – CPU stays stable at 30–40%
+
+* ASG remains at 2 instances
+* In cooldown → **no change**
+
+---
+
+## 🔚 **Final Result after 1 Hour:**
+
+| Time  | Event                 | Instances |
+| ----- | --------------------- | --------- |
+| 00:00 | Start                 | 2         |
+| 00:05 | Scale-out (CPU > 70%) | 3         |
+| 00:20 | Scale-in (CPU < 30%)  | 2         |
+| 00:35 | Scale-out (CPU > 70%) | 3         |
+| 00:50 | Scale-in (CPU < 30%)  | 2         |
+
+---
+
+![image](https://github.com/user-attachments/assets/eeb22a47-c9b2-4abb-be9b-6b1cc47c7640)
+
+
+## 🧠 Key Behavior Recap:
+
+* **Cooldown (10 min)** prevents rapid scaling reactions (scale-out/in only once per 10 min).
+* **Warm-up (5 min)** delays instance from affecting scaling decisions.
+* **Health Check Grace Period (3 min)** ensures newly launched instances aren’t judged unhealthy prematurely.
+* **Target tracking** auto-adjusts based on **actual CPU averages**, always seeking to stay close to target.
+
+---
+
+
+
 
 

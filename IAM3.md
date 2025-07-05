@@ -644,3 +644,245 @@ Attach a permission like `AdministratorAccess` or create your own.
 | 🔎 Monitor with CloudTrail                    | Full traceability       |
 
 ---
+
+# **IAM Roles with Custom Trust Policies**
+
+* ✅ What a trust policy is
+* ✅ All possible options/fields you can customize
+* ✅ Real-world examples
+* ✅ Hands-on steps in the AWS Console
+* ✅ Use cases and best practices
+
+---
+
+## 🔐 What is a **Trust Policy** in IAM?
+
+A **trust policy** is a JSON document attached to an **IAM role**, which defines ***who is allowed to assume the role*** and ***under what conditions***.
+
+💡 Think of it as the **entry gate rule** – it doesn’t define what you can do (permissions), only **who can enter** the role.
+
+---
+
+## 🧱 Trust Policy Structure
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { ... },
+      "Action": "sts:AssumeRole",
+      "Condition": { ... }
+    }
+  ]
+}
+```
+
+---
+
+## 🧰 Components You Can Customize
+
+| Field       | Purpose                                                                         |
+| ----------- | ------------------------------------------------------------------------------- |
+| `Principal` | Who can assume the role: a user, service, account, etc.                         |
+| `Action`    | Usually `sts:AssumeRole` (or `AssumeRoleWithSAML`, `AssumeRoleWithWebIdentity`) |
+| `Condition` | Optional conditions like IP range, MFA, ExternalId, session tags, etc.          |
+
+---
+
+## 🛠️ Example Use Cases with Custom Trust Policies
+
+---
+
+### 🧑‍🤝‍🧑 1. **Allow Only a Specific User in the Same Account**
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "arn:aws:iam::123456789012:user/deepak.dev"
+  },
+  "Action": "sts:AssumeRole"
+}
+```
+
+✅ Use case: User `deepak.dev` can assume this role to perform privileged tasks.
+
+---
+
+### 🏢 2. **Allow Users from Another AWS Account**
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "arn:aws:iam::111111111111:root"
+  },
+  "Action": "sts:AssumeRole"
+}
+```
+
+✅ Use case: Cross-account access (DevOps role used from a central account).
+
+---
+
+### 🎯 3. **Restrict to Specific IAM Role**
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "arn:aws:iam::111111111111:role/GitHubDeployRole"
+  },
+  "Action": "sts:AssumeRole"
+}
+```
+
+✅ Use case: Only GitHub's CI/CD role can assume this role (used with `OIDC` or service integrations).
+
+---
+
+### 🔐 4. **Allow AssumeRole Only with MFA**
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "arn:aws:iam::123456789012:user/deepak.dev"
+  },
+  "Action": "sts:AssumeRole",
+  "Condition": {
+    "Bool": {
+      "aws:MultiFactorAuthPresent": "true"
+    }
+  }
+}
+```
+
+✅ Use case: Enforce MFA for elevated privilege assumption.
+
+---
+
+### 🔑 5. **Use ExternalId to Protect Against Confused Deputy**
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "AWS": "arn:aws:iam::987654321098:root"
+  },
+  "Action": "sts:AssumeRole",
+  "Condition": {
+    "StringEquals": {
+      "sts:ExternalId": "your-external-client-id"
+    }
+  }
+}
+```
+
+✅ Use case: 3rd-party tool/service (e.g., Terraform Cloud, Snowflake, Datadog) securely assuming the role.
+
+---
+
+### 🌐 6. **Allow Web Identity (OIDC) Token-based Assumption**
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "Federated": "cognito-identity.amazonaws.com"
+  },
+  "Action": "sts:AssumeRoleWithWebIdentity",
+  "Condition": {
+    "StringEquals": {
+      "cognito-identity.amazonaws.com:aud": "identity-pool-id"
+    }
+  }
+}
+```
+
+✅ Use case: Authenticated users from Cognito identity pool can assume this role.
+
+---
+
+## 🛠️ Create Custom Trust Policy – AWS Console Steps
+
+### 🔹 Step-by-Step
+
+1. Go to **IAM → Roles → Create role**
+2. Choose **Custom trust policy** (bottom option)
+3. Paste your custom trust policy JSON
+4. Click **Next**
+5. Attach permissions (e.g., `AmazonS3FullAccess`)
+6. Name the role: `CustomTrustedAccessRole`
+7. Click **Create Role**
+
+---
+
+## 🧠 Real-world Example
+
+### 🔧 Scenario:
+
+You want to allow a specific IAM user (`deepak.dev`) to **assume a role for temporary admin access** — but **only with MFA enabled**.
+
+### ✅ Custom Trust Policy:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::123456789012:user/deepak.dev"
+      },
+      "Action": "sts:AssumeRole",
+      "Condition": {
+        "Bool": {
+          "aws:MultiFactorAuthPresent": "true"
+        }
+      }
+    }
+  ]
+}
+```
+
+Then attach an `AdministratorAccess` permission policy to the role.
+
+---
+
+## 🔎 Use `Policy Simulator` to test the trust
+
+Go to **IAM → Policy Simulator**, simulate an `AssumeRole` action for the user/role in question, and ensure it evaluates to `Allowed`.
+
+---
+
+## 🛡️ Best Practices
+
+| Practice                                 | Why                        |
+| ---------------------------------------- | -------------------------- |
+| ✅ Always restrict Principal              | Avoid wildcards like `"*"` |
+| 🔐 Use Conditions like MFA or ExternalId | Adds security              |
+| 📜 Tag sessions using `sts:TagSession`   | Track usage                |
+| 🔍 Monitor AssumeRole with CloudTrail    | Log role usage             |
+| ⛔ Don't use root user in trust policies  | Use named roles or users   |
+
+---
+
+## 🚀 Summary Table: Trust Policy Options
+
+| Feature                          | Example                                                           |
+| -------------------------------- | ----------------------------------------------------------------- |
+| IAM User (same account)          | `arn:aws:iam::<account>:user/<name>`                              |
+| IAM Role (same or cross-account) | `arn:aws:iam::<account>:role/<name>`                              |
+| AWS Services (e.g., EC2)         | `"Service": "ec2.amazonaws.com"`                                  |
+| ExternalId                       | `Condition → sts:ExternalId`                                      |
+| MFA Enforcement                  | `Condition → aws:MultiFactorAuthPresent: true`                    |
+| Web Identity                     | `Principal → Federated` + `Action: sts:AssumeRoleWithWebIdentity` |
+| SAML                             | `Principal → Federated` + `Action: sts:AssumeRoleWithSAML`        |
+
+---
+
+
+

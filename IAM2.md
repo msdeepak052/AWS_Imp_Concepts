@@ -171,26 +171,6 @@ You can generate **three types** of policies:
 
 ---
 
-## 🧠 Extra from ChatGPT
-
-If you're using **Infrastructure as Code (IaC)** like Terraform or AWS CDK, it's better to:
-
-* Use **inline IAM policy blocks**
-* Manage **custom JSON IAM policies** as separate files
-* Validate with tools like `tflint`, `checkov`, or `AWS Access Analyzer`
-
----
-
-## 🚀 Want More?
-
-I can also generate:
-
-* ✅ Terraform IAM policy generator code
-* ✅ AWS CLI/SDK-based IAM policy commands
-* ✅ YAML version for CloudFormation/CDK
-* ✅ IAM policy generation via ChatGPT prompt!
----
-
 ## 🔎 **What is Policy Evaluation in AWS?**
 
 **Policy Evaluation** is the logic AWS IAM uses to determine whether a request is **allowed or denied** based on all applicable policies. The **IAM Policy Simulator** lets you test and evaluate this logic **before deploying policies**, reducing errors and misconfigurations.
@@ -448,7 +428,7 @@ iamgen -s s3 -a GetObject -r arn:aws:s3:::my-bucket/*
 ---
 
 
-Great choice, Deepak! Let's **package your IAM Policy Generator as a proper CLI tool** with:
+Let's **package your IAM Policy Generator as a proper CLI tool** with:
 
 ✅ Installation as a command-line utility (`iamgen`)
 ✅ Auto-completion for **bash/zsh/fish**

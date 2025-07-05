@@ -870,3 +870,293 @@ You can **combine multiple scaling policies**:
 * Use **Manual Scaling** during testing
 
 ---
+
+## **Auto Scaling Group (ASG) Instance Maintenance Policy** 
+
+---
+
+## 🔍 **What is ASG Instance Maintenance Policy?**
+
+ASG Instance Maintenance Policy defines **how AWS Auto Scaling updates or replaces instances** during operations like:
+
+* **Instance Refresh**
+* **Capacity Rebalancing**
+* **Instance Replacement due to failures**
+
+It controls:
+
+* **Order of actions** (launch vs. terminate first)
+* **Availability vs. cost**
+* **How many instances can be affected at a time**
+
+---
+
+## 🧩 **All Maintenance Policy Options Explained**
+
+AWS offers four predefined behaviors:
+
+---
+
+### 🔸 1. **No Policy (Default) — Mixed Behavior**
+
+* **Behavior:** AWS automatically decides whether to launch first or terminate first.
+* **Goal:** A balance between **cost** and **availability** depending on current conditions.
+* **You don’t configure anything explicitly.**
+
+**Use Case:**
+
+> You’re okay with AWS making smart decisions based on current scaling needs or refresh type.
+
+**Limitations:**
+
+* Less predictable during instance refreshes.
+* You cannot fine-tune the refresh impact.
+
+---
+
+### 🔸 2. **Launch Before Terminating — Prioritize Availability**
+
+* **Behavior:** New instances are launched *before* terminating old ones.
+* **Goal:** Ensure maximum availability — useful for production systems with strict uptime needs.
+* **Temporary capacity** can exceed desired capacity until replacement is complete.
+
+**Example:**
+
+> Desired capacity = 4
+> New instance launched → total = 5
+> Old instance terminated → back to 4
+
+**Use Case:**
+
+> Mission-critical apps (e.g., payment gateways, e-commerce sites)
+
+**Pros:**
+
+* No disruption in traffic.
+* Safer for in-place upgrades (e.g., AMI updates)
+
+**Cons:**
+
+* Slight cost increase (temporary over-provisioning)
+
+---
+
+### 🔸 3. **Terminate Before Launching — Control Costs**
+
+* **Behavior:** Old instances are terminated *before* new ones are launched.
+* **Goal:** Minimize cost by never exceeding the desired capacity.
+* Ideal for **dev, test, or batch workloads**.
+
+**Example:**
+
+> Instance is terminated → desired capacity temporarily drops → new instance is launched → back to normal
+
+**Use Case:**
+
+> Non-critical apps or environments with limited budgets
+
+**Pros:**
+
+* No temporary over-provisioning → cost-efficient
+
+**Cons:**
+
+* Possible temporary performance hit
+
+---
+
+### 🔸 4. **Custom Behavior — Flexible**
+
+You can define:
+
+* `MinHealthyPercentage` — Minimum percentage of healthy instances during operations
+* `MaxHealthyPercentage` — Optional; how much capacity you're willing to temporarily exceed
+* `InstanceWarmup` — Time for new instance to stabilize (before next replacement begins)
+
+**Example:**
+
+| Setting              | Value       |
+| -------------------- | ----------- |
+| Desired Capacity     | 10          |
+| MinHealthyPercentage | 80%         |
+| MaxHealthyPercentage | 120%        |
+| InstanceWarmup       | 300 seconds |
+
+→ AWS keeps at least 8 instances healthy, can go up to 12 if needed, and waits 5 minutes per instance before proceeding.
+
+**Use Case:**
+
+> When you want *fine-grained control* over how aggressively the update happens.
+
+---
+
+## 🧭 **How to Set ASG Instance Maintenance Policy from AWS Console**
+
+### 🔧 Step-by-Step: Configure Maintenance Policy
+
+1. **Go to AWS Console**
+
+   * Navigate to **EC2 > Auto Scaling Groups**
+
+2. **Select your ASG**
+
+3. In the ASG view, click on the **“Instance Management”** tab.
+
+4. Scroll down to **“Instance Maintenance Policy”** section.
+
+5. Click **“Edit”**
+
+6. Choose one of the following:
+
+   * **No Policy (Default)** – leave it unset
+   * **Launch before Terminate**
+   * **Terminate before Launch**
+   * **Custom behavior** – define:
+
+     * Min healthy percentage
+     * Max healthy percentage (optional)
+     * Instance warm-up time
+
+7. **Save Changes**
+
+---
+
+### 🔁 Optional: Trigger an Instance Refresh (to use this policy)
+
+1. Go to the **“Instance Refresh”** tab.
+2. Click **Start Instance Refresh**
+3. Optionally, check:
+
+   * **Skip matching instances**
+   * **Set strategy: Rolling update**
+4. Click **Start**
+
+---
+
+## 📊 Summary Table
+
+| Behavior                | Launch First   | Terminate First | Cost       | Availability | Ideal Use   |
+| ----------------------- | -------------- | --------------- | ---------- | ------------ | ----------- |
+| No Policy               | Mixed          | Mixed           | Medium     | Medium       | General Use |
+| Launch Before Terminate | ✅              | ❌               | Higher     | ✅ High       | Production  |
+| Terminate Before Launch | ❌              | ✅               | ✅ Low      | Lower        | Dev/Test    |
+| Custom                  | ✅ Configurable | ✅ Configurable  | ✅ Flexible | ✅ Flexible   | Mixed       |
+
+---
+
+## 🧠 Extra from ChatGPT: When to Use What?
+
+| Situation              | Recommended Policy                        |
+| ---------------------- | ----------------------------------------- |
+| CI/CD rolling updates  | Launch before Terminate OR Custom         |
+| Nightly batch jobs     | Terminate before Launch                   |
+| Regulated environments | Custom (with high `MinHealthyPercentage`) |
+| Tight budgets          | Terminate before Launch                   |
+
+---
+
+**Terraform** for setting these policies as code
+
+Here’s a **Terraform snippet** to define an **Auto Scaling Group (ASG) with an Instance Maintenance Policy** using all four behavior options. The key block is `instance_maintenance_policy` within the `aws_autoscaling_group` resource.
+
+---
+
+## ✅ **1. Launch Before Terminate – Prioritize Availability**
+
+```hcl
+resource "aws_autoscaling_group" "asg_launch_first" {
+  name                      = "example-asg-launch-first"
+  max_size                  = 5
+  min_size                  = 2
+  desired_capacity          = 3
+  vpc_zone_identifier       = ["subnet-xxxxxx"]
+  launch_template {
+    id      = aws_launch_template.example.id
+    version = "$Latest"
+  }
+
+  instance_maintenance_policy {
+    launch_before_terminate = true
+  }
+}
+```
+
+---
+
+## ✅ **2. Terminate Before Launch – Control Costs**
+
+```hcl
+resource "aws_autoscaling_group" "asg_terminate_first" {
+  name                      = "example-asg-terminate-first"
+  max_size                  = 5
+  min_size                  = 2
+  desired_capacity          = 3
+  vpc_zone_identifier       = ["subnet-xxxxxx"]
+  launch_template {
+    id      = aws_launch_template.example.id
+    version = "$Latest"
+  }
+
+  instance_maintenance_policy {
+    launch_before_terminate = false
+  }
+}
+```
+
+---
+
+## ✅ **3. Custom Behavior – Flexible Control**
+
+```hcl
+resource "aws_autoscaling_group" "asg_custom_policy" {
+  name                      = "example-asg-custom"
+  max_size                  = 6
+  min_size                  = 3
+  desired_capacity          = 4
+  vpc_zone_identifier       = ["subnet-xxxxxx"]
+  launch_template {
+    id      = aws_launch_template.example.id
+    version = "$Latest"
+  }
+
+  instance_maintenance_policy {
+    min_healthy_percentage = 75
+    max_healthy_percentage = 125
+  }
+}
+```
+
+---
+
+## ❌ **4. No Policy – Mixed Behavior (Default)**
+
+If you **omit the `instance_maintenance_policy` block entirely**, AWS applies the default **mixed behavior** (based on internal optimization).
+
+```hcl
+resource "aws_autoscaling_group" "asg_no_policy" {
+  name                      = "example-asg-no-policy"
+  max_size                  = 6
+  min_size                  = 3
+  desired_capacity          = 4
+  vpc_zone_identifier       = ["subnet-xxxxxx"]
+  launch_template {
+    id      = aws_launch_template.example.id
+    version = "$Latest"
+  }
+
+  # No instance_maintenance_policy block = default behavior
+}
+```
+
+---
+
+### 🧠 Notes:
+
+* You **must** use a **Launch Template**, not a Launch Configuration, to configure `instance_maintenance_policy`.
+* This feature requires **Terraform AWS Provider v5.26.0+**.
+* Instance Refresh uses this policy during rolling updates.
+
+---
+
+
+

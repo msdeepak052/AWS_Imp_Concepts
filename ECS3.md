@@ -1107,7 +1107,6 @@ Click **Next** and **Create Service**
 
 ## ✅ Mermaid.js Graph: ECS Fargate Deployment Flow (Generic)
 
-```mermaid
 graph TD
   A[ECS Cluster (Fargate)] --> B[Task Definition]
   B --> C[ECS Service]
@@ -1139,7 +1138,7 @@ graph TD
   style E fill:#f0f8ff,stroke:#1e90ff
   style F fill:#ffffcc,stroke:#999900
   style G fill:#eaeaea,stroke:#666666
-```
+  ```
 
 
 ---

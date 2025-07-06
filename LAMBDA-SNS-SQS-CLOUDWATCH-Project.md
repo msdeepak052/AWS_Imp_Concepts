@@ -225,6 +225,119 @@ def lambda_handler(event, context):
 
 ---
 
+### **Lambda function code** I shared is **fully aligned** with the architecture and steps you described in the project.
+
+---
+
+## 🔄 Alignment with the Architecture
+
+| Project Step                             | Covered in Lambda Code?  | Details                                                               |
+| ---------------------------------------- | ------------------------ | --------------------------------------------------------------------- |
+| **1. File uploaded to S3**               | ✅ (Trigger via SQS)      | S3 sends event to SQS, not handled in Lambda but is part of the flow. |
+| **2. S3 event sent to SQS queue**        | ✅ (via SQS message body) | Lambda extracts S3 bucket/key from the SQS-wrapped event.             |
+| **3. Lambda triggered by SQS**           | ✅                        | Lambda processes each SQS record (event\['Records']).                 |
+| **4.a. Further Logic**                   | ✅                        | Simulates business logic (JSON parsing, key check, etc.).             |
+| **4.b. Failure handling via DLQ**        | ✅                        | Exception raised → DLQ is triggered via SQS + Lambda error handling.  |
+| **5. CloudWatch Logs & Metrics**         | ✅                        | Logs everything via Python logging.                                   |
+| **6. Alerting (CloudWatch Alarm + SNS)** | 🔄 (External setup)      | This is set up via CloudWatch, not in Lambda code.                    |
+| **7. Email alert via SNS topic**         | 🔄 (Console setup)       | Done through SNS + subscription, not Lambda.                          |
+| **Decoupling & serverless benefits**     | ✅                        | Fully decoupled and event-driven using managed services.              |
+
+---
+
+## ✅ Recap of Files and Steps (Using AWS Console)
+
+Here’s the **final list of what you need**, summarized for implementation in the AWS Console:
+
+---
+
+### 📁 Files Required
+
+| File                  | Purpose                                  |
+| --------------------- | ---------------------------------------- |
+| `handler.py`          | Lambda function for processing the file. |
+| `valid_sample.json`   | Test S3 file to trigger success.         |
+| `invalid_sample.json` | Test S3 file to simulate failure (DLQ).  |
+
+#### 📄 `handler.py`
+
+Paste this directly into the Lambda console:
+
+```python
+import json
+import logging
+import boto3
+from botocore.exceptions import ClientError
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+s3_client = boto3.client('s3')
+
+def lambda_handler(event, context):
+    logger.info("Lambda triggered with event: %s", json.dumps(event))
+
+    for record in event['Records']:
+        try:
+            message_body = json.loads(record['body'])
+            s3_info = message_body['Records'][0]['s3']
+            bucket_name = s3_info['bucket']['name']
+            object_key = s3_info['object']['key']
+
+            logger.info(f"New file uploaded to S3: {bucket_name}/{object_key}")
+
+            file_obj = s3_client.get_object(Bucket=bucket_name, Key=object_key)
+            file_content = file_obj['Body'].read().decode('utf-8')
+            logger.info(f"Fetched file content: {file_content[:100]}...")
+
+            # Simulate JSON business logic
+            try:
+                parsed_data = json.loads(file_content)
+                if 'id' not in parsed_data:
+                    raise ValueError("Missing 'id' in file")
+                logger.info(f"Valid file. ID: {parsed_data['id']}")
+
+            except json.JSONDecodeError:
+                logger.error("Invalid JSON format.")
+                raise
+
+            except Exception as ve:
+                logger.error(f"Validation error: {str(ve)}")
+                raise ve
+
+        except Exception as e:
+            logger.error(f"Failed to process message: {str(e)}")
+            raise e
+```
+
+---
+
+### 🛠️ AWS Console Setup Steps Recap
+
+1. **Create S3 Bucket** → `s3-object-upload-bucket`
+2. **Create SQS Queues**
+
+   * `s3-event-queue` (Main queue)
+   * `s3-dlq` (Dead-letter queue, attach to main queue)
+3. **Enable S3 Event Notifications**
+
+   * Trigger on PUT → send to `s3-event-queue`
+4. **Create IAM Role** → `lambda-s3-sqs-role`
+
+   * Attach: `AmazonS3ReadOnlyAccess`, `AmazonSQSFullAccess`, `CloudWatchLogsFullAccess`
+5. **Create Lambda** → `s3-object-processor`
+
+   * Runtime: Python 3.9
+   * Role: `lambda-s3-sqs-role`
+   * Paste code from `handler.py`
+6. **Configure Trigger**
+
+   * Add SQS `s3-event-queue` as event source to Lambda
+7. **CloudWatch Alarm + SNS Setup**
+
+   * Alarm on `s3-dlq` for `ApproximateNumberOfMessagesVisible > 0`
+   * Create SNS Topic → Subscribe via email
+
 ---
 
 ## 🛡️ Key Benefits

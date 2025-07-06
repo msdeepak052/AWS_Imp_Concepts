@@ -911,6 +911,11 @@ If your **Flask app is stored on Docker Hub**, and you want to **deploy it fully
 * Name: `flask-ecs-cluster`
 * Click **Create**
 
+![image](https://github.com/user-attachments/assets/07dcb129-4574-475d-8e9a-3cde27d1f4ce)
+
+![image](https://github.com/user-attachments/assets/5bb2bde0-953a-4e7f-bd88-e25215c89a1b)
+
+
 ---
 
 ### ✅ 4. Create Task Definition
@@ -936,36 +941,88 @@ If your **Flask app is stored on Docker Hub**, and you want to **deploy it fully
 
 Click **Create**
 
+![image](https://github.com/user-attachments/assets/b627978e-877d-4745-8b5d-d0391dd1be35)
+
+![image](https://github.com/user-attachments/assets/a2d84438-c933-4e60-8f78-3ab142130238)
+
+
 ---
 
 ### ✅ 5. Create Application Load Balancer (ALB)
 
-* Go to **EC2 → Load Balancers → Create**
+## 🛠️ Step 5.a: Create Target Group (Before ALB)
 
-* Choose: **Application Load Balancer**
+1. Go to **EC2 → Target Groups**
+2. Click **Create target group**
 
-* Name: `flask-ecs-alb`
+### Configuration:
 
-* Scheme: **Internet-facing**
+| Setting     | Value                                               |
+| ----------- | --------------------------------------------------- |
+| Target type | **IP** ✅ (because ECS Fargate assigns IPs to tasks) |
+| Protocol    | HTTP                                                |
+| Port        | 80                                                  |
+| VPC         | Your ECS VPC (`flask-ecs-vpc`)                      |
+| Name        | `flask-tg`                                          |
 
-* Listeners: HTTP, Port 80
+3. Click **Next**
 
-* Select your VPC
+### Health Check:
 
-* Select 2 public subnets
+| Setting    | Value                       |
+| ---------- | --------------------------- |
+| Path       | `/` (default Flask route)   |
+| Protocol   | HTTP                        |
+| Port       | `traffic port` (default)    |
+| Thresholds | Leave default unless needed |
 
-* **Security Group**: Select `flask-ecs-sg`
+4. Click **Next**
+5. **Don’t register any targets now** — ECS Fargate will register tasks automatically
+6. Click **Create Target Group**
 
-* Target Group:
+✅ Done! You now have a ready `flask-tg` target group.
 
-  * Name: `flask-tg`
-  * Target Type: **IP**
-  * Protocol: **HTTP**
-  * Port: **80**
-  * Health Check Path: `/`
+## 🛠️ Step 5.b: Create Application Load Balancer (ALB)
 
-Click **Create**
+1. Go to **EC2 → Load Balancers**
+2. Click **Create Load Balancer**
+3. Choose **Application Load Balancer**
 
+### Configuration:
+
+| Setting         | Value                                 |
+| --------------- | ------------------------------------- |
+| Name            | `flask-ecs-alb`                       |
+| Scheme          | **Internet-facing**                   |
+| IP address type | ipv4                                  |
+| VPC             | Same as ECS cluster (`flask-ecs-vpc`) |
+| Subnets         | Choose 2 **public subnets**           |
+
+4. Click **Next**
+
+### Security Group:
+
+* Choose or create one that allows:
+
+  * HTTP (Port 80) → Anywhere (0.0.0.0/0)
+
+---
+
+### Listener Configuration:
+
+* Port: 80
+* Protocol: HTTP
+* **Forward to:** select the **Target Group → `flask-tg`**
+
+---
+
+### Final Steps:
+
+* Click **Next**
+* Review everything
+* Click **Create Load Balancer**
+
+⏳ Wait a minute or two — your ALB will be **active**.
 ---
 
 ### ✅ 6. Create ECS Service

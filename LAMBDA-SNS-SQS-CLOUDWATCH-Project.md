@@ -14,6 +14,7 @@ Lambda polls SQS, processes object
         ↓
 Failure? → DLQ → CloudWatch Alarm → SNS Email Alert
 ```
+![image](https://github.com/user-attachments/assets/4e4fa539-6e5b-421f-bf88-759a16744204)
 
 ---
 

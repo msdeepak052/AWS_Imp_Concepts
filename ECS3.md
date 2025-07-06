@@ -1107,7 +1107,40 @@ Click **Next** and **Create Service**
 
 ## ✅ Mermaid.js Graph: ECS Fargate Deployment Flow (Generic)
 
-<pre><code>```mermaid graph TD A[ECS Cluster (Fargate)] --> B[Task Definition] B --> C[ECS Service] C --> D[Target Group (IP)] D --> E[Application Load Balancer (ALB)] E --> F[User Access via DNS] %% VPC Setup (flattened, since subgraphs can be finicky on GitHub) V1[Public Subnets] V2[Security Group (Allow 80/443)] V3[Internet Gateway] %% Networking connections C --> V1 E --> V1 C --> V2 B -.-> G[Docker Image Source\n(Docker Hub / ECR)] G --> B F -.-> H[Browser / Postman / Mobile App] ``` </code></pre>
+```mermaid
+graph TD
+  A[ECS Cluster (Fargate)] --> B[Task Definition]
+  B --> C[ECS Service]
+  C --> D[Target Group (IP)]
+  D --> E[Application Load Balancer (ALB)]
+  E --> F[User Access via DNS]
+
+  subgraph VPC_Setup
+    V1[Public Subnets]
+    V2[Security Group (Allow 80/443)]
+    V3[Internet Gateway]
+  end
+
+  subgraph Networking
+    C --> V1
+    E --> V1
+    C --> V2
+  end
+
+  B -.-> G[Docker Image Source\n(Docker Hub / ECR)]
+  G --> B
+
+  F -.-> H[Browser / Postman / Mobile App]
+
+  style A fill:#d6eaff,stroke:#0e4c92
+  style B fill:#ffe5cc,stroke:#b76d00
+  style C fill:#ffe5f0,stroke:#cc3366
+  style D fill:#e8f6e8,stroke:#2e8b57
+  style E fill:#f0f8ff,stroke:#1e90ff
+  style F fill:#ffffcc,stroke:#999900
+  style G fill:#eaeaea,stroke:#666666
+```
+
 
 ---
 

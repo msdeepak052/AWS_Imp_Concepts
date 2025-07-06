@@ -854,14 +854,14 @@ aws ecs describe-services \
 
 # Hands-On
 
-If your **Flask app is stored on Docker Hub**, and you want to **deploy it fully using AWS Console**, here's the **complete step-by-step guide** to deploy the app on **Amazon ECS Fargate using ECS Task + ECS Service + Load Balancer**, **100% via AWS Console**.
+If your **pythonapp app is stored on Docker Hub**, and you want to **deploy it fully using AWS Console**, here's the **complete step-by-step guide** to deploy the app on **Amazon ECS Fargate using ECS Task + ECS Service + Load Balancer**, **100% via AWS Console**.
 
 ---
 
 ## 🧾 Assumptions
 
 * Docker image: `devopsdktraining/tic-tac-toe-deepak:1` (from Docker Hub)
-* Simple Flask app listens on port 80
+* Simple pythonapp app listens on port 80
 * You want a load-balanced, highly available service
 
 ---
@@ -886,7 +886,7 @@ If your **Flask app is stored on Docker Hub**, and you want to **deploy it fully
 
 * Go to **VPC → Create VPC**
 * Choose “**VPC + 2 public subnets**”
-* Name it: `flask-ecs-vpc`
+* Name it: `pythonapp-ecs-vpc`
 * Enable **DNS Hostnames**
 * Done ✅
 
@@ -895,8 +895,8 @@ If your **Flask app is stored on Docker Hub**, and you want to **deploy it fully
 ### ✅ 2. Create Security Group
 
 * Go to **EC2 → Security Groups → Create**
-* Name: `flask-ecs-sg`
-* VPC: `flask-ecs-vpc`
+* Name: `pythonapp-ecs-sg`
+* VPC: `pythonapp-ecs-vpc`
 * Inbound Rules:
 
   * Type: HTTP, Port 80, Source: Anywhere (0.0.0.0/0)
@@ -908,7 +908,7 @@ If your **Flask app is stored on Docker Hub**, and you want to **deploy it fully
 
 * Go to **ECS → Clusters → Create Cluster**
 * Choose: **Networking only (Fargate)**
-* Name: `flask-ecs-cluster`
+* Name: `pythonapp-ecs-cluster`
 * Click **Create**
 
 ![image](https://github.com/user-attachments/assets/07dcb129-4574-475d-8e9a-3cde27d1f4ce)
@@ -922,7 +922,7 @@ If your **Flask app is stored on Docker Hub**, and you want to **deploy it fully
 
 * Go to **ECS → Task Definitions → Create new task definition**
 * Choose **FARGATE**
-* Name: `flask-task`
+* Name: `pythonapp-task`
 * Task Role: (leave blank or create if needed)
 * Task size:
 
@@ -930,9 +930,9 @@ If your **Flask app is stored on Docker Hub**, and you want to **deploy it fully
   * Memory: `512 (MiB)`
 * **Add container**
 
-  * Name: `flask-container`
-  * Image: `deepakyadav/flask-ecs-app:latest`
-  * Port mappings: `80`
+  * Name: `pythonapp-tictactoe-deepak`
+  * Image: `devopsdktraining/tic-tac-toe-deepak:1`
+  * Port mappings: `5000`
 
 💡 Optional:
 
@@ -944,6 +944,8 @@ Click **Create**
 ![image](https://github.com/user-attachments/assets/b627978e-877d-4745-8b5d-d0391dd1be35)
 
 ![image](https://github.com/user-attachments/assets/a2d84438-c933-4e60-8f78-3ab142130238)
+
+![image](https://github.com/user-attachments/assets/98f07b06-8138-47b6-a006-d5eb4079e5aa)
 
 
 ---
@@ -962,8 +964,8 @@ Click **Create**
 | Target type | **IP** ✅ (because ECS Fargate assigns IPs to tasks) |
 | Protocol    | HTTP                                                |
 | Port        | 80                                                  |
-| VPC         | Your ECS VPC (`flask-ecs-vpc`)                      |
-| Name        | `flask-tg`                                          |
+| VPC         | Your ECS VPC (`pythonapp-ecs-vpc`)                      |
+| Name        | `pythonapp-ecs-tg`                                          |
 
 3. Click **Next**
 
@@ -971,7 +973,7 @@ Click **Create**
 
 | Setting    | Value                       |
 | ---------- | --------------------------- |
-| Path       | `/` (default Flask route)   |
+| Path       | `/` (default pythonapp route)   |
 | Protocol   | HTTP                        |
 | Port       | `traffic port` (default)    |
 | Thresholds | Leave default unless needed |
@@ -980,7 +982,12 @@ Click **Create**
 5. **Don’t register any targets now** — ECS Fargate will register tasks automatically
 6. Click **Create Target Group**
 
-✅ Done! You now have a ready `flask-tg` target group.
+✅ Done! You now have a ready `pythonapp-ecs-tg` target group.
+
+![image](https://github.com/user-attachments/assets/618e5388-30cb-45c3-9d3e-ecf3a34e30d0)
+
+![image](https://github.com/user-attachments/assets/a5cf9c50-5485-48ca-a063-2bff6d334e03)
+
 
 ## 🛠️ Step 5.b: Create Application Load Balancer (ALB)
 
@@ -992,10 +999,10 @@ Click **Create**
 
 | Setting         | Value                                 |
 | --------------- | ------------------------------------- |
-| Name            | `flask-ecs-alb`                       |
+| Name            | `pythonapp-ecs-alb`                       |
 | Scheme          | **Internet-facing**                   |
 | IP address type | ipv4                                  |
-| VPC             | Same as ECS cluster (`flask-ecs-vpc`) |
+| VPC             | Same as ECS cluster (`pythonapp-ecs-vpc`) |
 | Subnets         | Choose 2 **public subnets**           |
 
 4. Click **Next**
@@ -1006,13 +1013,21 @@ Click **Create**
 
   * HTTP (Port 80) → Anywhere (0.0.0.0/0)
 
+![image](https://github.com/user-attachments/assets/7f5e44bb-9677-4064-a389-467e95ced398)
+
+![image](https://github.com/user-attachments/assets/63eb9a1a-3c1f-4003-8904-28ba6c14d383)
+
+
 ---
 
 ### Listener Configuration:
 
 * Port: 80
 * Protocol: HTTP
-* **Forward to:** select the **Target Group → `flask-tg`**
+* **Forward to:** select the **Target Group → `pythonapp-tg`**
+
+![image](https://github.com/user-attachments/assets/16d198cb-62c6-4b59-b677-df59246a2bb8)
+
 
 ---
 
@@ -1027,44 +1042,50 @@ Click **Create**
 
 ### ✅ 6. Create ECS Service
 
-* Go to **ECS → Clusters → flask-ecs-cluster → Services → Create**
+* Go to **ECS → Clusters → pythonapp-ecs-cluster → Services → Create**
 * Launch type: **FARGATE**
-* Task Definition: `flask-task`
-* Service name: `flask-service`
-* Desired count: `1` (you can scale later)
+* Task Definition: `pythonapp-ecs-task`
+* Service name: `python-app-deepak-service-xn2cvlev`
+* Desired count: `2` (you can scale later)
 * Networking:
 
-  * VPC: `flask-ecs-vpc`
+  * VPC: `pythonapp-ecs-vpc`
   * Subnets: choose 2 public subnets
-  * Security Group: `flask-ecs-sg`
+  * Security Group: `pythonapp-ecs-sg`
   * Auto-assign public IP: ✅ enabled
 
 **Load Balancing:**
 
 * Enable Application Load Balancer ✅
-* Choose: `flask-ecs-alb`
+* Choose: `pythonapp-ecs-alb`
 * Listener: Port 80: default
-* Target group: `flask-tg`
-* Container to register: `flask-container`
+* Target group: `pythonapp-tg`
+* Container to register: `pythonapp-container`
 * Port: `80`
 
 Click **Next** and **Create Service**
+
+![image](https://github.com/user-attachments/assets/5c2cd3a8-e020-4f9d-bd14-442070bd41b4)
+
 
 ---
 
 ## 🔍 Step 7: Verify
 
-* Go to **ECS → Cluster → flask-ecs-cluster → Services**
+* Go to **ECS → Cluster → pythonapp-ecs-cluster → Services**
 * Check task status is **RUNNING**
-* Go to **EC2 → Load Balancer → flask-ecs-alb**
+* Go to **EC2 → Load Balancer → pythonapp-ecs-alb**
 * Copy **DNS name**
 * Open in browser
 
+![image](https://github.com/user-attachments/assets/f51f10ba-741e-4918-801c-ead10cce4a5a)
+
+![image](https://github.com/user-attachments/assets/23f76d95-b52e-4180-8774-c814207a3806)
+
 ➡️ You should see:
 
-```bash
-🚀 Hello from Flask App on ECS Fargate!
-```
+![image](https://github.com/user-attachments/assets/40b4d458-68dc-4f19-bf65-e667d2ece62c)
+
 
 ---
 
@@ -1072,18 +1093,70 @@ Click **Next** and **Create Service**
 
 | Component       | Value                              |
 | --------------- | ---------------------------------- |
-| ECS Cluster     | flask-ecs-cluster                  |
-| Task Definition | flask-task                         |
-| Container Image | `deepakyadav/flask-ecs-app:latest` |
-| ECS Service     | flask-service                      |
-| Load Balancer   | flask-ecs-alb                      |
-| Target Group    | flask-tg                           |
+| ECS Cluster     | pythonapp-ecs-cluster                  |
+| Task Definition | pythonapp-task                         |
+| Container Image | `deepakyadav/pythonapp-ecs-app:latest` |
+| ECS Service     | pythonapp-service                      |
+| Load Balancer   | pythonapp-ecs-alb                      |
+| Target Group    | pythonapp-tg                           |
 | VPC/Subnets     | Public VPC                         |
 | Security Group  | Allows HTTP (80)                   |
-| Result          | Public URL running your Flask app  |
+| Result          | Public URL running your pythonapp app  |
 
 ---
 
+## ✅ Mermaid.js Graph: ECS Fargate Deployment Flow (Generic)
+
+```mermaid
+graph TD
+  A[ECS Cluster (Fargate)] --> B[Task Definition]
+  B --> C[ECS Service]
+  C --> D[Target Group (IP)]
+  D --> E[Application Load Balancer (ALB)]
+  E --> F[User Access via DNS]
+
+  subgraph VPC Setup
+    V1[Public Subnets]
+    V2[Security Group (Allow 80/443)]
+    V3[Internet Gateway]
+  end
+
+  subgraph Networking
+    C --> V1
+    E --> V1
+    C --> V2
+  end
+
+  B -.-> G[Docker Image Source<br>(Docker Hub / ECR)]
+  G --> B
+
+  F -.-> H[Browser / Postman / Mobile App]
+
+  style A fill:#d6eaff,stroke:#0e4c92
+  style B fill:#ffe5cc,stroke:#b76d00
+  style C fill:#ffe5f0,stroke:#cc3366
+  style D fill:#e8f6e8,stroke:#2e8b57
+  style E fill:#f0f8ff,stroke:#1e90ff
+  style F fill:#ffffcc,stroke:#999900
+  style G fill:#eaeaea,stroke:#666666
+```
+
+---
+
+## 🧭 Flow Breakdown
+
+| Step | Resource                  | Description                                                                    |
+| ---- | ------------------------- | ------------------------------------------------------------------------------ |
+| A    | **ECS Cluster (Fargate)** | Logical group to run services                                                  |
+| B    | **Task Definition**       | Defines container specs (image, CPU, memory, ports)                            |
+| C    | **ECS Service**           | Keeps desired task count running, connects to ALB                              |
+| D    | **Target Group (IP)**     | Used by ALB to route traffic to Fargate IPs                                    |
+| E    | **ALB**                   | Exposes the app to the internet                                                |
+| F    | **User Access (DNS)**     | ALB DNS endpoint accessed via browser, API client, etc.                        |
+| G    | **Docker Image**          | From Docker Hub or ECR, used by task definition                                |
+| VPC  | **VPC Networking**        | Must have public subnets, internet access, and security group with port 80/443 |
+
+---
 
 
 

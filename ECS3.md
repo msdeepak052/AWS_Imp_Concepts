@@ -1125,7 +1125,7 @@ graph TD
     E --> V1
     C --> V2
 
-    B -.-> G["Docker Image Source\n(Docker Hub/ECR)"]
+    B -.-> G["Docker Image Source<br/>(Docker Hub/ECR)"]
     G --> B
 
     F -.-> H["Browser/Postman/Mobile App"]

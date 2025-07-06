@@ -1127,7 +1127,7 @@ graph TD
     C --> V2
   end
 
-  B -.-> G[Docker Image Source<br>(Docker Hub / ECR)]
+  B -.-> G[Docker Image Source\n(Docker Hub / ECR)]
   G --> B
 
   F -.-> H[Browser / Postman / Mobile App]

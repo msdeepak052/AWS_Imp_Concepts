@@ -28,6 +28,9 @@ ECS encryption focuses on:
 
 ## 🔒 Types of ECS Encryption
 
+![image](https://github.com/user-attachments/assets/5f5ae4f7-3978-4a78-9db9-484a53ff40f4)
+
+
 ### 1. **Task Storage Encryption (Fargate)**
 
 #### 🔹 What is it?

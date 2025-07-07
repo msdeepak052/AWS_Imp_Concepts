@@ -262,7 +262,7 @@ sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-c
 # Part 5: Networking Configuration
 echo "Configuring firewall..."
 sudo systemctl enable --now firewalld
-sudo firewall-cmd --add-port=80/tcp --permanent
+sudo firewall-cmd --add-port=5000/tcp --permanent
 sudo firewall-cmd --reload
 
 # Part 6: Service Configuration
@@ -279,7 +279,7 @@ User=ec2-user
 Group=ec2-user
 WorkingDirectory=/home/ec2-user/web-ui
 Environment="PATH=/usr/local/bin:/usr/bin:/bin"
-ExecStart=/usr/local/bin/gunicorn -b 0.0.0.0:80 app:app
+ExecStart=/usr/local/bin/gunicorn -b 0.0.0.0:5000 app:app
 Restart=always
 RestartSec=5
 StandardOutput=file:/var/log/s3upload.log

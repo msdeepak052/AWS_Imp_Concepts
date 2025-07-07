@@ -165,11 +165,15 @@ Missing Line - To broadcast the messages of a message-producer system (for examp
          print("SNS Message Received:", event)
          return {"statusCode": 200}
      ```
+![image](https://github.com/user-attachments/assets/db1653f8-30f2-4309-9a1b-557270e90a50)
 
 2. Back in SNS, create subscription
 3. Protocol: "AWS Lambda"
 4. Endpoint: Select your Lambda function
 5. Click "Create subscription"
+
+![image](https://github.com/user-attachments/assets/6f0fa34c-14c2-48ec-a869-1e7d862417ab)
+
 
 ### Step 3: Publish a Message
 
@@ -183,6 +187,11 @@ Missing Line - To broadcast the messages of a message-producer system (for examp
 ![image](https://github.com/user-attachments/assets/e629a571-c5d3-4280-9226-74e52d1c457d)
 ![image](https://github.com/user-attachments/assets/2db01f8e-e56c-42cf-82fb-3bdac8dec7ce)
 ![image](https://github.com/user-attachments/assets/479cf15a-6185-4aa2-8cce-060d8ce5cd34)
+
+### Lambda
+![image](https://github.com/user-attachments/assets/1b653b19-fd88-462f-bf71-059b5a6376d7)
+
+![image](https://github.com/user-attachments/assets/2e6e6709-7241-4197-9a06-5f3a307008b2)
 
 
 ### Step 4: Verify Deliveries

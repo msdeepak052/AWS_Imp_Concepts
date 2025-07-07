@@ -1,11 +1,6 @@
 # Project - S3 → SQS → Lambda → DLQ + CloudWatch + SNS
 
-Here’s a **complete guide using AWS Console (no Terraform/CLI)** to implement the serverless architecture:
-📦 **Web-UI** → **S3 → SQS → Lambda → DLQ + CloudWatch + SNS**.
-
----
-
-## **Complete Project: EC2 UI → S3 → SQS → Lambda → DLQ + CloudWatch + SNS**
+### **Complete Project: 📦 **Web-UI** → **S3 → SQS → Lambda → DLQ + CloudWatch + SNS**.
 
 ## 🌐 End-to-End Architecture
 

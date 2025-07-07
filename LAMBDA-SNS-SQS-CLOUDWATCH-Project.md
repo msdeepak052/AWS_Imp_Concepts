@@ -770,6 +770,15 @@ def lambda_handler(event, context):
 2. Go to **CloudWatch Logs → Log groups → /aws/lambda/s3-object-processor**
 3. Check logs to see Lambda has processed the message.
 
+![image](https://github.com/user-attachments/assets/43a5fdeb-f146-45be-aa99-f2677bc905e6)
+
+![image](https://github.com/user-attachments/assets/59698ada-e274-4d51-80c5-3faa3161e010)
+
+![image](https://github.com/user-attachments/assets/6ef965a1-3668-4ce2-9783-0c153b8c287a)
+
+![image](https://github.com/user-attachments/assets/de294c5c-26a5-4802-b9de-80cb82beccf5)
+
+
 ---
 
 ### 🔹 Step 8: CloudWatch Alarm for DLQ
@@ -783,6 +792,14 @@ def lambda_handler(event, context):
 4. Evaluation period: 1 of 1 minute
 5. Next → Create a new SNS topic (if not created)
 
+![image](https://github.com/user-attachments/assets/1b241dd1-cc87-494b-a010-e57e98570463)
+
+![image](https://github.com/user-attachments/assets/1fe10655-a586-4577-a18a-3022e3a45c6b)
+
+![image](https://github.com/user-attachments/assets/a48749b6-2952-46f2-bf21-ba107b9bf0ed)
+
+![image](https://github.com/user-attachments/assets/4ac675bb-4b8f-4fad-b402-18063d379783)
+
 ---
 
 ### 🔹 Step 9: SNS Topic for Alerts
@@ -791,8 +808,21 @@ def lambda_handler(event, context):
 2. Create subscription:
 
    * Protocol: **Email**
-   * Endpoint: [your-email@example.com](mailto:your-email@example.com)
+   * Endpoint: [your-email@example.com](mailto:yadav.deepak012@gmail.com)
+
 3. Confirm email subscription via inbox
+
+![image](https://github.com/user-attachments/assets/5d0cf0f5-7552-45eb-b227-c8a38698a3f1)
+
+![image](https://github.com/user-attachments/assets/3c8fe37c-30e2-47de-97eb-50d854c8d8a7)
+
+![image](https://github.com/user-attachments/assets/079a9929-2d0a-4d1d-bd11-9deb07ff7b8c)
+
+![image](https://github.com/user-attachments/assets/8c8e8b0b-da4c-45b3-bee2-450a8b3fc12f)
+
+![image](https://github.com/user-attachments/assets/a1250e97-20b5-43b1-a92e-30043a375a81)
+
+![image](https://github.com/user-attachments/assets/5d8b858c-b028-4e95-bf16-5c625ee95c88)
 
 ---
 

@@ -1,4 +1,4 @@
-# Project - S3 → SQS → Lambda → DLQ + CloudWatch + SNS
+![image](https://github.com/user-attachments/assets/36ac4fa9-5a39-4380-b61e-9e23a8c0f8cf)# Project - S3 → SQS → Lambda → DLQ + CloudWatch + SNS
 
 Here’s a **complete guide using AWS Console (no Terraform/CLI)** to implement the serverless architecture:
 📦 **Web-UI** → **S3 → SQS → Lambda → DLQ + CloudWatch + SNS**.
@@ -145,6 +145,7 @@ gunicorn -b 0.0.0.0:80 app:app &
 
 # Create web application directory structure
 mkdir -p /home/ec2-user/web-ui/templates
+sudo chown -R ec2-user:ec2-user /home/ec2-user/web-ui
 
 # Create requirements.txt
 cat > /home/ec2-user/web-ui/requirements.txt << 'EOF'
@@ -156,7 +157,7 @@ EOF
 
 # Update system and install dependencies
 sudo yum update -y
-sudo yum install -y python3 python3-pip
+sudo yum install -y python3 python3-pip  firewalld
 
 # Install Python dependencies
 sudo pip3 install -r /home/ec2-user/web-ui/requirements.txt
@@ -251,6 +252,12 @@ sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-c
 # Start application (as ec2-user)
 sudo -u ec2-user bash -c 'cd /home/ec2-user/web-ui && gunicorn -b 0.0.0.0:80 app:app > app.log 2>&1 &'
 
+# Configure firewall
+sudo systemctl enable firewalld
+sudo systemctl start firewalld
+sudo firewall-cmd --add-port=80/tcp --permanent
+sudo firewall-cmd --reload
+
 # Configure automatic restart on reboot
 cat > /etc/systemd/system/s3upload.service << 'EOF'
 [Unit]
@@ -267,12 +274,18 @@ Restart=always
 WantedBy=multi-user.target
 EOF
 
+sudo systemctl daemon-reload
 systemctl enable s3upload.service
 systemctl start s3upload.service
 
 # Update firewall rules
 sudo firewall-cmd --add-port=80/tcp --permanent
 sudo firewall-cmd --reload
+
+# Simple status check
+echo "Installation complete!"
+echo "Service status:"
+sudo systemctl status s3upload.service --no-pager
 
 ```
 
@@ -281,6 +294,14 @@ sudo firewall-cmd --reload
 #### **1.5 Configure Security Group**
 1. Edit EC2 security group
 2. Add inbound rule: **HTTP (80)** from `0.0.0.0/0`
+
+---
+- Screenshots
+
+![image](https://github.com/user-attachments/assets/0ccda73c-d207-49ed-b8ec-d93e10cc296c)
+
+![image](https://github.com/user-attachments/assets/44622bd3-045d-4384-b3c0-a0e0b2fb2a67)
+
 
 ---
 
@@ -300,10 +321,24 @@ sudo firewall-cmd --reload
 5. **Role name**: `EC2-S3-Upload-Access`
 6. Click **Create role**
 
+![image](https://github.com/user-attachments/assets/049c039f-ee5d-4c60-9871-551f8eafae01)
+
+![image](https://github.com/user-attachments/assets/e5b9857d-119d-4540-9df8-6b7547d93e1c)
+
+![image](https://github.com/user-attachments/assets/259971ed-3aa9-4bb1-a3b2-cd6543cb7589)
+
+
+
+---
 ### **2. Attach Role to EC2 Instance**
 1. Go to **EC2 Console** → Select your instance (`s3-upload-ui`)
 2. **Actions** → **Security** → **Modify IAM role**
 3. Select `EC2-S3-Upload-Access` → **Update IAM role**
+
+![image](https://github.com/user-attachments/assets/80b0303e-439c-483e-b80d-a4641dbc344b)
+
+![image](https://github.com/user-attachments/assets/7978af3e-9edb-447a-b9a6-3789c8ec860b)
+
 
 ### **3. Verify Role in EC2 (SSH)**
 ```bash

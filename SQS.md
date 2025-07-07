@@ -182,6 +182,25 @@ exports.handler = async (event) => {
     return { statusCode: 200, body: 'Processed messages' };
 };
 ```
+
+```python
+
+import json
+
+def lambda_handler(event, context):
+    print("Processing order:", json.dumps(event, indent=2))
+    
+    for record in event['Records']:
+        body = json.loads(record['body'])
+        print("Order ID:", body['orderId'])
+        # Add your processing logic here
+        
+    return {
+        'statusCode': 200,
+        'body': 'Processed messages'
+    }
+
+```
 4. In the Lambda configuration, click "Add trigger"
 5. Select "SQS"
 6. Choose your `OrderProcessing.fifo` queue

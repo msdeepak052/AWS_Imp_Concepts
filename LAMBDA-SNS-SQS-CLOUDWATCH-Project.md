@@ -574,6 +574,10 @@ Failure? → DLQ → CloudWatch Alarm → SNS Email Alert
 3. Disable “Block all public access” (for simplicity in dev)
 4. Create the bucket
 
+![image](https://github.com/user-attachments/assets/974a86b2-9797-43c6-809f-52cee806ba0f)
+
+![image](https://github.com/user-attachments/assets/a000fd00-5ea8-455c-a35f-d97e56a7ced0)
+
 ---
 
 ### 🔹 Step 2: Create SQS Queues (Main + DLQ)
@@ -585,6 +589,9 @@ Failure? → DLQ → CloudWatch Alarm → SNS Email Alert
 3. Type: **Standard**
 4. Leave rest default → Create
 
+![image](https://github.com/user-attachments/assets/2b1ff913-f92b-433d-bddb-76bb454df8cb)
+
+
 #### 2.2 Create Main Queue
 
 1. Go back to **SQS → Create queue**
@@ -595,7 +602,51 @@ Failure? → DLQ → CloudWatch Alarm → SNS Email Alert
    * Enable DLQ
    * Select `s3-dlq`
    * Set maxReceiveCount = `2`
+
+5. Click "Access Policy" tab
+6. Add This Policy (replace REGION and ACCOUNT_ID with your values):
+
+```json
+
+{
+  "Version": "2012-10-17",
+  "Id": "__default_policy_ID",
+  "Statement": [
+    {
+      "Sid": "__owner_statement",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::339712902352:root"
+      },
+      "Action": "SQS:*",
+      "Resource": "arn:aws:sqs:ap-south-1:xxxxxxxxx:s3-event-queue"
+    },
+    {
+      "Sid": "allow-s3-notifications",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "s3.amazonaws.com"
+      },
+      "Action": "SQS:SendMessage",
+      "Resource": "arn:aws:sqs:ap-south-1:339xxxxxx:s3-event-queue",
+      "Condition": {
+        "ArnLike": {
+          "aws:SourceArn": "arn:aws:s3:*:*:s3-object-upload-bucket"
+        }
+      }
+    }
+  ]
+}
+
+```
 5. Create the queue
+
+![image](https://github.com/user-attachments/assets/859e6bbb-a85d-4939-85e2-5eb0b89967c1)
+
+![image](https://github.com/user-attachments/assets/d381fe51-3f2e-43c5-8167-423c2f6521c0)
+
+![image](https://github.com/user-attachments/assets/b5e524e0-ec9d-482d-9e20-38146d4717e4)
+
 
 ---
 
@@ -608,6 +659,11 @@ Failure? → DLQ → CloudWatch Alarm → SNS Email Alert
 5. Destination: **SQS Queue**
 6. Choose `s3-event-queue`
 7. Save
+
+![image](https://github.com/user-attachments/assets/983a5474-c8cf-4078-835d-10774c0a09aa)
+
+![image](https://github.com/user-attachments/assets/95512b24-c130-4ea5-97da-75d5dc740e7b)
+
 
 ---
 

@@ -5,10 +5,6 @@ Here’s a **complete guide using AWS Console (no Terraform/CLI)** to implement 
 
 ---
 
-Here's the complete implementation guide with your EC2-hosted UI addition, including all files, steps, and a Mermaid flowchart:
-
----
-
 # **Complete Project: EC2 UI → S3 → SQS → Lambda → DLQ + CloudWatch + SNS**
 
 ## 🌐 End-to-End Architecture
@@ -144,7 +140,7 @@ gunicorn -b 0.0.0.0:80 app:app &
 
 ---
 
-### 🔹 **Part 2: S3/SQS/Lambda Setup (Follow Previous Steps)**
+### 🔹 **Part 2: S3/SQS/Lambda Setup (Follow Below Steps)**
 
 1. **S3 Bucket**: `s3-object-upload-bucket` (as before)
 2. **SQS Queues**: 

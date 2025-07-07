@@ -139,35 +139,40 @@ gunicorn -b 0.0.0.0:80 app:app &
 
 ```bash
 #!/bin/bash
-# EC2 User Data Script - Auto-deploys S3 Upload Web UI
+# EC2 User Data Script - Robust S3 Upload Web UI Deployment
 # This will run automatically when the instance launches
 
+# Set error handling
+set -euo pipefail
 
-# Create web application directory structure
-mkdir -p /home/ec2-user/web-ui/templates
-sudo chown -R ec2-user:ec2-user /home/ec2-user/web-ui
+# Part 1: System Configuration
+echo "Updating system and installing dependencies..."
+sudo yum update -y
+sudo yum install -y python3 python3-pip firewalld
 
-# Create requirements.txt
-cat > /home/ec2-user/web-ui/requirements.txt << 'EOF'
+# Part 2: Application Setup
+echo "Setting up application directory structure..."
+APP_DIR="/home/ec2-user/web-ui"
+mkdir -p "${APP_DIR}/templates"
+cd "${APP_DIR}"
+
+# Create requirements.txt with pinned versions
+cat > requirements.txt << 'EOF'
 flask==2.3.2
 boto3==1.28.21
 gunicorn==21.2.0
 werkzeug==2.3.7
 EOF
 
-# Update system and install dependencies
-sudo yum update -y
-sudo yum install -y python3 python3-pip  firewalld
-
 # Install Python dependencies
-sudo pip3 install -r /home/ec2-user/web-ui/requirements.txt
+echo "Installing Python dependencies..."
+sudo pip3 install -r requirements.txt
 
 # Create Flask application
-cat > /home/ec2-user/web-ui/app.py << 'EOF'
+cat > app.py << 'EOF'
 from flask import Flask, render_template, request, flash
 import boto3
 from werkzeug.utils import secure_filename
-import os
 
 app = Flask(__name__)
 app.secret_key = "super-secret-key"
@@ -194,7 +199,7 @@ if __name__ == '__main__':
 EOF
 
 # Create HTML template
-cat > /home/ec2-user/web-ui/templates/index.html << 'EOF'
+cat > templates/index.html << 'EOF'
 <!DOCTYPE html>
 <html>
 <head>
@@ -204,7 +209,6 @@ cat > /home/ec2-user/web-ui/templates/index.html << 'EOF'
 <body class="p-4">
     <div class="container">
         <h1 class="mb-4">Upload File to S3</h1>
-        
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -212,7 +216,6 @@ cat > /home/ec2-user/web-ui/templates/index.html << 'EOF'
                 {% endfor %}
             {% endif %}
         {% endwith %}
-
         <form method="post" enctype="multipart/form-data">
             <div class="mb-3">
                 <input class="form-control" type="file" name="file" required>
@@ -224,13 +227,15 @@ cat > /home/ec2-user/web-ui/templates/index.html << 'EOF'
 </html>
 EOF
 
-# Set permissions
-chown -R ec2-user:ec2-user /home/ec2-user/web-ui
-chmod -R 755 /home/ec2-user/web-ui
+# Part 3: Permissions and Security
+echo "Setting permissions..."
+sudo chown -R ec2-user:ec2-user "${APP_DIR}"
+sudo chmod -R 755 "${APP_DIR}"
 
-# Install and configure CloudWatch Agent for logging (optional)
+# Part 4: CloudWatch Agent Configuration
+echo "Configuring CloudWatch Agent..."
 sudo yum install -y amazon-cloudwatch-agent
-cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'EOF'
+sudo tee /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json > /dev/null << 'EOF'
 {
     "logs": {
         "logs_collected": {
@@ -240,6 +245,11 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'EOF'
                         "file_path": "/home/ec2-user/web-ui/*.log",
                         "log_group_name": "EC2S3UploadUI",
                         "log_stream_name": "{instance_id}"
+                    },
+                    {
+                        "file_path": "/var/log/s3upload.log",
+                        "log_group_name": "EC2S3UploadUI",
+                        "log_stream_name": "{instance_id}-service"
                     }
                 ]
             }
@@ -249,44 +259,46 @@ cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'EOF'
 EOF
 sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
 
-# Start application (as ec2-user)
-sudo -u ec2-user bash -c 'cd /home/ec2-user/web-ui && gunicorn -b 0.0.0.0:80 app:app > app.log 2>&1 &'
-
-# Configure firewall
-sudo systemctl enable firewalld
-sudo systemctl start firewalld
+# Part 5: Networking Configuration
+echo "Configuring firewall..."
+sudo systemctl enable --now firewalld
 sudo firewall-cmd --add-port=80/tcp --permanent
 sudo firewall-cmd --reload
 
-# Configure automatic restart on reboot
-cat > /etc/systemd/system/s3upload.service << 'EOF'
+# Part 6: Service Configuration
+echo "Configuring systemd service..."
+sudo tee /etc/systemd/system/s3upload.service > /dev/null << 'EOF'
 [Unit]
 Description=S3 Upload Web UI
 After=network.target
+StartLimitIntervalSec=30
+StartLimitBurst=5
 
 [Service]
 User=ec2-user
+Group=ec2-user
 WorkingDirectory=/home/ec2-user/web-ui
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
 ExecStart=/usr/local/bin/gunicorn -b 0.0.0.0:80 app:app
 Restart=always
+RestartSec=5
+StandardOutput=file:/var/log/s3upload.log
+StandardError=file:/var/log/s3upload-error.log
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
+# Part 7: Final Deployment
+echo "Starting services..."
 sudo systemctl daemon-reload
-systemctl enable s3upload.service
-systemctl start s3upload.service
+sudo systemctl enable --now s3upload.service
 
-# Update firewall rules
-sudo firewall-cmd --add-port=80/tcp --permanent
-sudo firewall-cmd --reload
-
-# Simple status check
+# Verification
 echo "Installation complete!"
+echo "Web UI should be available at: http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
 echo "Service status:"
 sudo systemctl status s3upload.service --no-pager
-
 ```
 
 ---

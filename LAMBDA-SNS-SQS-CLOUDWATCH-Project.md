@@ -440,6 +440,9 @@ If you want least-privilege access, use this custom policy instead of `AmazonS3F
 
 This completes the secure EC2+S3 integration with proper IAM roles! 🎉
 
+![image](https://github.com/user-attachments/assets/8dd2ae56-01c5-4e3a-a78f-a6209b8d45ff)
+
+
 ---
 
 ### 🔹 **Part 2: S3/SQS/Lambda Setup (Follow Below Steps)**

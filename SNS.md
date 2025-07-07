@@ -4,6 +4,11 @@
 
 Amazon Simple Notification Service (SNS) is a fully managed pub/sub messaging service that enables you to decouple microservices, distributed systems, and serverless applications. It allows you to send messages or notifications to a large number of subscribers (endpoints) through various protocols.
 
+![image](https://github.com/user-attachments/assets/92396279-4c7c-41c3-bed7-cfab632787c7)
+
+![image](https://github.com/user-attachments/assets/cd6405c4-2973-4baa-94b6-64b214afab47)
+
+
 ## 🔹 **Core Concepts of Amazon SNS**
 
 | Term                   | Description                                                                                |
@@ -38,6 +43,13 @@ Amazon Simple Notification Service (SNS) is a fully managed pub/sub messaging se
 | `SubscriptionFilterPolicy` | Filters messages by attribute to specific subscribers |
 | `AccessPolicy`             | Controls who can publish or subscribe                 |
 
+---
+
+![image](https://github.com/user-attachments/assets/d3e51fd5-2c7f-4a99-9fcb-2e06fb4b9190)
+
+---
+
+Missing Line - To broadcast the messages of a message-producer system (for example, an e-commerce website) working with multiple other services that require its messages (for example, checkout and fulfillment systems), you can create a topic for your producer system.
 
 ## Key Features
 
@@ -110,6 +122,9 @@ Amazon Simple Notification Service (SNS) is a fully managed pub/sub messaging se
 5. Enter name (e.g., "OrderNotifications")
 6. Click "Create topic"
 
+![image](https://github.com/user-attachments/assets/3112192a-ad08-407b-9489-148a4573edd3)
+
+
 ### Step 2: Create Subscriptions
 
 #### Email Subscription:
@@ -119,11 +134,23 @@ Amazon Simple Notification Service (SNS) is a fully managed pub/sub messaging se
 4. Click "Create subscription"
 5. Check your email and confirm the subscription
 
+![image](https://github.com/user-attachments/assets/a5dad6ba-6e48-4088-9013-5ffd0039fb5c)
+
+![image](https://github.com/user-attachments/assets/4126f238-1869-4ea8-afe8-4946a9288738)
+
+![image](https://github.com/user-attachments/assets/8de48018-2196-4c0f-b04d-4531f3697614)
+
+![image](https://github.com/user-attachments/assets/69b74cf2-f9ed-4118-93c3-596a75844427)
+
+
 #### SMS Subscription:
 1. Click "Create subscription"
 2. Protocol: "SMS"
 3. Endpoint: Enter your phone number with country code (e.g., +15551234567)
 4. Click "Create subscription"
+
+![image](https://github.com/user-attachments/assets/d9d882c5-298a-4ce1-a920-b87183a144da)
+
 
 #### Lambda Subscription:
 1. First create a Lambda function (skip if you have one)
@@ -152,6 +179,11 @@ Amazon Simple Notification Service (SNS) is a fully managed pub/sub messaging se
 4. (Optional) Add message attributes:
    - Name: "priority", Type: "String", Value: "high"
 5. Click "Publish message"
+
+![image](https://github.com/user-attachments/assets/e629a571-c5d3-4280-9226-74e52d1c457d)
+![image](https://github.com/user-attachments/assets/2db01f8e-e56c-42cf-82fb-3bdac8dec7ce)
+![image](https://github.com/user-attachments/assets/479cf15a-6185-4aa2-8cce-060d8ce5cd34)
+
 
 ### Step 4: Verify Deliveries
 

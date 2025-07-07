@@ -142,13 +142,24 @@ gunicorn -b 0.0.0.0:80 app:app &
 # EC2 User Data Script - Auto-deploys S3 Upload Web UI
 # This will run automatically when the instance launches
 
-# Update system and install dependencies
-sudo yum update -y
-sudo yum install -y python3 python3-pip
-sudo pip3 install flask boto3 gunicorn
 
 # Create web application directory structure
 mkdir -p /home/ec2-user/web-ui/templates
+
+# Create requirements.txt
+cat > /home/ec2-user/web-ui/requirements.txt << 'EOF'
+flask==2.3.2
+boto3==1.28.21
+gunicorn==21.2.0
+werkzeug==2.3.7
+EOF
+
+# Update system and install dependencies
+sudo yum update -y
+sudo yum install -y python3 python3-pip
+
+# Install Python dependencies
+sudo pip3 install -r /home/ec2-user/web-ui/requirements.txt
 
 # Create Flask application
 cat > /home/ec2-user/web-ui/app.py << 'EOF'

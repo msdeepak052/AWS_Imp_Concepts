@@ -679,6 +679,9 @@ Failure? → DLQ → CloudWatch Alarm → SNS Email Alert
 4. Name: `lambda-s3-sqs-role`
 5. Create role
 
+![image](https://github.com/user-attachments/assets/99e60d75-0911-48e9-8354-8a461c87b199)
+
+
 ---
 
 ### 🔹 Step 5: Create Lambda Function
@@ -689,6 +692,10 @@ Failure? → DLQ → CloudWatch Alarm → SNS Email Alert
 4. Execution role: Choose **Existing role** → `lambda-s3-sqs-role`
 5. Create function
 
+![image](https://github.com/user-attachments/assets/239e6bc0-6062-4577-919c-8383892a45ef)
+
+
+
 #### Paste this code:
 
 ```python
@@ -697,51 +704,51 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 
-# Setup logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# AWS clients
 s3_client = boto3.client('s3')
 
 def lambda_handler(event, context):
-    logger.info("Lambda triggered with event: %s", json.dumps(event))
-
-    for record in event['Records']:
+    logger.info("Received event: %s", json.dumps(event))
+    
+    for record in event.get('Records', []):
         try:
-            # Step 1: Parse SQS message
             message_body = json.loads(record['body'])
-            s3_info = message_body['Records'][0]['s3']
-            bucket_name = s3_info['bucket']['name']
-            object_key = s3_info['object']['key']
-
-            logger.info(f"New file uploaded to S3: {bucket_name}/{object_key}")
-
-            # Step 2: Fetch object from S3
-            file_obj = s3_client.get_object(Bucket=bucket_name, Key=object_key)
-            file_content = file_obj['Body'].read().decode('utf-8')
-            logger.info(f"Fetched file content: {file_content[:100]}...")  # Show only first 100 chars
-
-            # Step 3: Business logic (e.g., parse JSON content)
-            try:
-                parsed_data = json.loads(file_content)
-                logger.info("Parsed JSON content successfully")
-                # Simulate further processing (e.g., validation)
-                if 'id' not in parsed_data:
-                    raise ValueError("Missing required 'id' field in file content")
-                logger.info(f"Processed data with ID: {parsed_data['id']}")
-
-            except json.JSONDecodeError as jde:
-                logger.error("File content is not valid JSON.")
-                raise jde
-            except Exception as be:
-                logger.error(f"Business logic error: {str(be)}")
-                raise be
-
+            
+            # Skip S3 test notifications
+            if message_body.get('Event') == 's3:TestEvent':
+                logger.info("Ignoring S3 test notification")
+                continue
+                
+            # Process actual upload events
+            s3_event = message_body['Records'][0]['s3']
+            bucket = s3_event['bucket']['name']
+            key = s3_event['object']['key']
+            
+            logger.info(f"Processing file: s3://{bucket}/{key}")
+            
+            # Get file content
+            response = s3_client.get_object(Bucket=bucket, Key=key)
+            content = response['Body'].read().decode('utf-8')
+            
+            # Validate JSON structure
+            data = json.loads(content)
+            if not data.get('id'):
+                raise ValueError("Missing required 'id' field")
+                
+            logger.info(f"Successfully processed file with ID: {data['id']}")
+            
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON file format")
+            raise
         except Exception as e:
-            logger.error(f"Failed to process SQS message: {str(e)}")
-            raise e  # Let Lambda rethrow to send message to DLQ
+            logger.error(f"Processing failed: {str(e)}")
+            raise
+
+    return {"statusCode": 200, "body": "Processing complete"}
 ```
+![image](https://github.com/user-attachments/assets/b7ae02e1-d508-4e87-b470-c8fc7e42005c)
 
 ---
 
@@ -752,6 +759,8 @@ def lambda_handler(event, context):
 3. Select queue: `s3-event-queue`
 4. Batch size: `1`
 5. Enable trigger
+
+![image](https://github.com/user-attachments/assets/ceae19f3-dbaa-4182-9aa1-c465af604109)
 
 ---
 

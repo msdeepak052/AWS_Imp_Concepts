@@ -134,6 +134,137 @@ cd /home/ec2-user/web-ui
 gunicorn -b 0.0.0.0:80 app:app &
 ```
 
+---
+- Same files can be added from the user script during the Ec2 creation
+
+#!/bin/bash
+# EC2 User Data Script - Auto-deploys S3 Upload Web UI
+# This will run automatically when the instance launches
+
+# Update system and install dependencies
+sudo yum update -y
+sudo yum install -y python3 python3-pip
+sudo pip3 install flask boto3 gunicorn
+
+# Create web application directory structure
+mkdir -p /home/ec2-user/web-ui/templates
+
+# Create Flask application
+cat > /home/ec2-user/web-ui/app.py << 'EOF'
+from flask import Flask, render_template, request, flash
+import boto3
+from werkzeug.utils import secure_filename
+import os
+
+app = Flask(__name__)
+app.secret_key = "super-secret-key"
+
+# S3 Config
+S3_BUCKET = "s3-object-upload-bucket"
+s3 = boto3.client('s3')
+
+@app.route('/', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        file = request.files['file']
+        if file:
+            filename = secure_filename(file.filename)
+            try:
+                s3.upload_fileobj(file, S3_BUCKET, filename)
+                flash(f"Successfully uploaded {filename} to S3!", "success")
+            except Exception as e:
+                flash(f"Upload failed: {str(e)}", "danger")
+    return render_template('index.html')
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
+EOF
+
+# Create HTML template
+cat > /home/ec2-user/web-ui/templates/index.html << 'EOF'
+<!DOCTYPE html>
+<html>
+<head>
+    <title>S3 Uploader</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="p-4">
+    <div class="container">
+        <h1 class="mb-4">Upload File to S3</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <input class="form-control" type="file" name="file" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Upload</button>
+        </form>
+    </div>
+</body>
+</html>
+EOF
+
+# Set permissions
+chown -R ec2-user:ec2-user /home/ec2-user/web-ui
+chmod -R 755 /home/ec2-user/web-ui
+
+# Install and configure CloudWatch Agent for logging (optional)
+sudo yum install -y amazon-cloudwatch-agent
+cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'EOF'
+{
+    "logs": {
+        "logs_collected": {
+            "files": {
+                "collect_list": [
+                    {
+                        "file_path": "/home/ec2-user/web-ui/*.log",
+                        "log_group_name": "EC2S3UploadUI",
+                        "log_stream_name": "{instance_id}"
+                    }
+                ]
+            }
+        }
+    }
+}
+EOF
+sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+
+# Start application (as ec2-user)
+sudo -u ec2-user bash -c 'cd /home/ec2-user/web-ui && gunicorn -b 0.0.0.0:80 app:app > app.log 2>&1 &'
+
+# Configure automatic restart on reboot
+cat > /etc/systemd/system/s3upload.service << 'EOF'
+[Unit]
+Description=S3 Upload Web UI
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=/home/ec2-user/web-ui
+ExecStart=/usr/local/bin/gunicorn -b 0.0.0.0:80 app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl enable s3upload.service
+systemctl start s3upload.service
+
+# Update firewall rules
+sudo firewall-cmd --add-port=80/tcp --permanent
+sudo firewall-cmd --reload
+
+
+---
+
 #### **1.5 Configure Security Group**
 1. Edit EC2 security group
 2. Add inbound rule: **HTTP (80)** from `0.0.0.0/0`

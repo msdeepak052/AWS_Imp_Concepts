@@ -1,6 +1,6 @@
 # Project - S3 → SQS → Lambda → DLQ + CloudWatch + SNS
 
-### **Complete Project: 📦 **Web-UI** → **S3 → SQS → Lambda → DLQ + CloudWatch + SNS**.
+### **Complete Project**: 📦 **Web-UI** → **S3 → SQS → Lambda → DLQ + CloudWatch + SNS**
 
 ## 🌐 End-to-End Architecture
 

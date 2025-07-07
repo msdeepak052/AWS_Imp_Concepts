@@ -131,7 +131,7 @@ if __name__ == '__main__':
 #### **1.4 Run Application**
 ```bash
 cd /home/ec2-user/web-ui
-gunicorn -b 0.0.0.0:80 app:app &
+gunicorn -b 0.0.0.0:5000 app:app &
 ```
 
 ---
@@ -305,7 +305,7 @@ sudo systemctl status s3upload.service --no-pager
 
 #### **1.5 Configure Security Group**
 1. Edit EC2 security group
-2. Add inbound rule: **HTTP (80)** from `0.0.0.0/0`
+2. Add inbound rule: **tcp port 5000** from `0.0.0.0/0`
 
 ---
 - Screenshots

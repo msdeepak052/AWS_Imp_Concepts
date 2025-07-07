@@ -137,6 +137,7 @@ gunicorn -b 0.0.0.0:80 app:app &
 ---
 - Same files can be added from the user script during the Ec2 creation
 
+```bash
 #!/bin/bash
 # EC2 User Data Script - Auto-deploys S3 Upload Web UI
 # This will run automatically when the instance launches
@@ -262,6 +263,7 @@ systemctl start s3upload.service
 sudo firewall-cmd --add-port=80/tcp --permanent
 sudo firewall-cmd --reload
 
+```
 
 ---
 

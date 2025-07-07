@@ -843,6 +843,23 @@ def lambda_handler(event, context):
 }
 ```
 
+### Screenshots for valid case
+
+![image](https://github.com/user-attachments/assets/98a9fff4-15e2-4c57-a153-97780856af62)
+
+![image](https://github.com/user-attachments/assets/541a769c-21d2-475f-ac86-ccc4e2da6f16)
+
+![image](https://github.com/user-attachments/assets/d4c036c6-0511-4e0d-8f93-c58bb8333aeb)
+
+![image](https://github.com/user-attachments/assets/ab5ddfd8-470b-449f-a055-5f08adbc641b)
+
+![image](https://github.com/user-attachments/assets/5f0f3ac2-eaec-4441-9f36-0ce44ed1ac3a)
+
+![image](https://github.com/user-attachments/assets/b7d288eb-efb1-437e-b021-cae73ce56d94)
+
+![image](https://github.com/user-attachments/assets/8ab0f267-bf9e-4806-bb9e-d29158afec2b)
+
+
 ### `invalid_sample.json` (to test DLQ)
 
 ```json
@@ -850,6 +867,22 @@ def lambda_handler(event, context):
   "name": "Missing ID"
 }
 ```
+
+### Screenshots for Invalid case
+
+![image](https://github.com/user-attachments/assets/99043770-31bd-4965-92e8-60fb10482cbf)
+
+![image](https://github.com/user-attachments/assets/8795cca9-0745-45f2-b8d1-361efaf06820)
+
+![image](https://github.com/user-attachments/assets/3c720caa-f5f9-4808-a69f-95d0a70bf2df)
+
+![image](https://github.com/user-attachments/assets/f2357a33-3a11-462a-8edf-cb7f864ce363)
+
+![image](https://github.com/user-attachments/assets/751ebd8a-753d-4442-bdcb-c01ce6fae665)
+
+![image](https://github.com/user-attachments/assets/7dd44022-b1be-41aa-8a51-287eb54ea3c1)
+
+![image](https://github.com/user-attachments/assets/472dfebd-7c56-4efc-a677-f6d048421792)
 
 ---
 

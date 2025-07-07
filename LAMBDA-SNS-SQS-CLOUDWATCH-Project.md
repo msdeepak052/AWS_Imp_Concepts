@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/36ac4fa9-5a39-4380-b61e-9e23a8c0f8cf)# Project - S3 → SQS → Lambda → DLQ + CloudWatch + SNS
+# Project - S3 → SQS → Lambda → DLQ + CloudWatch + SNS
 
 Here’s a **complete guide using AWS Console (no Terraform/CLI)** to implement the serverless architecture:
 📦 **Web-UI** → **S3 → SQS → Lambda → DLQ + CloudWatch + SNS**.

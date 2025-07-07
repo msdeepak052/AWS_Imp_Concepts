@@ -140,6 +140,117 @@ gunicorn -b 0.0.0.0:80 app:app &
 
 ---
 
+- The EC2 instance needs an IAM role with S3 access permissions to upload files to the S3 bucket. Here's the detailed step-by-step addition to your project:
+
+---
+
+## 🔐 **Step: Create IAM Role for EC2 (S3 Access)**
+
+### **1. Create IAM Role for EC2**
+1. Go to **IAM Console** → **Roles** → **Create role**
+2. **Trusted entity type**: AWS service
+3. **Use case**: EC2 → Click **Next**
+4. **Add permissions**: Attach these policies:
+   - `AmazonS3FullAccess` (for full upload access)
+   - *Optional*: `CloudWatchAgentServerPolicy` (if you want logging)
+5. **Role name**: `EC2-S3-Upload-Access`
+6. Click **Create role**
+
+### **2. Attach Role to EC2 Instance**
+1. Go to **EC2 Console** → Select your instance (`s3-upload-ui`)
+2. **Actions** → **Security** → **Modify IAM role**
+3. Select `EC2-S3-Upload-Access` → **Update IAM role**
+
+### **3. Verify Role in EC2 (SSH)**
+```bash
+# SSH into your EC2 instance
+ssh -i "your-key.pem" ec2-user@<public-ip>
+
+# Verify the role is attached (should show your role)
+curl http://169.254.169.254/latest/meta-data/iam/info
+```
+
+---
+
+## 🔄 **Updated Architecture with IAM Role**
+```mermaid
+flowchart TD
+    A[User] -->|Upload File| B(EC2 Web UI)
+    B -->|Assume IAM Role| C{IAM: EC2-S3-Upload-Access}
+    C -->|PutObject| D[S3 Bucket]
+    D -->|Event Notification| E[SQS Queue]
+    E -->|Poll Messages| F[Lambda Function]
+```
+
+---
+
+## 📜 **Key IAM Policy Details**
+
+### **Minimum Permissions (Alternative to S3FullAccess)**
+If you want least-privilege access, use this custom policy instead of `AmazonS3FullAccess`:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:PutObject",
+                "s3:GetObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::s3-object-upload-bucket",
+                "arn:aws:s3:::s3-object-upload-bucket/*"
+            ]
+        }
+    ]
+}
+```
+
+---
+
+## 🛡️ **Security Best Practices for EC2+S3**
+
+1. **Bucket Policy Example** (Extra protection):
+   ```json
+   {
+       "Version": "2012-10-17",
+       "Statement": [
+           {
+               "Effect": "Allow",
+               "Principal": {
+                   "AWS": "arn:aws:iam::YOUR_ACCOUNT_ID:role/EC2-S3-Upload-Access"
+               },
+               "Action": "s3:PutObject",
+               "Resource": "arn:aws:s3:::s3-object-upload-bucket/*"
+           }
+       ]
+   }
+   ```
+   *(Add via S3 → Bucket → Permissions → Bucket Policy)*
+
+2. **EC2 Instance Hardening**:
+   ```bash
+   # Restrict upload directory (optional)
+   sudo chown -R ec2-user:ec2-user /home/ec2-user/web-ui
+   sudo chmod 700 /home/ec2-user/web-ui
+   ```
+
+---
+
+## ✅ **Final Verification**
+1. Upload a file via your EC2 web UI
+2. Check:
+   - File appears in S3 bucket
+   - No errors in EC2 system logs (`/var/log/`)
+   - Lambda processes the file (CloudWatch logs)
+
+This completes the secure EC2+S3 integration with proper IAM roles! 🎉
+
+---
+
 ### 🔹 **Part 2: S3/SQS/Lambda Setup (Follow Below Steps)**
 
 1. **S3 Bucket**: `s3-object-upload-bucket` (as before)

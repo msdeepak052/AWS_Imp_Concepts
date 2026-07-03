@@ -56,6 +56,9 @@ Key properties of PrivateLink connections:
 - **No overlapping-CIDR problem** — unlike peering, the two VPCs' CIDR ranges can even overlap, because there's no direct routing between the full networks, only to the single ENI.
 - **Scales to thousands of consumer VPCs/accounts** without the "full mesh" management headache Transit Gateway/peering can create (Notes 11, 17).
 
+<img width="759" height="268" alt="image" src="https://github.com/user-attachments/assets/9678230a-40d5-42dd-b6ee-313e14155de4" />
+
+
 ---
 
 ## 4. Extending `myapp-vpc`: adding two endpoints

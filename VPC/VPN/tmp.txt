@@ -1,0 +1,87 @@
+Can u create the similar .mds like given in EC2s (check it). The mds in EC2 are divided topic wise with each does explain in a detailed way with examples so that any beginner can understand ..it should be one stop for aws saa c03 as well.
+
+Same way i want for VPC but in VPC the topics requires explanation from beginner to advanced but with examples and mermaid architectures, workflows etc so that user can understand easily and some require detailed step by step end to end implemnetation using the AWS console with latest contnt ...do chck internet and give a very good and detailed way..
+
+for subnets do give expamples to claculates the subnets with provided CIDRs
+
+Play
+64. Introduction Of Virtual Private Cloud (VPC)
+14min
+Play
+65. How To Create VPC Part 1 (Live Hands-On)
+19min
+Play
+66. How To Create VPC || Subnets Part 2 ( Hands-On)
+23min
+Play
+67. How To Create VPC || Internet Gateway & Route Table Part 3 (Hands-On)
+21min
+Play
+68. How To Create VPC || VPC 2-Tire Architecture Part 4
+7min
+Play
+69. How To Create VPC | Create Public Subnet And Private Subnet Part 5 Hands-On
+19min
+Play
+70. How To Create VPC || Public Subnet And Private Subnet Part 6 (Hands-On)
+27min
+Play
+71. How To Create VPC || NAT Gateway Part 7 (Hand-On)
+20min
+Play
+72. How To Create VPC || Summary Part 1 To 7
+12min
+Play
+73. VPC Peering Connection (Hands-on)
+19min
+Play
+74. VPC Access Control List (ACL) (Hands-On)
+17min
+Play
+75. Security Group V/S Access Control List (Hands-on)
+10min
+Play
+76. Stateless Vs Stateful
+4min
+Start
+77. Class Note For Section 5 - Virtual Private Cloud VPC
+1min
+Play
+78. Virtual Private Network (VPN)
+7min
+Play
+79. Virtual Private Network (VPN) (Hands-On)
+17min
+Play
+80. AWS Direct Connect (Hands-On)
+10min
+Play
+81. VPC Transit Gateway
+11min
+Play
+82. VPC Transit Gateway (Hands-on)
+19min
+Play
+83. VPC Endpoint
+14min
+Play
+84. VPC Endpoint Services - Private Link (Hands-On)
+9min
+Play
+85. DHCP Option Sets (Hands-On)
+13min
+Play
+86. VPC Flow Log (Hands-On)
+13min
+Play
+87. Managed Prefix List Part 1 (Hands-On)
+14min
+Play
+88. Managed Prefix List Part 2 (Hands-On)
+13min
+Start
+89. Class Note For Section 5 - Virtual Private Network VPN
+1min
+Start
+Quiz 4: Quiz On Mastering Virtual Private Cloud (VPC)
+Good Luck

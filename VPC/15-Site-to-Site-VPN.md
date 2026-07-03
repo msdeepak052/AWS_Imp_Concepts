@@ -196,6 +196,68 @@ flowchart LR
 
 ---
 
+## Architecture Explaination
+
+```mermaid
+flowchart LR
+    subgraph ABC["🏢 ABC Data Center (On-Premises)"]
+        Servers["Internal Servers<br/>192.168.10.0/24"]
+        LAN["LAN Switch"]
+        CGW["Customer Gateway Device<br/>(VPN-capable Router / Firewall)<br/>e.g. Cisco, Fortinet, pfSense<br/>Public IP: 203.0.113.5"]
+        Servers --- LAN --- CGW
+    end
+
+    subgraph NET["🌍 Public Internet"]
+        ISP1["ABC's ISP"]
+        ISP2["AWS Edge / ISP"]
+        ISP1 --- ISP2
+    end
+
+    subgraph AWS["☁️ AWS Region"]
+        subgraph VPC["VPC  10.0.0.0/16"]
+            VGW["Virtual Private Gateway (VGW)<br/>or Transit Gateway"]
+            RT["Route Table<br/>192.168.10.0/24 → VGW"]
+            EC2["EC2 / RDS<br/>Private Subnet<br/>10.0.11.0/24"]
+            VGW --- RT --- EC2
+        end
+    end
+
+    CGW -->|ISP uplink| ISP1
+    ISP2 -->|to AWS| VGW
+
+    CGW == "🔒 IPsec Tunnel 1 (encrypted)" ==> VGW
+    CGW == "🔒 IPsec Tunnel 2 (standby, encrypted)" ==> VGW
+
+```
+## How the pieces map to AWS terminology
+
+| In your diagram | AWS name | Role |
+|---|---|---|
+| ABC's VPN router/firewall | **Customer Gateway (CGW)** | Your physical device with a **public IP**; terminates the tunnel on your side. This *is* the "VPN server" on-prem. |
+| ISP links | **Public Internet** | Carries the encrypted tunnel. AWS doesn't own this part. |
+| AWS-side VPN endpoint | **Virtual Private Gateway (VGW)** or **Transit Gateway** | Terminates the tunnel on the AWS side, attached to your VPC. |
+| The encrypted path | **IPsec VPN tunnels** | AWS gives you **2 tunnels** (to 2 different endpoints) for high availability. |
+
+## The traffic flow, step by step
+
+1. A server in ABC DC (`192.168.10.0/24`) sends a packet to an EC2 instance in AWS (`10.0.11.0/24`).
+2. The LAN routes it to the **Customer Gateway** device.
+3. The CGW **encrypts + encapsulates** the packet (IPsec) and sends it out through **ABC's ISP** onto the public internet.
+4. It travels the internet inside the tunnel and arrives at the **Virtual Private Gateway** in AWS.
+5. The VGW **decrypts** it, and the VPC **route table** (which has `192.168.10.0/24 → VGW`) forwards it to the EC2 instance.
+6. Return traffic goes back the same way, through the same encrypted tunnel.
+
+## A few important notes
+
+- **Two tunnels for redundancy:** AWS always provisions **2 IPsec tunnels** to separate endpoints. Your CGW should be configured for both so that if one drops, traffic fails over automatically.
+- **Routing options:** **Static** (you manually list on-prem CIDRs) or **dynamic with BGP** (routes exchanged automatically — better for larger/changing networks).
+- **The VPN server on your side is the Customer Gateway device.** AWS runs the managed VPN endpoint (VGW/TGW) — you don't manage a "VPN server" inside AWS for Site-to-Site VPN.
+- **Both CIDRs must not overlap** (`192.168.10.0/24` on-prem vs `10.0.0.0/16` in AWS) — otherwise routing breaks.
+
+> 🧠 One line: your **router/firewall (Customer Gateway)** builds an encrypted **IPsec tunnel over your ISP + the internet** to the **Virtual Private Gateway** attached to your VPC, and route tables on both ends know how to reach each other's private networks.
+
+---
+
 ## 10. Common beginner problems
 
 | Problem | Likely cause / fix |

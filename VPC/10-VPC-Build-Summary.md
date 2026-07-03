@@ -83,6 +83,9 @@ flowchart TD
     end
 ```
 
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/d3a00b01-6cba-482a-9722-8b66d45f70ef" />
+
+
 ---
 
 ## 4. Console left-nav → what we configured there

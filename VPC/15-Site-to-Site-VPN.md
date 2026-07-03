@@ -192,6 +192,7 @@ flowchart LR
     VGW --> RT
     RT --> PRIV
 ```
+<img width="787" height="563" alt="image" src="https://github.com/user-attachments/assets/cf93ef9f-2fc5-4bb7-82c9-68898120c6c0" />
 
 ---
 
@@ -228,6 +229,7 @@ flowchart LR
 
 ### Sources
 - [What is AWS Site-to-Site VPN? – AWS docs](https://docs.aws.amazon.com/vpn/latest/s2svpn/VPC_VPN.html)
+- [AWS Site-to-Site VPN] (https://docs.aws.amazon.com/whitepapers/latest/aws-vpc-connectivity-options/aws-site-to-site-vpn.html)
 - [How AWS Site-to-Site VPN works – AWS docs](https://docs.aws.amazon.com/vpn/latest/s2svpn/how_it_works.html)
 - [AWS Site-to-Site VPN single and multiple VPN connection examples – AWS docs](https://docs.aws.amazon.com/vpn/latest/s2svpn/Examples.html)
 - [Secure communication between VPN connections using AWS VPN CloudHub – AWS docs](https://docs.aws.amazon.com/vpn/latest/s2svpn/VPN_CloudHub.html)

@@ -137,8 +137,7 @@ flowchart LR
     DXGW -- "Private VIF" --> VGW2
 ```
 
-<img width="719" height="471" alt="image" src="https://github.com/user-attachments/assets/d0aaf236-1282-48ab-a6bb-b54c4ef17907" />
-
+<img width="773" height="471" alt="image" src="https://github.com/user-attachments/assets/24d821ee-2096-46d3-8b55-75ab607e0c8f" />
 
 ---
 

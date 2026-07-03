@@ -139,6 +139,9 @@ flowchart LR
 
 <img width="773" height="471" alt="image" src="https://github.com/user-attachments/assets/24d821ee-2096-46d3-8b55-75ab607e0c8f" />
 
+<img width="726" height="471" alt="image" src="https://github.com/user-attachments/assets/33f014a4-9ac4-4e33-bd3f-dab9454e1f5f" />
+
+
 ---
 
 ## 9. Recap

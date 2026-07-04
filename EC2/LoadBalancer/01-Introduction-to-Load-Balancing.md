@@ -95,6 +95,7 @@ flowchart TD
         I2 -.-> PRIV2
     end
 ```
+<img width="956" height="731" alt="image" src="https://github.com/user-attachments/assets/5784d5b0-a169-4f50-b0d3-8580829c0a59" />
 
 ---
 

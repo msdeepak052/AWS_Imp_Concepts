@@ -2,6 +2,11 @@
 
 > Goal: build the **provider side** of the GWLB traffic-inspection scenario. The previous hands-on note finished by creating two dedicated subnets, `gwlb-appliance-subnet-1` (`10.0.101.0/24`, AZ-a) and `gwlb-appliance-subnet-2` (`10.0.102.0/24`, AZ-b), inside your VPC. In this note we launch the simulated firewall appliances into those subnets, register them behind a **GENEVE target group**, and stand up the **Gateway Load Balancer** itself. The next hands-on notes then build the endpoint-service/endpoint plumbing that lets real traffic reach it, wire up the actual ingress redirect, and verify the whole thing end to end.
 
+
+<img width="1093" height="631" alt="image" src="https://github.com/user-attachments/assets/7001b90e-f77b-4f68-a710-6a410f5243f7" />
+
+
+
 ---
 
 ## 1. What we're building in this part

@@ -27,6 +27,8 @@ flowchart TD
     TG --> ASG["Backend app instances<br/>(private subnets 1/2)"]
     TGAPI --> API1["demo-api-1<br/>private subnet 1<br/>port 8080"]
 ```
+<img width="555" height="640" alt="image" src="https://github.com/user-attachments/assets/b4743df9-0a85-4016-ba9c-12f21bb0c70a" />
+
 
 ---
 

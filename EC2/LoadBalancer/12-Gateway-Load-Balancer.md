@@ -75,6 +75,10 @@ flowchart LR
 
 Nothing about `demo-alb` or the client changes — the whole inspection detour happens at the routing layer, via a mechanism called **VPC ingress routing**, covered next.
 
+
+<img width="1093" height="631" alt="image" src="https://github.com/user-attachments/assets/6a2bd2b0-6e2c-451f-b33f-52aff809a4c2" />
+
+
 ---
 
 ## 5. Key components (previewed here, built across the hands-on notes ahead)

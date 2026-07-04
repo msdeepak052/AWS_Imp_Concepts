@@ -44,7 +44,7 @@ Create another security group:
 | SSH (demo jump access) | 22 | **`myapp-web-sg`** (select the security group itself, not a CIDR) |
 | Custom TCP (app port, demo) | 8080 | `myapp-web-sg` |
 
-> 🧠 Referencing a **security group as the source** (instead of a CIDR) means "allow traffic from anything currently using `myapp-web-sg`" — so if you add more web instances later, they're automatically allowed in without editing this rule. This is the standard tier-to-tier pattern (web → app → db) referenced in Note 07.
+> 🧠 Referencing a **security group as the source** (instead of a CIDR) means "allow traffic from anything currently using `myapp-web-sg`" — so if you add more web instances later, they're automatically allowed in without editing this rule. This is the standard tier-to-tier security pattern (web tier's SG → app tier's SG → db tier's SG), where each tier only opens its firewall to the specific tier in front of it, never to the whole internet or the whole VPC.
 
 - **Outbound**: leave default.
 
@@ -102,7 +102,7 @@ Since `myapp-app-1` has no public IP, you cannot SSH into it directly from your 
 
 `myapp-web-1` acting as the hop here is called a **bastion host** (or "jump box").
 
-> ⚠️ **A dedicated bastion host is still a server you must patch, secure, and pay for 24/7.** The modern, more secure alternative is **AWS Systems Manager Session Manager**: it lets you open a shell to *any* instance (public or private) with no open inbound ports, no bastion host, and no SSH key management at all — as long as the instance has the SSM Agent installed and an IAM role with the `AmazonSSMManagedInstanceCore` policy, and can reach the SSM service endpoints (directly via IGW/NAT, or privately via a VPC endpoint — Note 18). For new builds, prefer Session Manager over a bastion host.
+> ⚠️ **A dedicated bastion host is still a server you must patch, secure, and pay for 24/7.** The modern, more secure alternative is **AWS Systems Manager Session Manager**: it lets you open a shell to *any* instance (public or private) with no open inbound ports, no bastion host, and no SSH key management at all — as long as the instance has the SSM Agent installed and an IAM role with the `AmazonSSMManagedInstanceCore` policy, and can reach the SSM service endpoints (either via the internet path through an IGW/NAT Gateway, or privately through a VPC endpoint — a private, non-internet connection straight to an AWS service). For new builds, prefer Session Manager over a bastion host.
 
 ---
 
@@ -115,7 +115,7 @@ ping -c 2 8.8.8.8
 curl -m 5 https://amazon.com
 ```
 
-Both should **time out / fail**. This is expected: `myapp-private-subnet-1` is still on the **main route table** (`local` only, per Note 06) — there is no route out to the internet, so even simple `yum update` commands would fail right now.
+Both should **time out / fail**. This is expected: `myapp-private-subnet-1` is still on the **main route table** (which only has the automatic `local` route for in-VPC traffic) — there is no route out to the internet, so even simple `yum update` commands would fail right now.
 
 This is exactly why Note 09 exists: we add a **NAT Gateway** so private instances get **outbound-only** internet access (for patches/updates) while remaining unreachable from the internet inbound.
 

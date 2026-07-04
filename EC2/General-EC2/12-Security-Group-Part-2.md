@@ -1,6 +1,6 @@
 # 12 - Security Group — Part 2 (Rules in Depth)
 
-> Goal: master **how to write good rules** — understanding **sources/destinations** (CIDR, "My IP", "Anywhere", security-group references), **multiple security groups**, and reading CIDR notation. Builds on Part 1.
+> Goal: master **how to write good rules** — understanding **sources/destinations** (CIDR, "My IP", "Anywhere", security-group references), **multiple security groups**, and reading CIDR notation. Continues from Part 1's core idea that security groups are **stateful, allow-only firewalls attached to instances** (deny everything inbound by default, allow all outbound by default).
 
 ---
 
@@ -28,7 +28,7 @@ In the console "Source" (inbound) or "Destination" (outbound) dropdown you'll se
 2. **Anywhere-IPv4** — `0.0.0.0/0`. Use **only** for public services (HTTP 80 / HTTPS 443). ❌ Never for SSH/RDP/DB.
 3. **Anywhere-IPv6** — `::/0`.
 4. **Custom** — type any CIDR (e.g. office network `198.51.100.0/24`) or...
-5. **Another Security Group** — reference an SG instead of an IP (covered in Part 3, but introduced below).
+5. **Another Security Group** — reference an SG instead of an IP or CIDR. This means "allow traffic from any instance that is currently a member of that other security group," so the rule keeps working automatically as instances are added/removed (see section 5 below for a worked example).
 
 ---
 
@@ -72,7 +72,7 @@ Example — a web tier talking to a database tier:
 - Now **any** web server (whatever its IP) can reach the DB on 3306, and you never hard-code IPs.
 - When Auto Scaling adds new web servers, they're automatically allowed (they're in `web-sg`).
 
-This is hugely important for dynamic, multi-tier apps — detailed in Part 3.
+This is hugely important for dynamic, multi-tier apps: because the rule points at the *group*, not at fixed IPs, it stays correct automatically as instances are added, removed, or replaced (e.g. by Auto Scaling) — nobody has to go back and edit firewall rules every time the fleet changes. Part 3 goes further and chains this pattern across a full three-tier app (load balancer → app → database).
 
 ---
 

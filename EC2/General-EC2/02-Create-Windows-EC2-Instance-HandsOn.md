@@ -43,7 +43,7 @@ You now see the **Launch an instance** wizard. We'll go section by section.
 - Under **Quick Start**, click the **Windows** tab.
 - Choose **Microsoft Windows Server 2022 Base** (or the latest 2025 Base if shown).
 - Make sure it says **Free tier eligible** if you want to stay free.
-- 🧠 The AMI is the template that installs the OS for you. (More in Note 05.)
+- 🧠 The AMI is the template that installs the OS and any pre-baked software for you — AWS maintains ready-made AMIs for each Windows Server version so you don't have to install Windows manually.
 
 ---
 
@@ -79,7 +79,7 @@ Click **Edit** on the Network settings box.
     - **Type**: RDP
     - **Source type**: **My IP** ✅ (this restricts access to *your* current IP only — much safer than "Anywhere").
 
-> ⚠️ Never leave RDP (3389) open to `0.0.0.0/0` (Anywhere) in real life — bots constantly scan for it. "My IP" is the safe beginner choice. (Security groups are covered in depth in Notes 11–14.)
+> ⚠️ Never leave RDP (3389) open to `0.0.0.0/0` (Anywhere) in real life — bots constantly scan for it. "My IP" is the safe beginner choice. A security group is simply a virtual firewall attached to the instance: it only allows the specific ports and sources you list, and blocks everything else by default.
 
 ---
 

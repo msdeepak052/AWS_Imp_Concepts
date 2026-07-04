@@ -6,7 +6,7 @@
 
 ## 1. Dedicated Hosts (pricing view)
 
-(Tenancy concept covered in Note 18 — here we focus on the **purchasing** angle.)
+(**Tenancy** is about whether your instance shares the underlying physical server with other AWS customers or gets dedicated hardware to itself — here we focus on the **purchasing** angle: how a Dedicated Host is priced and bought.)
 
 **What:** Pay for an **entire physical EC2 server dedicated to you**, with visibility into **sockets/physical cores**.
 

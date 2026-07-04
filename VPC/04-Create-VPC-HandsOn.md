@@ -7,7 +7,7 @@
 ## 0. Before you start
 
 1. Sign in to the **AWS Management Console**: <https://console.aws.amazon.com>.
-2. Top-right Region selector → choose **Asia Pacific (Mumbai) `ap-south-1`** (our worked example's Region — Note 01 §6). VPCs are Region-specific, same as EC2.
+2. Top-right Region selector → choose **Asia Pacific (Mumbai) `ap-south-1`** (the Region we picked for this worked example — any Region works the same way). VPCs are Region-specific, same as EC2.
 3. In the top search bar, type **VPC** → click **VPC** to open the Amazon VPC console.
 
 ---
@@ -46,9 +46,9 @@ The **Create VPC** wizard offers a **"Resources to create"** choice:
 
 - Under **IPv4 CIDR block**, keep **IPv4 CIDR manual input** selected.
 - Enter: **`10.0.0.0/16`**.
-- Leave **IPv6 CIDR block** as **No IPv6 CIDR block** — we're keeping this example IPv4-only (Note 03 §8 covers IPv6 sizing if you want to experiment later).
+- Leave **IPv6 CIDR block** as **No IPv6 CIDR block** — we're keeping this example IPv4-only. (If you enable IPv6 later, AWS assigns the VPC a fixed `/56` block and every subnet a fixed `/64` block automatically — there's no sizing math to do, unlike IPv4.)
 
-> ⚠️ Double-check the CIDR before clicking Create — **you cannot change a VPC's primary CIDR block after creation** (you can only add secondary CIDR blocks, Note 02 §4, or delete and recreate the VPC).
+> ⚠️ Double-check the CIDR before clicking Create — **you cannot change a VPC's primary CIDR block after creation** (you can only add extra secondary CIDR blocks alongside it later, or delete and recreate the VPC from scratch).
 
 ---
 
@@ -80,7 +80,7 @@ Every VPC has two DNS attributes. For a normal VPC (not the default one) these c
 
 1. With `myapp-vpc` selected in **Your VPCs**, click **Actions → Edit VPC settings**.
 2. Confirm/enable both:
-   - **Enable DNS resolution** — lets instances use the Amazon-provided DNS server (the `.2` reserved address in each subnet, Note 03 §2) to resolve domain names.
+   - **Enable DNS resolution** — lets instances use the Amazon-provided DNS server (the `.2` address in each subnet, one of the 5 addresses AWS always reserves) to resolve domain names.
    - **Enable DNS hostnames** — assigns instances a resolvable DNS hostname alongside their IP.
 3. Click **Save changes**.
 
@@ -108,10 +108,10 @@ Good news: **a VPC by itself costs nothing.** You are not charged for:
 - Subnets, route tables, Security Groups, or Network ACLs (once we create them)
 
 You only start paying once you add certain resources on top — most notably:
-- **NAT Gateways** (hourly + data processing charges — Note 09)
+- **NAT Gateways** (billed hourly, plus a per-GB charge for data processed through them)
 - **Elastic IPs** left unattached
-- **Site-to-Site VPN connections** and **Transit Gateway attachments** (Notes 15, 17)
-- **VPC Interface Endpoints** (Note 18)
+- **Site-to-Site VPN connections** and **Transit Gateway attachments** (both billed hourly per attachment/connection)
+- **VPC Interface Endpoints** (private, PrivateLink-based connections straight to AWS services like SSM or Secrets Manager, billed hourly per endpoint)
 
 So at this stage, there's nothing to delete — feel free to leave `myapp-vpc` sitting empty while you continue to Note 05. If you ever want to tear it down entirely later: **Your VPCs → select `myapp-vpc` → Actions → Delete VPC** (AWS will block deletion until all dependent resources — subnets, gateways, etc. — are removed first).
 
@@ -121,7 +121,7 @@ So at this stage, there's nothing to delete — feel free to leave `myapp-vpc` s
 
 | Problem | Likely cause / fix |
 |---|---|
-| "Create VPC" button greyed out / CIDR rejected | CIDR outside the `/16`–`/28` valid range (Note 02 §2), or malformed (e.g. missing `/prefix`). |
+| "Create VPC" button greyed out / CIDR rejected | CIDR outside AWS's allowed `/16`–`/28` range for a VPC, or malformed (e.g. missing `/prefix`). |
 | Can't find `myapp-vpc` afterward | Wrong **Region** selected (top-right) — VPCs don't show across Regions. |
 | Accidentally created it with "VPC and more" | Delete it (after removing dependent resources) and recreate with "VPC only", or just proceed — the *result* is the same VPC, you'll just have subnets/IGW/route tables already made for you (skip ahead, or delete them to practice manually). |
 | DNS hostnames/resolution greyed out or seem to have no effect | Make sure you're editing settings on the VPC itself (**Your VPCs → Actions → Edit VPC settings**), not on a subnet or instance. |

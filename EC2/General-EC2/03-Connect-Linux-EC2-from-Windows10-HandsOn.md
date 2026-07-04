@@ -109,7 +109,7 @@ sudo yum install -y httpd
 sudo systemctl start httpd
 echo "Hello from my EC2 instance" | sudo tee /var/www/html/index.html
 ```
-(To view it in a browser you'd open port 80 in the security group — covered in Note 14.)
+(To view it in a browser you'd need to add an inbound rule to the instance's security group allowing **HTTP, port 80**, from a source like "Anywhere" or your own IP — the security group blocks all inbound traffic by default until you explicitly allow it.)
 
 To leave the server: type `exit`.
 

@@ -1,6 +1,6 @@
 # 18 - Classic Load Balancer (Legacy)
 
-> Goal: close out this folder the way `VPC\10-VPC-Build-Summary.md` and `EC2\ASG\12-Auto-Scaling-vs-Elastic-Load-Balancer.md` close out theirs — a comparison/legacy bookend. We won't build anything with `myapp-clb` here; this note exists purely so you can recognize the **Classic Load Balancer (CLB)** on the exam and in older AWS accounts, and explain precisely why it's the wrong answer for anything new.
+> Goal: close out this folder with a comparison/legacy bookend. We won't build anything with `demo-clb` here; this note exists purely so you can recognize the **Classic Load Balancer (CLB)** on the exam and in older AWS accounts, and explain precisely why it's the wrong answer for anything new.
 
 ---
 
@@ -24,11 +24,11 @@ Elastic Load Balancing launched in **2009** with the Classic Load Balancer as it
 | Elastic Load Balancing (Classic) launches | 2009 | Only option; one target group, no routing rules. |
 | **Application Load Balancer (ALB)** launches | 2016 | Purpose-built Layer 7: path-based/host-based routing rules, multiple target groups per load balancer, native container (ECS) and Lambda targets. |
 | **Network Load Balancer (NLB)** launches | 2017 | Purpose-built Layer 4: static IP per AZ, ultra-low latency, millions of requests/sec, preserves client source IP by default. |
-| **Gateway Load Balancer (GWLB)** launches | 2020 | Purpose-built Layer 3/4 traffic inspection via GENEVE (Notes 12–17). |
+| **Gateway Load Balancer (GWLB)** launches | 2020 | Purpose-built Layer 3/4 traffic inspection via GENEVE, covered earlier in this folder. |
 
 Once ALB and NLB existed, CLB had no remaining advantage — everything it did, one of the two newer types did better:
 
-- Need HTTP(S) routing intelligence (paths, hosts, headers), container/Lambda targets, or per-service health checks on one load balancer? **ALB** does all of it; CLB has **none** of it (`myapp-tg-api`/`myapp-tg-admin` path/host routing from Notes 06–08 is simply impossible on a CLB — there's only ever one target group, no listener rules at all).
+- Need HTTP(S) routing intelligence (paths, hosts, headers), container/Lambda targets, or per-service health checks on one load balancer? **ALB** does all of it; CLB has **none** of it (path/host routing to separate target groups like `demo-tg-api`/`demo-tg-admin` is simply impossible on a CLB — there's only ever one target group, no listener rules at all).
 - Need raw TCP/UDP performance, a static IP, or extreme scale? **NLB** outperforms CLB and adds static IPs, which CLB never supported.
 
 AWS actively encourages migrating off CLB and even ships a **built-in migration wizard** (EC2 console → select a CLB → **Launch migration wizard** → migrate to ALB or NLB) plus load-balancer copy utilities on GitHub, precisely because so many old accounts still have CLBs quietly running from pre-2016 builds.
@@ -45,9 +45,9 @@ AWS actively encourages migrating off CLB and even ships a **built-in migration 
 | **Protocol(s)** | HTTP, HTTPS, TCP, SSL | HTTP, HTTPS, gRPC, WebSockets | TCP, UDP, TLS | GENEVE only (fixed, port 6081) |
 | **Static IP per AZ** | No | No (use an NLB in front if you need one) | **Yes** | N/A (transparent inspection path, not a client-facing endpoint) |
 | **Preserves client source IP** | Sometimes, via `X-Forwarded-For` only | Via `X-Forwarded-For` header | **Yes, natively**, by default | N/A — original packet headers pass through to the appliance |
-| **Cross-zone load balancing default** | On, free | **Always on, free** (Note 11) | **Off by default**, chargeable if enabled (Note 11) | Off by default |
+| **Cross-zone load balancing default** | On, free | **Always on, free** | **Off by default**, chargeable if enabled | Off by default |
 | **Container/Lambda targets** | No | **Yes** | Yes (IP targets), no Lambda | No |
-| **Typical use today** | None recommended — legacy accounts only | Web apps, microservices, API routing (`myapp-alb`) | Ultra-low-latency TCP/UDP, static IP requirements (`myapp-nlb`) | Centralized firewall/IDS/IPS traffic inspection (`myapp-gwlb`) |
+| **Typical use today** | None recommended — legacy accounts only | Web apps, microservices, API routing (`demo-alb`) | Ultra-low-latency TCP/UDP, static IP requirements (`demo-nlb`) | Centralized firewall/IDS/IPS traffic inspection (`demo-gwlb`) |
 
 🎯 **Exam tip:** if a scenario describes needing **path-based routing**, **host-based routing**, or **native container/Lambda target support** — **CLB is never the correct answer**. Those three phrases are AWS's standard "this is asking for ALB" signal, and the exam sometimes lists CLB as a distractor precisely to test whether you know it lacks all three.
 
@@ -55,17 +55,17 @@ AWS actively encourages migrating off CLB and even ships a **built-in migration 
 
 ## 4. Health checks and billing: another quiet downgrade
 
-CLB's health checking is also more primitive than what `myapp-tg`/`myapp-tg-api`/`myapp-tg-admin` use today:
+CLB's health checking is also more primitive than what a modern target group setup uses today:
 
 | | **CLB** | **ALB / NLB / GWLB target groups** |
 |---|---|---|
-| Health check granularity | One health check **per load balancer** | One health check **per target group** — `myapp-tg` can check `/health` while `myapp-tg-api` independently checks `/api/health` on the same load balancer |
-| Health check protocols | HTTP, HTTPS, TCP, SSL | HTTP, HTTPS, TCP (+ GENEVE targets use TCP/HTTP/HTTPS per Note 15) |
+| Health check granularity | One health check **per load balancer** | One health check **per target group** — `demo-tg` can check `/health` while `demo-tg-api` independently checks `/api/health` on the same load balancer |
+| Health check protocols | HTTP, HTTPS, TCP, SSL | HTTP, HTTPS, TCP (+ GENEVE targets use TCP/HTTP/HTTPS health checks) |
 | Billing model | Hourly rate + **data processed** (GB) | Hourly rate + **Load Balancer Capacity Units (LCU-hours)** — LCU bundles new connections, active connections, bandwidth, and (for ALB) rule evaluations into one blended metric |
 
 The LCU model on modern load balancers is generally more transparent and often cheaper for bursty or rule-heavy workloads, since CLB's flat per-GB model doesn't account for connection count or rule complexity at all (because CLB has no rules to evaluate in the first place).
 
-> ⚠️ **If you ever inherit a CLB in a real account:** don't just leave it — (1) confirm what's actually registered behind it and whether health checks are even passing, (2) run the **migration wizard** to generate an equivalent ALB or NLB as a *new, separate* resource (it does not convert the CLB in place), (3) shift traffic gradually via weighted DNS, then (4) delete the CLB only once 100% of traffic and all in-flight requests have drained. Note 05 covers building `myapp-alb` from scratch if you're doing this as a "migrate to ALB" exercise.
+> ⚠️ **If you ever inherit a CLB in a real account:** don't just leave it — (1) confirm what's actually registered behind it and whether health checks are even passing, (2) run the **migration wizard** to generate an equivalent ALB or NLB as a *new, separate* resource (it does not convert the CLB in place), (3) shift traffic gradually via weighted DNS, then (4) delete the CLB only once 100% of traffic and all in-flight requests have drained. If you're doing this as a "migrate to ALB" exercise, you'd be building a fresh ALB from scratch, following the same steps as any new ALB build.
 
 ---
 
@@ -77,24 +77,24 @@ The LCU model on modern load balancers is generally more transparent and often c
 
 ---
 
-## 6. Diagram: CLB's flat model vs. `myapp-alb`'s rule-based model
+## 6. Diagram: CLB's flat model vs. `demo-alb`'s rule-based model
 
 ```mermaid
 flowchart TD
     subgraph CLB_MODEL["Classic Load Balancer — flat, no rules"]
-        C_CLIENT(("Client")) --> CLB["myapp-clb<br/>(one listener)"]
+        C_CLIENT(("Client")) --> CLB["demo-clb<br/>(one listener)"]
         CLB --> C_I1["EC2 instance"]
         CLB --> C_I2["EC2 instance"]
     end
 
-    subgraph ALB_MODEL["myapp-alb — listener rules, multiple target groups (Notes 05-08)"]
-        A_CLIENT(("Client")) --> ALB["myapp-alb<br/>listener :80/:443"]
-        ALB -->|"path /api/* "| TG_API["myapp-tg-api"]
-        ALB -->|"host admin.myapp.internal"| TG_ADMIN["myapp-tg-admin"]
-        ALB -->|"default rule"| TG_DEFAULT["myapp-tg"]
-        TG_API --> API1["myapp-api-1"]
-        TG_ADMIN --> ADMIN1["myapp-admin-1"]
-        TG_DEFAULT --> ASG1["myapp-asg instances"]
+    subgraph ALB_MODEL["demo-alb — listener rules, multiple target groups"]
+        A_CLIENT(("Client")) --> ALB["demo-alb<br/>listener :80/:443"]
+        ALB -->|"path /api/* "| TG_API["demo-tg-api"]
+        ALB -->|"host admin.example.internal"| TG_ADMIN["demo-tg-admin"]
+        ALB -->|"default rule"| TG_DEFAULT["demo-tg"]
+        TG_API --> API1["demo-api-1"]
+        TG_ADMIN --> ADMIN1["demo-admin-1"]
+        TG_DEFAULT --> ASG1["Auto Scaling group instances"]
     end
 ```
 
@@ -109,7 +109,7 @@ CLB has no equivalent of listener **rules** or **priority** at all — every req
 - AWS labels CLB "previous generation," recommends migrating, and ships a **console migration wizard** plus **GitHub copy utilities** to make it easy.
 - You'll see CLB today only in **old, un-migrated accounts** or as an **exam distractor** — never as a "build this" recommendation for new workloads. EC2-Classic (its original context) is fully retired; any CLB now runs inside a VPC.
 - 🎯 **Exam tip:** path-based routing, host-based routing, container/Lambda targets → always **ALB**, never CLB.
-- This closes the Load Balancer folder: Notes 01–11 built `myapp-alb` and `myapp-nlb` with path/host routing and cross-zone balancing; Notes 12–17 built the full `myapp-gwlb` traffic-inspection chapter; this note frames where CLB fits (or, mostly, doesn't) in that picture.
+- This closes the Load Balancer folder: earlier notes built `demo-alb` and `demo-nlb` with path/host routing and cross-zone balancing; the GWLB chapter built the full `demo-gwlb` traffic-inspection scenario; this note frames where CLB fits (or, mostly, doesn't) in that picture.
 
 ---
 

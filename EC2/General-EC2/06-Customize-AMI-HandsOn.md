@@ -27,7 +27,7 @@ This is called a **"golden image"**.
 
 ## 3. Step 2 — Connect and customize it
 
-SSH in (see Note 03), then install and configure a web server:
+SSH in using your key pair and the instance's public IP (`ssh -i linux-key.pem ec2-user@<PUBLIC_IP>`), then install and configure a web server:
 
 ```bash
 # Become root-ish with sudo for installs

@@ -33,7 +33,7 @@ Suppose `myapp-vpc-b` had instead been created as `10.0.0.0/16` (same as `myapp-
 3. The router never even considers sending that packet toward the peering connection — it thinks the destination is a neighbor **already inside its own VPC**, so it looks for a local instance with that IP instead.
 4. Result: the packet either goes nowhere (no such host locally) or, worse, reaches the *wrong* local instance that happens to share the same overlapping IP.
 
-AWS actually **blocks you from creating the peering connection at all** if the CIDRs overlap, precisely to prevent this ambiguity. This is why planning non-overlapping IP ranges **before** you build any VPC (Note 02/03) matters so much once peering enters the picture.
+AWS actually **blocks you from creating the peering connection at all** if the CIDRs overlap, precisely to prevent this ambiguity. This is why planning non-overlapping IP ranges **before** you build any VPC (choosing a distinct `/16` per VPC up front, rather than reusing `10.0.0.0/16` everywhere) matters so much once peering enters the picture.
 
 > ⚠️ **Gotcha:** this is also why you should avoid always defaulting every VPC to `10.0.0.0/16`. If you know you'll eventually peer VPCs (dev, staging, prod, shared-services), give each one a distinct /16 range from the start (e.g. `10.0.0.0/16`, `10.1.0.0/16`, `10.2.0.0/16`).
 
@@ -68,7 +68,7 @@ graph LR
     style C fill:#1f6feb,color:#fff
 ```
 
-If you need full any-to-any connectivity between many VPCs (a "hub and spoke" or full mesh), peering does not scale well — that's exactly the problem **Transit Gateway** solves (Note 17). With N VPCs needing full mesh peering, you'd need `N(N-1)/2` separate peering connections; with Transit Gateway you need just N attachments.
+If you need full any-to-any connectivity between many VPCs (a "hub and spoke" or full mesh), peering does not scale well — that's exactly the problem **Transit Gateway** solves: it's a central hub that every VPC attaches to once, instead of every VPC needing a direct peering connection to every other VPC. With N VPCs needing full mesh peering, you'd need `N(N-1)/2` separate peering connections; with Transit Gateway you need just N attachments.
 
 🎯 **Exam tip:** if a question describes A-B and B-C peering connections and asks "can A communicate with C?", the answer is **NO** unless an A-C peering connection is explicitly mentioned. This is one of the most frequently tested VPC facts on the SAA-C03.
 
@@ -92,7 +92,7 @@ Creating a peering connection is a two-step handshake:
 1. **Requester**: the owner of one VPC creates a **peering connection request**, specifying the local VPC and the target VPC (by VPC ID, and account ID/Region if cross-account/cross-Region).
 2. **Accepter**: the owner of the other VPC must **accept** the pending request before any traffic can flow.
 
-> ⚠️ **A peering connection being "Active" routes NOTHING by itself.** It only makes the private connection *available*. You must still **manually add a route in the route table on each side**, pointing the peer's CIDR at the peering connection (`pcx-...`) as the target. Miss the route on even one side and traffic is one-way or fails entirely (SGs/NACLs must also allow the traffic — see Notes 12-14).
+> ⚠️ **A peering connection being "Active" routes NOTHING by itself.** It only makes the private connection *available*. You must still **manually add a route in the route table on each side**, pointing the peer's CIDR at the peering connection (`pcx-...`) as the target. Miss the route on even one side and traffic is one-way or fails entirely. On top of routing, each instance's **security group** (and any Network ACL on its subnet) must also allow the traffic — routing gets the packet there, but the firewall layers still have to let it through.
 
 For our example: `myapp-vpc` (10.0.0.0/16) needs to reach `myapp-vpc-b` (10.1.0.0/16):
 - In `myapp-vpc`'s route table(s): add `10.1.0.0/16 → pcx-xxxxxxxx`.
@@ -177,7 +177,7 @@ graph TD
 - **No transitive peering** — A-B and B-C does not give you A-C; you must peer A-C explicitly.
 - Supports same/cross-Region and same/cross-account.
 - Flow: **Create request (requester)** → **Accept (accepter)** → **Add route on both sides** → **check SGs**.
-- For connecting many VPCs at scale, prefer **Transit Gateway** (Note 17) over a peering mesh.
+- For connecting many VPCs at scale, prefer a **Transit Gateway** hub over a full-mesh peering setup.
 - Next: Note 12 — **Network ACLs**, the subnet-level stateless firewall that also governs traffic entering a peered VPC's subnets.
 
 ---

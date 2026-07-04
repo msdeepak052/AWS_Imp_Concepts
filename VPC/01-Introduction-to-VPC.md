@@ -14,7 +14,7 @@ Think of it as renting an entire **private data center network** (switches, rout
 - **Private** → by default nothing outside it can reach in, and nothing inside can reach out, unless you explicitly allow it.
 - **Cloud** → it lives inside an AWS Region, on AWS-managed infrastructure.
 
-> 🧠 **Mental model:** if an EC2 **instance** is a computer, a **VPC** is the building + floor plan + electrical wiring that computer sits inside. EC2 (Note 08/09 in the EC2 folder) always launches *into* a VPC subnet — you can't have an instance floating outside a network.
+> 🧠 **Mental model:** if an EC2 **instance** is a computer, a **VPC** is the building + floor plan + electrical wiring that computer sits inside. An EC2 instance always launches *into* a VPC subnet, never outside one — at launch time you always pick a subnet, which pins the instance to one VPC and one Availability Zone.
 
 ---
 
@@ -36,7 +36,7 @@ Before VPC existed (pre-2009), all AWS customers' EC2 instances shared one flat,
 ## 3. Region-scoped, not global
 
 - A VPC lives in **exactly one Region** (e.g. `ap-south-1` — Mumbai). It cannot span Regions.
-- A VPC **can** span multiple **Availability Zones (AZs)** within that Region — in fact, spreading subnets across AZs is exactly how you build high availability (more in Note 07/08).
+- A VPC **can** span multiple **Availability Zones (AZs)** within that Region — in fact, spreading subnets across AZs is exactly how you build high availability: if one AZ (effectively one physical data center cluster) has an outage, subnets and instances in a different AZ keep running.
 - VPCs, subnets, route tables, security groups, etc. are all **Region-specific** resources — you won't see your Mumbai VPC if the console is switched to N. Virginia.
 
 ---
@@ -48,13 +48,13 @@ When you create a new AWS account, AWS automatically creates a **default VPC** i
 | Property | Default VPC value |
 |---|---|
 | CIDR block | `172.31.0.0/16` |
-| Subnets | One public subnet per AZ in the Region (using `/20` blocks — see Note 03 §6) |
+| Subnets | One public subnet per AZ in the Region (using `/20` blocks, i.e. 4,096 addresses each) |
 | Internet Gateway | Already attached |
 | Route table | Already routes `0.0.0.0/0` to the Internet Gateway |
 | Instances launched with no VPC specified | Land here automatically, get a public IP |
 
 - The default VPC exists so a brand-new user can launch an EC2 instance with **zero networking knowledge** and it "just works" (internet-reachable).
-- For anything beyond learning/toy projects, you build your **own custom VPC** (like the `myapp-vpc` we design starting in Note 03) so you control the CIDR range, tiering, and security from scratch.
+- For anything beyond learning/toy projects, you build your **own custom VPC** (like the `myapp-vpc` we design and build over the rest of this folder) so you control the CIDR range, tiering, and security from scratch.
 
 > ⚠️ You can delete the default VPC. If you do (or need it back), you can recreate a default VPC per Region from the console — but most real projects intentionally build custom VPCs instead of relying on it.
 

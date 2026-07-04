@@ -29,7 +29,7 @@
 
 | Approach | What it's good for |
 |---|---|
-| **Bake into AMI** (Note 06) | Heavy/slow installs done once → fast boot, consistent. |
+| **Bake into AMI** (an AMI is a saved snapshot/image of a fully configured instance's disk that you can launch new instances from) | Heavy/slow installs done once → fast boot, consistent. |
 | **User Data at launch** | Last-mile config, per-environment values, things that change often. |
 | **Both (common)** | Golden AMI for the base + small User Data for environment-specific tweaks. |
 

@@ -79,7 +79,7 @@ This is the #1 gotcha on the exam. **In every AWS subnet — no matter its size 
 
 ## 4. Worked Example 2 — the actual `myapp-vpc` layout
 
-Recall from Note 01/02, `myapp-vpc` (`10.0.0.0/16`) uses four `/24` subnets:
+Recall: `myapp-vpc` (`10.0.0.0/16`) uses four `/24` subnets:
 
 | Subnet | CIDR | Third octet | Usable range |
 |---|---|---|---|
@@ -90,7 +90,7 @@ Recall from Note 01/02, `myapp-vpc` (`10.0.0.0/16`) uses four `/24` subnets:
 
 **Why these are valid and non-overlapping:** a `/24` fixes the first three octets and leaves the 4th free (`2^8 = 256` IPs), so **every distinct third-octet value is a separate, non-overlapping block**. `1 ≠ 2 ≠ 11 ≠ 12`, so there's zero overlap — the ranges don't even need to be adjacent.
 
-**How much is left unused?** The `/16` has room for **256 possible `/24` subnets** (third octet `0`–`255`). We've used 4 (`1, 2, 11, 12`). That leaves **252 unused `/24` blocks** — plenty of room for a future database tier (`10.0.21.0/24`, `10.0.22.0/24` — see Note 07), more AZs, or entirely new tiers, without ever touching the ranges already in use.
+**How much is left unused?** The `/16` has room for **256 possible `/24` subnets** (third octet `0`–`255`). We've used 4 (`1, 2, 11, 12`). That leaves **252 unused `/24` blocks** — plenty of room for a future database tier (e.g. `10.0.21.0/24`, `10.0.22.0/24`, if we ever split the private tier into a separate app tier and DB tier), more AZs, or entirely new tiers, without ever touching the ranges already in use.
 
 > 🧠 Leaving gaps on purpose (public subnets at `.1`/`.2`, private at `.11`/`.12`, not `.3`/`.4`) is a deliberate real-world habit — it leaves room to insert more subnets per tier later without renumbering everything.
 
@@ -137,7 +137,7 @@ Each block starts exactly where the previous one ends (or on a valid boundary fo
 
 ## 6. Worked Example 4 — the default VPC, `172.31.0.0/16`, split into `/20`s
 
-This is literally what AWS's **default VPC** (Note 01 §4) does automatically, one subnet per AZ:
+This is literally what AWS's **default VPC** (the `172.31.0.0/16` VPC that AWS auto-creates in every Region for every new account) does automatically, one subnet per AZ:
 
 - Block size of a `/20` = `2^(32-20)` = `2^12` = **4,096 total IPs** (usable = `4,091`).
 - How many `/20` blocks fit inside a `/16`? `2^(20-16)` = `2^4` = **16 subnets**.
@@ -191,7 +191,7 @@ AWS creates one such `/20` per AZ in the Region (e.g. 3 AZs → 3 of these subne
 
 ## 8. Secondary CIDR blocks and a note on IPv6
 
-- A VPC isn't locked to its original CIDR forever — you can **add secondary CIDR blocks** later (up to 5 total per VPC, including the primary) if you run out of address space, e.g. adding `10.1.0.0/16` on top of `myapp-vpc`'s original `10.0.0.0/16`. New subnets can then be created inside the secondary range. The same non-overlap rule from Note 02 §5 applies to secondary blocks too.
+- A VPC isn't locked to its original CIDR forever — you can **add secondary CIDR blocks** later (up to 5 total per VPC, including the primary) if you run out of address space, e.g. adding `10.1.0.0/16` on top of `myapp-vpc`'s original `10.0.0.0/16`. New subnets can then be created inside the secondary range. The same non-overlap rule applies to secondary blocks too: a secondary CIDR must not overlap the primary block, any other secondary block, or any network you'll ever connect the VPC to (a peered VPC, an on-premises network over VPN, etc.).
 - **IPv6 in a VPC works completely differently and needs no math at all**: if you enable IPv6, AWS (or your own BYOIP pool) assigns the **VPC a fixed `/56` block**, and **every subnet gets a fixed `/64` block** carved out of it automatically. There's no VLSM-style sizing decision to make — every subnet is always exactly `/64`, because IPv6's address space is so vast that fixed-size allocation is simply the design. Just remember the two magic numbers: **VPC = `/56`, subnet = `/64`**.
 
 ---

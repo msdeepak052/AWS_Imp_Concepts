@@ -59,7 +59,7 @@ sudo systemctl enable --now httpd
    - The page is blocked because no inbound rule allows port 80 anymore (default deny).
 4. **Re-add** the HTTP 80 / Anywhere rule → **Save** → refresh → page loads again. ✅
 
-> 🧠 This proves the **allow-only / default-deny** behavior from Part 1.
+> 🧠 This proves the **allow-only / default-deny** behavior: a security group has no built-in "deny" rule — it simply blocks anything that isn't explicitly allowed. The moment the only rule permitting port 80 is gone, port 80 traffic has nothing allowing it through, so it's dropped, exactly as if the group had never allowed it in the first place.
 
 ---
 
@@ -91,7 +91,7 @@ Simulate "only web servers may reach the DB":
 3. Now any instance in `web-sg` can reach port 3306 of any instance in `db-sg`, **without hard-coding IPs**.
 4. (If you launch a DB-like instance with `db-sg`, only your web instance — being in `web-sg` — could connect to 3306.)
 
-> This is the real-world multi-tier pattern from Part 3.
+> This is the real-world multi-tier pattern: instead of hard-coding IPs, the DB's rule trusts "membership in `web-sg`," so any current or future instance placed in `web-sg` is automatically allowed to reach the DB, with no rule edits needed as the web fleet scales up or down.
 
 ---
 

@@ -1,6 +1,6 @@
 # 18 - VPC Endpoints and AWS PrivateLink
 
-> Goal: understand how instances in a **private subnet** (no IGW, no public IP) can still talk to AWS services like **S3** and **Secrets Manager** without going out to the public internet — and without paying NAT Gateway data-processing fees. Builds on the `myapp-vpc` NAT Gateway design from Note 09. Next: Note 19 (DHCP Option Sets).
+> Goal: understand how instances in a **private subnet** (no IGW, no public IP) can still talk to AWS services like **S3** and **Secrets Manager** without going out to the public internet — and without paying NAT Gateway data-processing fees. Builds on the `myapp-vpc` NAT Gateway design set up earlier in this folder.
 
 ---
 
@@ -14,7 +14,7 @@ myapp-app-1 → myapp-private-rt (0.0.0.0/0) → myapp-nat-gw → myapp-igw → 
 
 This works, but has two real downsides:
 
-1. **Cost** — every byte crosses the NAT Gateway, which bills **per GB processed** (Note 09), even though the traffic never leaves AWS's own network geographically.
+1. **Cost** — every byte crosses the NAT Gateway, which bills **per GB processed**, even though the traffic never leaves AWS's own network geographically.
 2. **Security posture** — traffic technically transits the public internet path (via IGW), which some compliance/security teams want to avoid entirely for a "private" resource — they want traffic to **never leave the AWS backbone**.
 
 A **VPC Endpoint** solves both: it lets resources inside your VPC reach an AWS service **privately**, over the AWS network, with **no NAT Gateway and no Internet Gateway involved at all** for that traffic.
@@ -54,7 +54,7 @@ The powerful extra capability: you can put **your own application** (e.g. an int
 Key properties of PrivateLink connections:
 - **One-directional** — the consumer VPC can reach the service, but the service provider cannot initiate connections back into the consumer's VPC.
 - **No overlapping-CIDR problem** — unlike peering, the two VPCs' CIDR ranges can even overlap, because there's no direct routing between the full networks, only to the single ENI.
-- **Scales to thousands of consumer VPCs/accounts** without the "full mesh" management headache Transit Gateway/peering can create (Notes 11, 17).
+- **Scales to thousands of consumer VPCs/accounts** without the "full mesh" management headache that VPC Peering and Transit Gateway are designed to solve at larger scale.
 
 <img width="759" height="268" alt="image" src="https://github.com/user-attachments/assets/9678230a-40d5-42dd-b6ee-313e14155de4" />
 
@@ -118,7 +118,7 @@ Both paths stay entirely inside AWS's network — no IGW, no NAT Gateway, involv
 5. **VPC**: `myapp-vpc`.
 6. **Subnets**: check both **`myapp-private-subnet-1`** and **`myapp-private-subnet-2`** (creates one ENI per AZ, for HA).
 7. **Enable DNS name**: leave checked — this lets the app call the normal `secretsmanager.ap-south-1.amazonaws.com` hostname and transparently resolve to the endpoint's private IP, so **no code changes needed**.
-8. **Security group**: choose/create one that allows inbound **443 from `myapp-app-sg`** (Note 04) — the endpoint ENI needs its own SG just like an instance would.
+8. **Security group**: choose/create one that allows inbound **443 from `myapp-app-sg`** — the security group already used by the app-tier instances — the endpoint ENI needs its own SG just like an instance would.
 9. **Create endpoint**. Status goes `Pending` → `Available` after a minute or two.
 
 ---

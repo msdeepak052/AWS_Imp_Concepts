@@ -1,12 +1,12 @@
 # 15 - AWS Site-to-Site VPN
 
-> Goal: connect `myapp-vpc` back to an **on-premises network** over the public internet, encrypted, using **AWS Site-to-Site VPN**. Covers the four building blocks (Customer Gateway, Virtual Private Gateway, the VPN Connection itself, and route propagation), why AWS always gives you **two tunnels**, static vs BGP routing, and **VPN CloudHub**. Note 16 covers the dedicated-line alternative (Direct Connect); Note 17 covers Transit Gateway, which can also terminate VPNs at scale.
+> Goal: connect `myapp-vpc` back to an **on-premises network** over the public internet, encrypted, using **AWS Site-to-Site VPN**. Covers the four building blocks (Customer Gateway, Virtual Private Gateway, the VPN Connection itself, and route propagation), why AWS always gives you **two tunnels**, static vs BGP routing, and **VPN CloudHub**. Later notes in this folder cover the dedicated-line alternative (Direct Connect) and Transit Gateway, which can also terminate VPN connections at scale.
 
 ---
 
 ## 1. What problem does Site-to-Site VPN solve?
 
-So far every note in this folder has treated `myapp-vpc` as a self-contained island that talks to the public internet (Note 06) or is peered to a sibling VPC (Note 11). Real companies usually also have an **on-premises data center or office network** that needs to talk to AWS privately — for example, to reach `myapp-private-subnet-1` without going over the open internet unencrypted, or to let head-office staff hit an internal admin tool.
+So far every note in this folder has treated `myapp-vpc` as a self-contained island that talks to the public internet through its Internet Gateway, or is peered directly to a sibling VPC. Real companies usually also have an **on-premises data center or office network** that needs to talk to AWS privately — for example, to reach `myapp-private-subnet-1` without going over the open internet unencrypted, or to let head-office staff hit an internal admin tool.
 
 **AWS Site-to-Site VPN** creates an **encrypted IPSec tunnel** between:
 - your **on-premises network** (a physical router/firewall you own), and
@@ -14,7 +14,7 @@ So far every note in this folder has treated `myapp-vpc` as a self-contained isl
 
 routed over the **public internet**, but encrypted end-to-end so the traffic inside the tunnel is private.
 
-> 🧠 **Mental model:** Site-to-Site VPN is like renting an armored courier van that drives on the same public roads as everyone else (the internet), but nobody can see what's inside the van (encryption). Direct Connect (Note 16), by contrast, is your own private road that never touches public traffic at all.
+> 🧠 **Mental model:** Site-to-Site VPN is like renting an armored courier van that drives on the same public roads as everyone else (the internet), but nobody can see what's inside the van (encryption). Direct Connect — a dedicated, private, physical network link to AWS covered in a later note — is by contrast your own private road that never touches public traffic at all.
 
 ---
 
@@ -32,9 +32,9 @@ routed over the **public internet**, but encrypted end-to-end so the traffic ins
 - Your real on-prem device (a Cisco ASA, pfSense box, Fortinet appliance, etc.) must support **IPSec** and be reachable from the internet at that public IP.
 
 ### Virtual Private Gateway (VGW) in detail
-- The **AWS-managed VPN concentrator** attached to one VPC (like the IGW in Note 06, it's a 1:1-per-VPC style attachment, though a VGW can be detached and re-attached elsewhere).
+- The **AWS-managed VPN concentrator** attached to one VPC (like an Internet Gateway, it's a 1:1-per-VPC style attachment, though a VGW can be detached and re-attached elsewhere).
 - Unlike an IGW, a VGW can also be configured to **propagate routes** automatically into your route tables (Section 5).
-- Also supports **Direct Connect private VIF** termination (Note 16) — the VGW is a general "VPC-side gateway," not VPN-only.
+- Also supports terminating a **Direct Connect private VIF** — Direct Connect being AWS's dedicated physical network connection, detailed in a later note — the VGW is a general "VPC-side gateway," not VPN-only.
 
 ---
 
@@ -91,7 +91,7 @@ Instead of manually adding a route for the on-prem CIDR to `myapp-private-rt`, y
 
 ## 7. Where this fits vs Direct Connect vs Client VPN
 
-| | Site-to-Site VPN | Direct Connect (Note 16) | Client VPN |
+| | Site-to-Site VPN | Direct Connect | Client VPN |
 |---|---|---|---|
 | Connects | **Network to network** (on-prem network ↔ VPC) | **Network to network**, over a dedicated private line | **A single remote user's laptop** ↔ VPC |
 | Path | Public internet (encrypted) | Private dedicated fiber (not internet) | Public internet (encrypted) |
@@ -273,7 +273,7 @@ flowchart LR
 
 - **Site-to-Site VPN connections** are billed **per hour while attached and available** (roughly $0.05/hr in most regions for a standard connection), whether or not traffic flows.
 - Delete the **VPN Connection** first, then you can detach/delete the **Virtual Private Gateway** and **Customer Gateway** (these two are free, but tidy up unused resources anyway).
-- If you also created a NAT Gateway / EIP for this walkthrough, remember those are billed hourly too (Note 09).
+- If you also created a NAT Gateway / EIP for this walkthrough, remember those are billed hourly too — a NAT Gateway bills per hour it's running plus per-GB of data processed, independent of this VPN setup.
 
 ---
 
@@ -284,7 +284,7 @@ flowchart LR
 - **Static routing** = you type the CIDRs; **BGP** = routes exchange automatically and is AWS's recommended default when supported.
 - **Route propagation** pushes VPN/BGP-learned routes into your route table automatically instead of manual entry.
 - **VPN CloudHub** = multiple on-prem sites + one VGW = those sites can talk to each other, not just to the VPC.
-- Site-to-Site VPN sets up in **minutes** over the public internet (encrypted); Direct Connect (Note 17) is a **dedicated private line** that takes **weeks**; Client VPN is for individual remote users, not site-to-site.
+- Site-to-Site VPN sets up in **minutes** over the public internet (encrypted); Direct Connect is a **dedicated private line** that takes **weeks**; Client VPN is for individual remote users, not site-to-site.
 - Next: Note 16 covers **Direct Connect** for when you need consistent, high-bandwidth, dedicated connectivity instead.
 
 ---

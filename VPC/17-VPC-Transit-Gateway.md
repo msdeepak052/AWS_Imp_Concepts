@@ -1,12 +1,12 @@
 # 17 - VPC Transit Gateway
 
-> Goal: understand **AWS Transit Gateway (TGW)** — a central hub/router that connects many VPCs and on-premises networks without a full mesh of peering connections (Note 11). Covers the peering scalability problem, TGW route tables (segmentation), attachment types, and the TGW-vs-peering decision. Extends the `myapp` example by attaching `myapp-vpc`, `myapp-vpc-b`, and the Site-to-Site VPN from Note 15 to one `myapp-tgw`.
+> Goal: understand **AWS Transit Gateway (TGW)** — a central hub/router that connects many VPCs and on-premises networks without a full mesh of point-to-point peering connections. Covers the peering scalability problem, TGW route tables (segmentation), attachment types, and the TGW-vs-peering decision. Extends the `myapp` example by attaching `myapp-vpc`, `myapp-vpc-b`, and the Site-to-Site VPN connection built earlier in this folder to one `myapp-tgw`.
 
 ---
 
 ## 1. The problem: VPC Peering doesn't scale
 
-Note 11 showed how to peer two VPCs directly. That's fine for two VPCs. But peering connections are **point-to-point** and **not transitive** — if VPC A peers with B, and B peers with C, **A still cannot reach C** through B. To let every VPC talk to every other VPC, you need a peering connection **between every pair**.
+VPC Peering, covered in the previous note, connects two VPCs directly by linking their networks so traffic can flow between them privately. That's fine for two VPCs. But peering connections are **point-to-point** and **not transitive** — if VPC A peers with B, and B peers with C, **A still cannot reach C** through B. To let every VPC talk to every other VPC, you need a peering connection **between every pair**.
 
 The number of connections needed for **N** fully-meshed VPCs is:
 
@@ -79,11 +79,11 @@ A Transit Gateway doesn't just connect VPCs — it connects several kinds of net
 | Attachment type | Connects |
 |---|---|
 | **VPC attachment** | One VPC (via one subnet per AZ you want reachable) |
-| **VPN attachment** | A Site-to-Site VPN connection (Note 15) — instead of terminating on a VGW per-VPC, the VPN terminates on the TGW and can reach every VPC attached to it |
-| **Direct Connect Gateway attachment** | A DX Gateway (Note 16), via a **transit VIF** — brings on-prem DX connectivity to every attached VPC through the hub |
+| **VPN attachment** | A Site-to-Site VPN connection (an encrypted IPSec tunnel over the internet to an on-premises network) — instead of terminating on a VGW per-VPC, the VPN terminates on the TGW and can reach every VPC attached to it |
+| **Direct Connect Gateway attachment** | A Direct Connect Gateway (the resource that lets one dedicated physical connection reach many VPCs), via a **transit VIF** — brings on-prem DX connectivity to every attached VPC through the hub |
 | **Peering attachment** | Connects **two Transit Gateways**, including across Regions or AWS accounts — the way to extend a hub-and-spoke design beyond one Region |
 
-This is exactly why Note 15's VPN and Note 16's Direct Connect are relevant here: instead of a VPN/DX connection being wired to one VPC's VGW, you attach it once to the TGW and every VPC on that TGW can reach it — one on-prem connection serving many VPCs.
+This is exactly why Site-to-Site VPN and Direct Connect are relevant here: instead of a VPN/DX connection being wired to one VPC's VGW, you attach it once to the TGW and every VPC on that TGW can reach it — one on-prem connection serving many VPCs.
 
 ---
 
@@ -117,7 +117,7 @@ Note that **only static routes** are supported over a TGW peering attachment (no
 
 ## 6. Hands-on: attach `myapp-vpc`, `myapp-vpc-b`, and the Site-to-Site VPN to `myapp-tgw`
 
-We bring together three notes' worth of resources: `myapp-vpc` (`10.0.0.0/16`, Notes 01–10), `myapp-vpc-b` (`10.1.0.0/16`, Note 11's peering example), and the Site-to-Site VPN from Note 15 — all attached to one new Transit Gateway so all three can reach each other **through the hub** instead of needing a peering connection AND a separate VPN-per-VPC.
+We bring together resources built up over this whole folder: `myapp-vpc` (`10.0.0.0/16`, our main VPC), `myapp-vpc-b` (`10.1.0.0/16`, the second VPC from the earlier VPC peering example), and the Site-to-Site VPN connection built earlier in this folder — all attached to one new Transit Gateway so all three can reach each other **through the hub** instead of needing a peering connection AND a separate VPN-per-VPC.
 
 ### Step 1 — Create the Transit Gateway
 
@@ -141,11 +141,11 @@ We bring together three notes' worth of resources: `myapp-vpc` (`10.0.0.0/16`, N
 1. Repeat Step 2, **VPC**: `myapp-vpc-b` (`10.1.0.0/16`), selecting its equivalent private subnets.
 2. **Create attachment**.
 
-### Step 4 — Attach the Site-to-Site VPN from Note 15
+### Step 4 — Attach the Site-to-Site VPN connection
 
 1. **Create Transit Gateway Attachment** → **Attachment type**: **VPN**.
 2. **Transit Gateway**: `myapp-tgw`.
-3. **Customer Gateway**: choose `myapp-onprem-cgw` (existing, from Note 15) or create a new one.
+3. **Customer Gateway**: choose `myapp-onprem-cgw` (the Customer Gateway created earlier for the Site-to-Site VPN) or create a new one.
 4. This provisions a fresh Site-to-Site VPN connection **terminating on the TGW** rather than a per-VPC VGW — now `192.168.0.0/16` is reachable by **both** `myapp-vpc` and `myapp-vpc-b` through the same hub, instead of needing a second VPN if `myapp-vpc-b` also wanted on-prem access.
 
 ### Step 5 — Update VPC route tables to send cross-VPC/on-prem traffic to the TGW
@@ -154,13 +154,13 @@ The TGW attachments alone don't redirect traffic — each **VPC's own route tabl
 
 1. Route Tables → `myapp-private-rt` (in `myapp-vpc`) → **Edit routes** → **Add route**:
    - Destination `10.1.0.0/16` (myapp-vpc-b's CIDR) → Target: **Transit Gateway** → `myapp-tgw`.
-   - Destination `192.168.0.0/16` (on-prem) → Target: `myapp-tgw` (replacing/alongside the direct VGW route from Note 15, depending on which path you keep).
+   - Destination `192.168.0.0/16` (on-prem) → Target: `myapp-tgw` (replacing/alongside the direct Virtual Private Gateway route created earlier for the Site-to-Site VPN, depending on which path you keep).
 2. In `myapp-vpc-b`'s equivalent private route table → **Add route**:
    - Destination `10.0.0.0/16` (myapp-vpc's CIDR) → Target: `myapp-tgw`.
    - Destination `192.168.0.0/16` → Target: `myapp-tgw`.
 3. Both VPCs, plus on-prem, can now reach each other **through `myapp-tgw`** as a hub.
 
-> ⚠️ **CIDRs must not overlap** for any of this to route correctly — exactly the same rule as VPC peering (Note 11). `10.0.0.0/16`, `10.1.0.0/16`, and `192.168.0.0/16` are all distinct, so routing is unambiguous.
+> ⚠️ **CIDRs must not overlap** for any of this to route correctly — exactly the same rule that applies to VPC peering. `10.0.0.0/16`, `10.1.0.0/16`, and `192.168.0.0/16` are all distinct, so routing is unambiguous.
 
 ---
 
@@ -191,7 +191,7 @@ flowchart TD
 
 ## 8. TGW vs VPC Peering: the decision
 
-| Factor | VPC Peering (Note 11) | Transit Gateway |
+| Factor | VPC Peering | Transit Gateway |
 |---|---|---|
 | Cost | Free (only data transfer charged) | Attachment-hour + per-GB data processing charge |
 | Topology | Point-to-point, not transitive | Hub-and-spoke, all attachments can reach each other via route tables |
@@ -208,7 +208,7 @@ flowchart TD
 
 - **Transit Gateway attachments** are billed **per attachment-hour**, plus **per-GB processed** through the TGW — delete VPC/VPN/peering attachments you no longer need.
 - Delete attachments before deleting the Transit Gateway itself (VPC attachments, VPN attachment, then the TGW).
-- Remember the underlying **Site-to-Site VPN connection** (Note 15) is still billed hourly even after moving it to a TGW attachment — delete it too if it's no longer needed.
+- Remember the underlying **Site-to-Site VPN connection** is still billed hourly even after moving it to a TGW attachment — delete it too if it's no longer needed.
 - Leftover **route table entries pointing at a deleted TGW** will show as blackholed routes — clean those up in each VPC's route table.
 
 ---
@@ -220,7 +220,7 @@ flowchart TD
 - Attachment types: **VPC**, **VPN**, **Direct Connect Gateway**, and **TGW peering** (for cross-region).
 - **TGW route tables** let you segment/isolate attachments (e.g., prod vs dev) even on one shared TGW.
 - TGW is **regional** — cross-region connectivity needs a **TGW peering attachment** with static routes.
-- We attached `myapp-vpc`, `myapp-vpc-b`, and the Note 15 Site-to-Site VPN to `myapp-tgw`, then updated each VPC's route table to send cross-VPC/on-prem traffic to the TGW.
+- We attached `myapp-vpc`, `myapp-vpc-b`, and the Site-to-Site VPN connection to `myapp-tgw`, then updated each VPC's route table to send cross-VPC/on-prem traffic to the TGW.
 - Decision rule: **few VPCs → peering; many VPCs / need central control → Transit Gateway.**
 - Next: Note 18 covers **VPC Endpoints and PrivateLink** — private connectivity to AWS services without needing internet/NAT at all.
 

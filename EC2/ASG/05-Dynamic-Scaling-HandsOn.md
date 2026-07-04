@@ -1,24 +1,24 @@
 # 05 - Dynamic Scaling (Hands-On)
 
-> Goal: move `myapp-asg` (built in Note 02, running Note 03's manual scaling and Note 04's scheduled scaling) onto **dynamic scaling** — policies that react automatically to **real-time CloudWatch metrics** instead of a human click or a fixed clock time. We add a **target tracking** policy (keep average CPU at 50%) and a **step scaling** policy (bigger CPU breach = bigger response), and trace the full alarm → scale → register sequence.
+> Goal: move `demo-asg` onto **dynamic scaling** — policies that react automatically to **real-time CloudWatch metrics** instead of a human click or a fixed clock time. We add a **target tracking** policy (keep average CPU at 50%) and a **step scaling** policy (bigger CPU breach = bigger response), and trace the full alarm → scale → register sequence.
 
 ---
 
 ## 1. Manual vs Scheduled vs Dynamic — where this fits
 
-| Approach | Trigger | Covered in |
+| Approach | Trigger | Where |
 |---|---|---|
-| **Manual scaling** | You edit desired/min/max yourself | Note 03 |
-| **Scheduled scaling** | A fixed clock time you predict in advance | Note 04 |
+| **Manual scaling** | You edit desired/min/max yourself | Covered earlier in this series |
+| **Scheduled scaling** | A fixed clock time you predict in advance | Covered earlier in this series |
 | **Dynamic scaling** | A **live CloudWatch alarm** crossing a threshold, right now | This note |
-| **Predictive scaling** | An ML forecast of future load, acting ahead of time | Note 06 |
+| **Predictive scaling** | An ML forecast of future load, acting ahead of time | Covered next |
 
 > 🧠 **Mental model:** scheduled scaling says "I *know* Monday 8 AM is busy." Dynamic scaling says "I *don't know* when it'll get busy, but I'm watching CPU every minute and will react the moment it does." Dynamic scaling is what most people mean by "Auto Scaling" in casual conversation.
 
 Dynamic scaling always has the same three parts:
 1. A **CloudWatch alarm** watching a metric (e.g. `CPUUtilization` averaged across the group).
-2. A **scaling policy** attached to `myapp-asg` that says what to do when the alarm fires.
-3. The **ASG** actually launching/terminating instances and (if attached) registering/deregistering them with `myapp-tg`.
+2. A **scaling policy** attached to `demo-asg` that says what to do when the alarm fires.
+3. The **ASG** actually launching/terminating instances and (if a target group is attached) registering/deregistering them with it.
 
 ---
 
@@ -49,59 +49,59 @@ This removes the two hardest parts of dynamic scaling (choosing thresholds, choo
 
 ---
 
-## 4. Hands-on: create a target tracking policy on `myapp-asg`
+## 4. Hands-on: create a target tracking policy on `demo-asg`
 
-**Goal:** keep average CPU utilization across `myapp-asg` at 50%.
+**Goal:** keep average CPU utilization across `demo-asg` at 50%.
 
-1. Console → **EC2 → Auto Scaling Groups → `myapp-asg`**.
+1. Console → **EC2 → Auto Scaling Groups → `demo-asg`**.
 2. Select the **Automatic Scaling** tab.
 3. Click **Create dynamic scaling policy**.
 4. **Policy type**: **Target tracking scaling**.
-5. **Name**: `myapp-cpu-target-50`.
+5. **Name**: `demo-cpu-target-50`.
 6. **Metric type**: **Average CPU utilization**.
 7. **Target value**: `50`.
-8. **Instances need**: leave the default **Instance warmup** (time before a new instance's metrics count toward the average — give it enough time for `httpd`/`nginx` from the `myapp-lt` user data to actually be serving traffic, e.g. 300s).
+8. **Instances need**: leave the default **Instance warmup** (time before a new instance's metrics count toward the average — give it enough time for `httpd`/`nginx` from the `demo-lt` user data to actually be serving traffic, e.g. 300s).
 9. Leave **Disable scale-in** unchecked (so this policy handles both scale-out AND scale-in).
 10. **Create**.
 
-Behind the scenes AWS now maintains two CloudWatch alarms on `myapp-asg`'s average CPU — one to add capacity when CPU is sustained above 50%, one to remove capacity when it's sustained below.
+Behind the scenes AWS now maintains two CloudWatch alarms on `demo-asg`'s average CPU — one to add capacity when CPU is sustained above 50%, one to remove capacity when it's sustained below.
 
-> ⚠️ Target tracking respects your Min/Max (2/6 for `myapp-asg`). It will never scale below 2 or above 6 no matter how the metric behaves.
+> ⚠️ Target tracking respects your Min/Max (2/6 for `demo-asg`). It will never scale below 2 or above 6 no matter how the metric behaves.
 
 ---
 
-## 5. Hands-on: create a step scaling policy on `myapp-asg`
+## 5. Hands-on: create a step scaling policy on `demo-asg`
 
 Say you also want a coarser, faster-reacting safety net: a bigger CPU breach should add more capacity immediately, not wait for target tracking's steady convergence.
 
 ### Step 1 — create the CloudWatch alarms
 
 1. Console → **CloudWatch → Alarms → Create alarm**.
-2. **Metric**: `CPUUtilization`, namespace `AWS/EC2`, dimension = `myapp-asg` (or use the ASG's aggregated metric).
+2. **Metric**: `CPUUtilization`, namespace `AWS/EC2`, dimension = `demo-asg` (or use the ASG's aggregated metric).
 3. **Statistic**: Average, **Period**: 1 minute.
 4. **Condition**: `CPUUtilization >= 70` for **2 out of 2 datapoints** (2 consecutive breaches, avoids reacting to a single noisy spike).
-5. Name it `myapp-cpu-high-70`.
-6. Repeat for a low alarm: `CPUUtilization < 30` for 2 datapoints → name it `myapp-cpu-low-30`.
+5. Name it `demo-cpu-high-70`.
+6. Repeat for a low alarm: `CPUUtilization < 30` for 2 datapoints → name it `demo-cpu-low-30`.
 
 ### Step 2 — create the step scaling policy
 
-1. Back in **EC2 → Auto Scaling Groups → `myapp-asg` → Automatic Scaling → Create dynamic scaling policy**.
+1. Back in **EC2 → Auto Scaling Groups → `demo-asg` → Automatic Scaling → Create dynamic scaling policy**.
 2. **Policy type**: **Step scaling**.
-3. **Name**: `myapp-step-scale-out`.
-4. **CloudWatch alarm**: `myapp-cpu-high-70`.
+3. **Name**: `demo-step-scale-out`.
+4. **CloudWatch alarm**: `demo-cpu-high-70`.
 5. **Add step adjustments**:
    | If metric value is... | Then... |
    |---|---|
    | Between 70 and 80 | Add **1** capacity unit |
    | ≥ 80 | Add **3** capacity units |
-6. **Create** a second policy `myapp-step-scale-in` on alarm `myapp-cpu-low-30`:
+6. **Create** a second policy `demo-step-scale-in` on alarm `demo-cpu-low-30`:
    | If metric value is... | Then... |
    |---|---|
    | < 30 | Remove **1** capacity unit |
 
-Now `myapp-asg` scales out by 1 for a moderate breach (70–80%) and by 3 for a severe one (>80%), while scaling in gently (−1) when CPU is low — a graduated response the flat target-tracking-only setup can't express.
+Now `demo-asg` scales out by 1 for a moderate breach (70–80%) and by 3 for a severe one (>80%), while scaling in gently (−1) when CPU is low — a graduated response the flat target-tracking-only setup can't express.
 
-> ⚠️ **Running both target tracking and step scaling on the same ASG at once is unusual** — normally you pick one strategy per metric. This note runs both purely to demonstrate each policy type against the same `myapp-asg`; in a real deployment you'd typically standardize on target tracking unless you have a specific reason for graduated step responses.
+> ⚠️ **Running both target tracking and step scaling on the same ASG at once is unusual** — normally you pick one strategy per metric. This note runs both purely to demonstrate each policy type against the same `demo-asg`; in a real deployment you'd typically standardize on target tracking unless you have a specific reason for graduated step responses.
 
 ---
 
@@ -110,15 +110,15 @@ Now `myapp-asg` scales out by 1 for a moderate breach (70–80%) and by 3 for a 
 ```mermaid
 sequenceDiagram
     participant CW as CloudWatch Alarm
-    participant ASG as myapp-asg
-    participant EC2 as EC2 (Launch Template myapp-lt)
-    participant TG as myapp-tg / myapp-alb
+    participant ASG as demo-asg
+    participant EC2 as EC2 (Launch Template demo-lt)
+    participant TG as demo-tg (target group)
 
     CW->>CW: Evaluate CPUUtilization every 60s
     CW-->>ASG: ALARM state (e.g. CPU >= 70% for 2 datapoints)
     ASG->>ASG: Evaluate attached scaling policy
     alt Scale-out
-        ASG->>EC2: Launch new instance(s) from myapp-lt
+        ASG->>EC2: Launch new instance(s) from demo-lt
         EC2-->>ASG: Instance running, passes EC2 health check
         ASG->>TG: Register new instance(s)
         TG-->>TG: ELB health check on /health must pass
@@ -130,7 +130,7 @@ sequenceDiagram
     end
 ```
 
-Note the two health gates on scale-out: the instance must pass its **EC2 status check**, then its **ELB target group health check** (`/health`) before `myapp-alb` actually routes traffic to it — this is why Note 02's **EC2 + ELB combined health checks** matter so much for dynamic scaling to work correctly.
+Note the two health gates on scale-out: the instance must pass its **EC2 status check**, then its **ELB target group health check** (`/health`) before the load balancer actually routes traffic to it — this is why configuring both EC2 and ELB health checks together (as we did when first building the ASG) matters so much for dynamic scaling to work correctly.
 
 ---
 
@@ -138,7 +138,7 @@ Note the two health gates on scale-out: the instance must pass its **EC2 status 
 
 | Problem | Likely cause / fix |
 |---|---|
-| ASG scales out but new instances never get traffic | Target group health check (`/health`) is failing — instance is EC2-healthy but app-unhealthy. Check the `myapp-lt` user data actually started `httpd`/`nginx`. |
+| ASG scales out but new instances never get traffic | Target group health check (`/health`) is failing — instance is EC2-healthy but app-unhealthy. Check the `demo-lt` user data actually started `httpd`/`nginx`. |
 | Target tracking seems to "overshoot" then settle | Normal — target tracking converges over a few evaluation cycles, it isn't instantaneous. |
 | Step scaling never fires | Check the CloudWatch alarm is actually in `ALARM` state (not `INSUFFICIENT_DATA`) and its **datapoints-to-alarm** setting matches what you expect. |
 | Scale-in keeps fighting scale-out (flapping) | Two competing policies with overlapping thresholds — the ASG uses whichever policy calculates the **larger** desired capacity, but flapping usually means your thresholds/step boundaries are too close together. Widen the gap (e.g. scale-out at 70%, scale-in at 30%, not 45%/50%). |
@@ -160,8 +160,8 @@ Note the two health gates on scale-out: the instance must pass its **EC2 status 
 
 - Dynamic scaling reacts to **real-time CloudWatch metrics**, unlike scheduled (fixed time) or manual (human-driven) scaling.
 - **Target tracking** (set-and-forget, AWS manages the alarms/math) is the modern default; **step scaling** gives graduated, breach-size-aware responses; **simple scaling** is legacy, gated by a fixed cooldown.
-- Built `myapp-cpu-target-50` (target tracking, average CPU = 50%) and `myapp-step-scale-out`/`myapp-step-scale-in` (step scaling, CPU 70–80%→+1, >80%→+3, <30%→−1) on `myapp-asg`.
-- Scale-out only finishes once the new instance passes **both** the EC2 status check and the `myapp-tg` ELB health check.
+- Built `demo-cpu-target-50` (target tracking, average CPU = 50%) and `demo-step-scale-out`/`demo-step-scale-in` (step scaling, CPU 70–80%→+1, >80%→+3, <30%→−1) on `demo-asg`.
+- Scale-out only finishes once the new instance passes **both** the EC2 status check and the `demo-tg` ELB health check.
 - Next: Note 06 covers **predictive scaling** — using ML forecasts to scale *ahead* of demand instead of reacting to it.
 
 ---

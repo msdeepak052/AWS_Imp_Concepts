@@ -83,8 +83,8 @@ Three levels:
 
 ## 8. Don't confuse tenancy with...
 
-- **Placement Groups** (Note 17) → about *latency/fault isolation* among **your own** instances, not about sharing with other customers.
-- **Reserved Instances / Savings Plans** (Notes 19–21) → about *pricing commitment*, not hardware sharing. (You **can** combine, e.g. Dedicated Host + Savings Plan.)
+- **Placement Groups** → a separate setting that controls how **your own** instances are physically arranged relative to each other (packed close for speed, or spread apart for fault isolation) — it's about *latency/fault isolation* among your instances, not about whether you share hardware with other AWS customers.
+- **Reserved Instances / Savings Plans** → these are billing commitments where you agree to pay for a certain configuration or spend level for 1–3 years in exchange for a discount — about *pricing commitment*, not hardware sharing. (You **can** combine, e.g. Dedicated Host + Savings Plan.)
 
 ---
 

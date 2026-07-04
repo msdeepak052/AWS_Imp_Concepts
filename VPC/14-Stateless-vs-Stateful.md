@@ -1,6 +1,6 @@
 # 14 - Stateless vs Stateful (Deep Dive)
 
-> Goal: really nail down **what "state" means** in a firewall, why that single property changes how many rules you must write, and see it play out packet-by-packet for both a Security Group (Note 11) and a Network ACL (Note 12). This is the concept that trips up the most beginners in the whole VPC section — worth a dedicated note.
+> Goal: really nail down **what "state" means** in a firewall, why that single property changes how many rules you must write, and see it play out packet-by-packet for both a Security Group (the instance-level, stateful firewall) and a Network ACL (the subnet-level, stateless firewall). This is the concept that trips up the most beginners in the whole VPC section — worth a dedicated note.
 
 ---
 
@@ -23,7 +23,7 @@ A typical TCP connection (e.g. a browser loading a web page) works like this:
 3. **Client** sends `ACK` — connection established.
 4. Data flows both ways: server-to-client traffic is **from port 80 to port 51000**; client-to-server traffic is **from port 51000 to port 80**.
 
-Notice: the **server's replies are addressed to a random high port** the client picked, not to port 80. Any firewall on the path has to somehow allow that reply through — either because it "remembers" the outgoing request (stateful) or because it has a standing rule for that whole ephemeral range (stateless, Note 12 §5).
+Notice: the **server's replies are addressed to a random high port** the client picked, not to port 80. Any firewall on the path has to somehow allow that reply through — either because it "remembers" the outgoing request (stateful) or because it has a standing rule allowing that whole ephemeral port range (1024-65535) as its own independent rule, in the opposite direction (stateless — this is exactly the extra rule a NACL needs that a Security Group doesn't).
 
 ---
 
@@ -45,7 +45,7 @@ A NACL has no memory, so:
 
 - The **inbound** rule allowing TCP 80 from `0.0.0.0/0` only covers the **request** arriving.
 - The **reply** (server:80 → client:ephemeral-port) is a **completely separate packet** as far as the NACL is concerned — it must independently match an **outbound** rule, specifically one allowing the **ephemeral port range (1024-65535)** as the destination.
-- Miss that outbound ephemeral rule, and the request gets in fine, but the reply is silently dropped on the way out — the classic "it looks like it should work but the client just hangs" NACL bug (see Note 12 §5-6).
+- Miss that outbound ephemeral rule, and the request gets in fine, but the reply is silently dropped on the way out — the classic "it looks like it should work but the client just hangs" NACL bug.
 
 ---
 
@@ -123,7 +123,8 @@ Keep the VPC-section focus on **Security Group = stateful** and **NACL = statele
 - **Network ACLs are stateless** → need explicit rules for **both** the request and the ephemeral-port reply.
 - The TCP handshake's use of a random **ephemeral port** on the client side is *why* the reply direction needs its own stateless rule at all.
 - Forgetting the NACL's outbound ephemeral rule is the #1 real-world NACL bug — always pair a service-port rule with its ephemeral counterpart in the opposite direction.
-- This closes out the NACL/SG mini-series (Notes 11-14). Next in the VPC folder: Note 15 — **Site-to-Site VPN**, connecting `myapp-vpc` back to an on-premises network.
+- This closes out the mini-series on Security Groups, NACLs, and stateful vs stateless firewall behavior.
+- Next: Note 15 — **Site-to-Site VPN**, connecting `myapp-vpc` back to an on-premises network.
 
 ---
 

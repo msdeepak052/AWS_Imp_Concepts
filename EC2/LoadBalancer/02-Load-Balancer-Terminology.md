@@ -1,6 +1,6 @@
 # 02 - Load Balancer Terminology
 
-> Goal: nail down the core vocabulary before touching the console. Every hands-on note from here on (03-05 and beyond) assumes you know these terms cold. Continues Note 01 (the "why"); Note 03 starts the actual `myapp-alb` build with the network prerequisites.
+> Goal: nail down the core vocabulary before touching the console. Every hands-on note from here on assumes you know these terms cold. Continues Note 01 (the "why"); Note 03 starts the actual `demo-alb` build with the network prerequisites.
 
 ---
 
@@ -13,7 +13,7 @@ Each listener has:
 - A **default action** (the "default rule" — see below), which every listener must have.
 - Zero or more additional **listener rules** you add on top.
 
-`myapp-alb` (built in Note 05) gets one listener: **HTTP:80**.
+`demo-alb` (built in Note 05) gets one listener: **HTTP:80**.
 
 ---
 
@@ -22,12 +22,12 @@ Each listener has:
 A **listener rule** is evaluated by the load balancer to decide *which target group* a given request goes to. Each rule has:
 
 - A **priority** (a number — lower number is evaluated first).
-- One or more **conditions** (e.g. path pattern `/api/*`, host header `admin.myapp.internal`, HTTP method, query string, source IP).
+- One or more **conditions** (e.g. path pattern `/api/*`, host header `admin.example.internal`, HTTP method, query string, source IP).
 - One or more **actions** (e.g. `forward` to a target group, `redirect`, `fixed-response`, or **authenticate**).
 
 Every listener automatically has a **default rule** — it can't be deleted, has no conditions, and is **always evaluated last**, acting as the catch-all for anything that didn't match a more specific rule above it. Rules are evaluated **in priority order, lowest number first; the first matching rule wins** and no further rules are checked after that.
 
-> This is only a preview — full detail on writing rules (path-based and host-based routing, priority ordering in practice) is covered in Notes 06-08. For now: `myapp-alb`'s Note-05 build uses only the default rule, forwarding everything to `myapp-tg`.
+> This is only a preview — full detail on writing rules (path-based and host-based routing, priority ordering in practice) is covered in Notes 06-08. For now: `demo-alb`'s Note-05 build uses only the default rule, forwarding everything to `demo-tg`.
 
 ---
 
@@ -39,7 +39,7 @@ A **target group** is the pool of backend destinations the load balancer routes 
 - **Protocol and port** used to route traffic to targets (e.g. HTTP:80).
 - **Health check settings** (see below).
 
-`myapp-tg` (built in Note 05) uses target type **instance**, protocol/port **HTTP:80**.
+`demo-tg` (built in Note 05) uses target type **instance**, protocol/port **HTTP:80**.
 
 > ⚠️ You can register one target with **multiple** target groups, and a target group's target type **cannot be changed after creation** — pick it carefully.
 
@@ -61,11 +61,11 @@ The load balancer periodically sends a request (TCP ping, HTTP GET, etc.) to eac
 | **Timeout** | How long to wait for a response before counting it as a failure | 5 seconds (range 2-120) |
 | **Healthy threshold** | Consecutive **successful** checks needed to mark an unhealthy target healthy again | 5 (range 2-10) |
 | **Unhealthy threshold** | Consecutive **failed** checks needed to mark a target unhealthy | 2 (range 2-10) |
-| **Path** | (HTTP/HTTPS) the URI the health check requests | `/` by default — `myapp-tg` uses `/health` |
+| **Path** | (HTTP/HTTPS) the URI the health check requests | `/` by default — `demo-tg` uses `/health` |
 
 **What happens to a target that fails its health check?** It is marked `unhealthy` and the load balancer **stops routing new requests to it** — it's taken out of rotation. Critically, **the load balancer does not terminate or restart anything** — it has no such power. It only controls whether *it* sends traffic there.
 
-> 🧠 **Contrast with the ASG's job:** an unhealthy target sitting in `myapp-tg` is only "parked" by the load balancer. It's `myapp-asg` (Note `EC2\ASG\12`) that actually notices the target-group-reported unhealthy status (when ELB health checks are enabled on the ASG) and **replaces the instance** — launching a new one and terminating the bad one. The load balancer diagnoses; the ASG cures.
+> 🧠 **Contrast with an Auto Scaling group's job:** an unhealthy target sitting in a target group is only "parked" by the load balancer. If that target group is attached to an Auto Scaling group with ELB health checks enabled, it's the ASG that actually notices the target-group-reported unhealthy status and **replaces the instance** — launching a new one and terminating the bad one. The load balancer diagnoses; the ASG cures.
 
 ---
 
@@ -76,7 +76,7 @@ Controls whether each load balancer node distributes requests **only to targets 
 - **ALB**: cross-zone load balancing is **always on** and cannot be turned off at the load balancer level (only per target group, as an override).
 - **NLB**: cross-zone load balancing is **off by default** and can be enabled per target group; enabling it may incur a **cross-AZ data transfer charge**.
 
-Full worked comparison (uneven vs even per-instance traffic share) is in Note 11 — this is just the definition you need now.
+This is just the definition you need now — a full worked comparison (uneven vs. even per-instance traffic share) belongs to a deeper networking discussion beyond this note's scope.
 
 ---
 
@@ -130,7 +130,7 @@ Two ALB cookie types:
 
 🎯 **Exam tip:** "path-based routing" and "host-based routing" are **ALB-only** — if a question needs that and mentions NLB or GWLB, the answer is wrong; route it through ALB instead (or put an ALB behind/in front as appropriate).
 
-🎯 **Exam tip:** cross-zone load balancing is **always-on and free at the load balancer level for ALB**, but **off-by-default and potentially chargeable for NLB** — a classic exam contrast (Note 11 goes deep on this).
+🎯 **Exam tip:** cross-zone load balancing is **always-on and free at the load balancer level for ALB**, but **off-by-default and potentially chargeable for NLB** — a classic exam contrast.
 
 ---
 
@@ -138,9 +138,9 @@ Two ALB cookie types:
 
 - **Listener** = protocol+port the LB listens on; **Listener rule** = priority-ordered conditions+actions, default rule is the catch-all.
 - **Target group** = pool of targets + health check config + target type; **Target** = one registered instance/IP/Lambda.
-- **Health check** failure takes a target out of rotation — it does **not** terminate anything; that's the ASG's job.
+- **Health check** failure takes a target out of rotation — it does **not** terminate anything; that's the ASG's job when the target group is attached to one.
 - **Cross-zone load balancing**, **idle timeout**, **deregistration delay** (the modern name for connection draining), and **sticky sessions** each have different defaults and applicability across ALB/NLB/GWLB — memorize the table in Section 10.
-- Next: Note 03 — verify `myapp-vpc`'s existing subnets actually satisfy what an ALB needs (2+ AZs, correct public/private placement) before we build anything.
+- Next: Note 03 — Load Balancer VPC Design (Hands-On).
 
 ---
 

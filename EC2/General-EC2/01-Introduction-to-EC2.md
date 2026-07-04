@@ -99,7 +99,7 @@ The **AWS Free Tier** (for new accounts) historically includes **750 hours/month
 - **Stopped**: billed for storage only (EBS), not compute. Public IP usually changes on restart.
 - **Terminated**: instance is permanently deleted. Root EBS volume is deleted by default.
 
-> ⚠️ **Terminate = permanent deletion.** Don't confuse "Stop" with "Terminate". We protect against accidental termination in Note 16.
+> ⚠️ **Terminate = permanent deletion.** Don't confuse "Stop" with "Terminate". AWS lets you enable a **Termination Protection** setting on an instance, which blocks the Terminate action (via console, CLI, or API) until you explicitly disable that setting — a simple safeguard against a misclick destroying a production server.
 
 ---
 

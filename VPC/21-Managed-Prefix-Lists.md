@@ -1,6 +1,6 @@
 # 21 - Managed Prefix Lists
 
-> Goal: understand what a **managed prefix list** is, the difference between **AWS-managed** and **customer-managed** prefix lists, and how referencing one prefix list in many Security Groups/route tables saves you from updating the same CIDR everywhere by hand. Builds on `myapp-web-sg` from Note 04. Next: continue the folder review / apply everything end-to-end.
+> Goal: understand what a **managed prefix list** is, the difference between **AWS-managed** and **customer-managed** prefix lists, and how referencing one prefix list in many Security Groups/route tables saves you from updating the same CIDR everywhere by hand. Builds on `myapp-web-sg`, the security group created earlier in this build. Next: continue the folder review / apply everything end-to-end.
 
 ---
 
@@ -53,7 +53,7 @@ Example: you create `myapp-office-ips` with **Max entries = 10**, but only add 3
 
 ## 5. Extending `myapp-vpc`: replace a hardcoded "My IP" with a prefix list
 
-Recall from Note 04: `myapp-web-sg` allows inbound **SSH (22)** from **"My IP"** — a single hardcoded CIDR (e.g. `203.0.113.10/32`). That's fine solo, but breaks the moment:
+Recall that `myapp-web-sg`, created earlier in this build, allows inbound **SSH (22)** from **"My IP"** — a single hardcoded CIDR (e.g. `203.0.113.10/32`). That's fine solo, but breaks the moment:
 - You're not the only admin, or
 - Your home/office IP changes (common with residential ISPs).
 

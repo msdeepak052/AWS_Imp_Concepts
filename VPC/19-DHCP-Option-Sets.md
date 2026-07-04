@@ -1,6 +1,6 @@
 # 19 - DHCP Option Sets
 
-> Goal: understand how EC2 instances automatically get their **DNS and network configuration** inside a VPC, and how to override it with a **custom DHCP option set** — the classic use case being "point my instances at an on-prem DNS server" in a hybrid setup (ties to Note 15's Site-to-Site VPN). Next: Note 20 (VPC Flow Logs).
+> Goal: understand how EC2 instances automatically get their **DNS and network configuration** inside a VPC, and how to override it with a **custom DHCP option set** — the classic use case being "point my instances at an on-prem DNS server" in a hybrid setup connected via Site-to-Site VPN or Direct Connect.
 
 ---
 
@@ -25,7 +25,7 @@ A DHCP option set can define:
 
 ## 2. The default DHCP option set
 
-Every VPC (including the default VPC, and `myapp-vpc` when we created it in Note 04) is automatically associated with a **default DHCP option set** containing:
+Every VPC (including the default VPC, and `myapp-vpc` when we created it earlier in this build) is automatically associated with a **default DHCP option set** containing:
 
 | Option | Default value |
 |---|---|
@@ -39,11 +39,11 @@ This is why, out of the box, every EC2 instance in `myapp-vpc` can already resol
 
 ## 3. Why would you ever create a custom DHCP option set?
 
-The default works fine for a pure-AWS setup. The real-world trigger is **hybrid connectivity** (Note 15 – Site-to-Site VPN, Note 16 – Direct Connect):
+The default works fine for a pure-AWS setup. The real-world trigger is **hybrid connectivity** — an encrypted Site-to-Site VPN tunnel or a dedicated Direct Connect line back to an on-premises network:
 
 > "We have an on-prem Active Directory domain (`corp.local`) with its own DNS servers. Our EC2 instances in `myapp-vpc` join that AD domain, and need to resolve on-prem hostnames (`fileserver.corp.local`) — not just AWS/internet names."
 
-To make that work, you create a **custom DHCP option set** that lists your **on-prem DNS server IP(s)** (reachable over the VPN/DX connection from Note 15) as the `domain-name-servers`, and associate it with `myapp-vpc`. Now every instance's OS-level DNS resolver automatically points at the on-prem DNS server instead of (or in addition to) `AmazonProvidedDNS`.
+To make that work, you create a **custom DHCP option set** that lists your **on-prem DNS server IP(s)** (reachable over the Site-to-Site VPN or Direct Connect connection to that on-premises network) as the `domain-name-servers`, and associate it with `myapp-vpc`. Now every instance's OS-level DNS resolver automatically points at the on-prem DNS server instead of (or in addition to) `AmazonProvidedDNS`.
 
 Other real reasons to customize:
 - Standardizing on a **corporate NTP server** for compliance/audit reasons.
@@ -70,7 +70,7 @@ You **cannot edit** an existing DHCP option set once created. There is no "Edit"
 
 ## 5. Step-by-step: custom DHCP option set for `myapp-vpc`
 
-**Scenario:** `myapp-vpc` connects to an on-prem network (`192.168.0.0/16`, per Note 15's Site-to-Site VPN) that has an on-prem DNS server at `192.168.0.53`. We want `myapp-app-1`/`myapp-app-2` to resolve on-prem AD hostnames.
+**Scenario:** `myapp-vpc` connects to an on-prem network (`192.168.0.0/16`, reachable via a Site-to-Site VPN connection to that network) that has an on-prem DNS server at `192.168.0.53`. We want `myapp-app-1`/`myapp-app-2` to resolve on-prem AD hostnames.
 
 1. VPC console → left nav **DHCP Option Sets** → **Create DHCP option set**.
 2. **DHCP option set name**: `myapp-onprem-dns-options`.
@@ -89,7 +89,7 @@ flowchart LR
         DOPT["DHCP Option Set<br/>myapp-onprem-dns-options<br/>domain-name-servers = 192.168.0.53, AmazonProvidedDNS"]
         EC2["myapp-app-1<br/>(EC2 instance)"]
     end
-    ONPREM[("On-prem DNS server<br/>192.168.0.53<br/>(via Site-to-Site VPN, Note 15)")]
+    ONPREM[("On-prem DNS server<br/>192.168.0.53<br/>(via Site-to-Site VPN)")]
 
     DOPT -->|1 . assigned at boot/lease renewal| EC2
     EC2 -->|2 . DNS query for fileserver.corp.local| ONPREM
@@ -105,7 +105,7 @@ flowchart LR
 | Changed the DHCP option set but instances still resolve the old way | You edited/created a new set but forgot to **reboot** or renew the DHCP lease on existing instances. |
 | Trying to "edit" an existing option set — no such button | Option sets are **immutable** — create a new one and re-associate instead. |
 | On-prem names resolve, but S3/AWS names stop resolving | `AmazonProvidedDNS` wasn't listed as a fallback entry in `domain-name-servers`. |
-| On-prem DNS unreachable from EC2 | The Site-to-Site VPN / Direct Connect (Note 15/16) isn't up, or the security group/NACL blocks port 53 (UDP/TCP) to `192.168.0.53`. |
+| On-prem DNS unreachable from EC2 | The Site-to-Site VPN or Direct Connect connection isn't up, or the security group/NACL blocks port 53 (UDP/TCP) to `192.168.0.53`. |
 
 ---
 
@@ -113,7 +113,7 @@ flowchart LR
 
 - **DHCP option sets** control the network config (DNS servers, domain name, NTP) instances receive automatically at boot.
 - Every VPC starts with a **default option set**: `domain-name-servers = AmazonProvidedDNS`.
-- **Custom option sets** are mainly for hybrid setups — pointing instances at an **on-prem DNS server** so they can resolve on-prem hostnames (ties to Note 15 VPN / Note 16 Direct Connect).
+- **Custom option sets** are mainly for hybrid setups — pointing instances at an **on-prem DNS server** so they can resolve on-prem hostnames, reachable via a Site-to-Site VPN or Direct Connect connection.
 - ⚠️ Option sets are **immutable** — you create a new one and re-associate it with the VPC; you don't edit in place.
 - Existing running instances need a **DHCP lease renewal or reboot** to pick up a newly associated option set; new instances get it immediately.
 - Next: **Note 20** — VPC Flow Logs (capturing metadata about the traffic actually flowing through your VPC).

@@ -1,12 +1,12 @@
 # 10 - Custom Termination Policies with Lambda (Hands-On)
 
-> Goal: understand what a **custom (Lambda-backed) termination policy** is, when the built-in options from Note 09 aren't expressive enough, and how to attach one to `myapp-asg`. We also cover the lighter-weight alternative — **instance scale-in protection** — for the common case where all you need is "never terminate this specific instance."
+> Goal: understand what a **custom (Lambda-backed) termination policy** is, when the built-in options from the previous note aren't expressive enough, and how to attach one to `demo-asg`. We also cover the lighter-weight alternative — **instance scale-in protection** — for the common case where all you need is "never terminate this specific instance."
 
 ---
 
 ## 1. Why built-in policies aren't always enough
 
-Note 09's built-in policies (`OldestInstance`, `OldestLaunchTemplate`, etc.) only understand generic, structural facts about an instance — its age, its launch template version, its billing-hour position. None of them can answer business questions like:
+The previous note's built-in policies (`OldestInstance`, `OldestLaunchTemplate`, etc.) only understand generic, structural facts about an instance — its age, its launch template version, its billing-hour position. None of them can answer business questions like:
 
 - "Is this instance in the middle of processing a long job right now?"
 - "Does this instance have a `protect-from-scale-in=true` tag?"
@@ -26,8 +26,8 @@ When a scale-in event happens (or an instance refresh / max-instance-lifetime re
 
 ```json
 {
-  "AutoScalingGroupARN": "arn:aws:autoscaling:ap-south-1:123456789012:autoScalingGroup:...:autoScalingGroupName/myapp-asg",
-  "AutoScalingGroupName": "myapp-asg",
+  "AutoScalingGroupARN": "arn:aws:autoscaling:ap-south-1:123456789012:autoScalingGroup:...:autoScalingGroupName/demo-asg",
+  "AutoScalingGroupName": "demo-asg",
   "CapacityToTerminate": [
     { "AvailabilityZone": "ap-south-1a", "Capacity": 1, "InstanceMarketOption": "on-demand" }
   ],
@@ -40,7 +40,7 @@ When a scale-in event happens (or an instance refresh / max-instance-lifetime re
 ```
 
 - `CapacityToTerminate` — how much capacity needs to go, broken down by AZ and purchase option (already AZ-balanced by the ASG before your function is even called).
-- `Instances` — the candidate instances the ASG suggests, narrowed to the imbalanced AZ (same AZ-balancing rule as Note 09 applies **before** your Lambda is invoked).
+- `Instances` — the candidate instances the ASG suggests, narrowed to the imbalanced AZ (same AZ-balancing rule as the previous note applies **before** your Lambda is invoked).
 - `Cause` — one of `SCALE_IN`, `INSTANCE_REFRESH`, `MAX_INSTANCE_LIFETIME`, `REBALANCE`.
 
 ### Output — what your function must return
@@ -71,22 +71,22 @@ Console path: Lambda console → your function → **Configuration** → **Permi
 
 ## 4. Precedence: custom policy first, built-ins as fallback
 
-A custom Lambda termination policy is referenced by **ARN** in the same `--termination-policies` list as the built-ins from Note 09 — but with rules:
+A custom Lambda termination policy is referenced by **ARN** in the same `--termination-policies` list as the built-ins from the previous note — but with rules:
 
 - The Lambda ARN **must be listed first**.
 - Only **one** Lambda function can be specified per ASG.
-- Anything the Lambda *doesn't* fully resolve (e.g. it returns more candidates than capacity needed to terminate) falls through to the **next policy in the list** as a tie-breaker — exactly like Note 09's chaining, just with the Lambda occupying slot #1.
+- Anything the Lambda *doesn't* fully resolve (e.g. it returns more candidates than capacity needed to terminate) falls through to the **next policy in the list** as a tie-breaker — exactly like the previous note's chaining, just with the Lambda occupying slot #1.
 - You can reference an **unqualified ARN** (uses the unpublished/`$LATEST` code, but the resource policy must be on the unpublished version) or a **qualified ARN** with a version/alias suffix (not `$LATEST` — that specific suffix is rejected).
 
 Example combining a custom policy with a built-in fallback:
 
 ```
-["arn:aws:lambda:ap-south-1:123456789012:function:myapp-termination-fn:prod", "OldestInstance"]
+["arn:aws:lambda:ap-south-1:123456789012:function:demo-termination-fn:prod", "OldestInstance"]
 ```
 
 ---
 
-## 5. Hands-on: attach a custom Lambda termination policy to `myapp-asg`
+## 5. Hands-on: attach a custom Lambda termination policy to `demo-asg`
 
 **Scenario:** protect any instance tagged `protect-from-scale-in=true` (e.g. one running a long batch job); for everything else, fall back to terminating the oldest instance.
 
@@ -128,10 +128,10 @@ def lambda_handler(event, context):
 
 Deploy this, publish a version (e.g. `prod` alias), and add the resource-based policy from Section 3.
 
-### Step 2 — Attach it to `myapp-asg`
+### Step 2 — Attach it to `demo-asg`
 
 **Console:**
-1. EC2 console → **Auto Scaling Groups** → `myapp-asg` → **Details** → **Advanced configurations** → **Edit**.
+1. EC2 console → **Auto Scaling Groups** → `demo-asg` → **Details** → **Advanced configurations** → **Edit**.
 2. Under **Termination policies**, choose **Custom termination policy**, select your Lambda function and the `prod` version/alias.
 3. Keep `OldestInstance` as a second entry (fallback), in that order.
 4. **Update**.
@@ -139,9 +139,9 @@ Deploy this, publish a version (e.g. `prod` alias), and add the resource-based p
 **AWS CLI:**
 ```bash
 aws autoscaling update-auto-scaling-group \
-  --auto-scaling-group-name myapp-asg \
+  --auto-scaling-group-name demo-asg \
   --termination-policies \
-    "arn:aws:lambda:ap-south-1:123456789012:function:myapp-termination-fn:prod" \
+    "arn:aws:lambda:ap-south-1:123456789012:function:demo-termination-fn:prod" \
     "OldestInstance"
 ```
 
@@ -162,8 +162,8 @@ Trigger a scale-in (e.g. lower desired capacity by 1) and confirm the tagged ins
 ```mermaid
 sequenceDiagram
     participant CW as CloudWatch Alarm
-    participant ASG as myapp-asg
-    participant Lambda as myapp-termination-fn
+    participant ASG as demo-asg
+    participant Lambda as demo-termination-fn
     participant EC2 as EC2 API
 
     CW->>ASG: CPU < 30% → scale in by 1
@@ -174,7 +174,7 @@ sequenceDiagram
     Lambda->>Lambda: Filter out protected instances,<br/>pick oldest of the rest
     Lambda-->>ASG: { "InstanceIDs": ["i-0a1b...111"] }
     ASG->>EC2: TerminateInstances(i-0a1b...111)
-    ASG->>ASG: myapp-tg deregisters terminated instance
+    ASG->>ASG: Target group deregisters terminated instance
 ```
 
 ---
@@ -187,7 +187,7 @@ For the very common, simpler need — **"never let the ASG terminate this one sp
 # Protect one running instance from scale-in
 aws autoscaling set-instance-protection \
   --instance-ids i-0a1b2c3d4e5f60111 \
-  --auto-scaling-group-name myapp-asg \
+  --auto-scaling-group-name demo-asg \
   --protected-from-scale-in
 ```
 
@@ -207,13 +207,13 @@ aws autoscaling set-instance-protection \
 
 ## 8. ⚠️ Clean up to avoid charges
 
-- Revert `myapp-asg`'s termination policy back to `Default` (or `OldestInstance`) once done testing:
+- Revert `demo-asg`'s termination policy back to `Default` (or `OldestInstance`) once done testing:
   ```bash
-  aws autoscaling update-auto-scaling-group --auto-scaling-group-name myapp-asg --termination-policies "Default"
+  aws autoscaling update-auto-scaling-group --auto-scaling-group-name demo-asg --termination-policies "Default"
   ```
 - Delete the demo Lambda function if you created one solely for this exercise (Lambda has its own free tier, but tidy up regardless).
 - Remove the resource-based policy / test tag if you no longer need them.
-- As always: bring `myapp-asg` back to desired=2/min=2 if you scaled up purely to test scale-in behavior.
+- As always: bring `demo-asg` back to desired=2/min=2 if you scaled up purely to test scale-in behavior.
 
 ---
 

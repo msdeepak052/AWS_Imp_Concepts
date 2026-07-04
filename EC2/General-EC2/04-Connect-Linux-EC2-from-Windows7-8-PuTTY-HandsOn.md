@@ -14,7 +14,7 @@
 
 ---
 
-## 2. Launch a Linux instance (same as Note 03, quick version)
+## 2. Launch a Linux instance (quick recap of the launch steps)
 
 1. EC2 → **Launch instance**.
 2. Name: `linux-putty-demo`; AMI: **Amazon Linux 2023**; Type: `t3.micro`.

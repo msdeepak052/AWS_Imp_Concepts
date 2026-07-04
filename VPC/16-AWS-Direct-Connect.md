@@ -1,6 +1,6 @@
 # 16 - AWS Direct Connect
 
-> Goal: understand **AWS Direct Connect (DX)** — a dedicated, private, physical network link from your on-premises facility to AWS that never touches the public internet. Contrasts with Site-to-Site VPN (Note 15) on cost, speed, encryption, and setup time. This is a **conceptual** note, not a hands-on build — DX requires physical hardware, a colocation facility, and often an AWS Partner, so a console-only walkthrough wouldn't reflect reality. High-level console steps are still shown for completeness.
+> Goal: understand **AWS Direct Connect (DX)** — a dedicated, private, physical network link from your on-premises facility to AWS that never touches the public internet. Contrasts with Site-to-Site VPN (the encrypted tunnel over the public internet covered in the previous note) on cost, speed, encryption, and setup time. This is a **conceptual** note, not a hands-on build — DX requires physical hardware, a colocation facility, and often an AWS Partner, so a console-only walkthrough wouldn't reflect reality. High-level console steps are still shown for completeness.
 
 ---
 
@@ -8,7 +8,7 @@
 
 **AWS Direct Connect** is a **dedicated, private, physical network connection** between your on-premises data center (or a colocation/network provider facility) and an AWS **Direct Connect location**. Once established, your traffic to AWS travels over this dedicated link instead of the public internet.
 
-> 🧠 **Mental model:** if Site-to-Site VPN (Note 15) is an armored van driving on public roads, Direct Connect is your own **private road** that only your traffic ever uses — no other cars (internet traffic), no traffic lights (internet congestion/jitter), and by default, no armor (not encrypted) because you own the whole road.
+> 🧠 **Mental model:** if Site-to-Site VPN — an encrypted tunnel that still travels over the shared public internet — is an armored van driving on public roads, Direct Connect is your own **private road** that only your traffic ever uses — no other cars (internet traffic), no traffic lights (internet congestion/jitter), and by default, no armor (not encrypted) because you own the whole road.
 
 Key properties:
 - **Bypasses the public internet entirely** for the traffic that flows over it.
@@ -50,7 +50,7 @@ A single physical Direct Connect connection can carry multiple **Virtual Interfa
 |---|---|---|---|
 | **Private VIF** | A VPC (via a **VGW** or a **Direct Connect Gateway**) | Reach private IP resources inside your VPC (EC2, RDS, etc.) | Most common type for hybrid architectures |
 | **Public VIF** | **AWS public services** (S3, DynamoDB, public endpoints of any AWS service) reachable via their **public IP ranges** | Reach AWS public services over DX instead of the internet; also the VIF type used to layer a VPN on top for encryption | Requires public IPs (yours or AWS-provided) |
-| **Transit VIF** | One or more **Transit Gateways** (Note 17) via a **Direct Connect Gateway** | Reach many VPCs across accounts/regions attached to a Transit Gateway, through one DX connection | The modern, scalable way to connect DX to many VPCs |
+| **Transit VIF** | One or more **Transit Gateways** (a central hub router that connects many VPCs and networks, covered in the next note) via a **Direct Connect Gateway** | Reach many VPCs across accounts/regions attached to a Transit Gateway, through one DX connection | The modern, scalable way to connect DX to many VPCs |
 
 You can create **up to 51 VIFs per dedicated connection** (1/10/100 Gbps), including the transit VIF.
 
@@ -61,7 +61,7 @@ A **Direct Connect Gateway** is a globally-available resource that lets **one Di
 - Without a DX Gateway: one private VIF ↔ one VGW ↔ one VPC (1:1).
 - With a DX Gateway: one VIF ↔ DX Gateway ↔ many VGWs/VPCs, including VPCs in other regions.
 
-This mirrors the way Note 17's Transit Gateway solves the "many VPCs" scaling problem for VPN/peering — DX Gateway solves the equivalent problem for physical Direct Connect.
+This mirrors the way Transit Gateway — a central hub that lets many VPCs connect through one place instead of a full mesh of connections — solves the "many VPCs" scaling problem for VPN/peering: DX Gateway solves the equivalent problem for physical Direct Connect.
 
 ---
 
@@ -105,7 +105,7 @@ Because Direct Connect needs physical infrastructure you don't control end-to-en
 4. AWS (or the Partner) schedules the physical cross-connect — this is the part that takes **weeks**, not minutes.
 5. Once the physical connection is `Available`, create a **Virtual Interface**: Direct Connect console → **Virtual Interfaces** → **Create virtual interface** → choose **Private**, **Public**, or **Transit**, supply VLAN ID, BGP ASN, and (for private/transit) the target **VGW** / **Direct Connect Gateway**.
 6. If connecting to multiple VPCs/regions, create a **Direct Connect Gateway** first (**Direct Connect Gateways** → **Create**) and associate your VGWs to it.
-7. Update your VPC route tables to route relevant CIDRs toward the VGW/DX Gateway, exactly as in Note 15's route propagation step.
+7. Update your VPC route tables to route relevant CIDRs toward the VGW/DX Gateway — the same route propagation mechanism used for a Site-to-Site VPN's Virtual Private Gateway, where the route table learns the on-prem CIDR automatically instead of it being typed in by hand.
 
 ---
 

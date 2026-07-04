@@ -1,6 +1,6 @@
 # 13 - Security Group vs Network ACL
 
-> Goal: a **focused side-by-side comparison** of Security Groups (Note 11, EC2 folder) and Network ACLs (Note 12) — this exact comparison is one of the most frequently tested topics on the SAA-C03. No new concepts here, just the two put together so the contrast is crystal clear.
+> Goal: a **focused side-by-side comparison** of Security Groups (the stateful, instance-level firewall that only allows traffic — never explicitly denies it) and Network ACLs (the stateless, subnet-level firewall covered in the previous note, which supports both allow and deny rules) — this exact comparison is one of the most frequently tested topics on the SAA-C03. No new concepts here, just the two put together so the contrast is crystal clear.
 
 ---
 
@@ -18,7 +18,7 @@ Both exist in the same VPC at the same time, and **every packet reaching an inst
 | Aspect | Security Group | Network ACL |
 |---|---|---|
 | **Operates at** | Instance / ENI level | Subnet level |
-| **Stateful or stateless** | **Stateful** — return traffic auto-allowed | **Stateless** — must explicitly allow both directions (Note 14) |
+| **Stateful or stateless** | **Stateful** — return traffic auto-allowed | **Stateless** — must explicitly allow both directions, since it has no memory of the outbound request and evaluates every packet independently |
 | **Rule types** | **Allow only** (implicit deny for everything else) | **Allow AND explicit Deny** |
 | **Rule evaluation** | **All** rules are evaluated; if **any** rule matches and allows, traffic passes | **Ordered** by rule number, **lowest number first, first match wins** |
 | **Default for a new/blank one** | New SG: inbound all denied, outbound all allowed | **Default** NACL: allow all in/out. **Custom** NACL: deny all until rules added |
@@ -57,7 +57,7 @@ Both checkpoints must say "yes" for a packet to reach the instance. On the way *
 ## 4. Worked "what happens" scenarios
 
 **Scenario A — NACL allows, SG blocks:**
-`myapp-public-nacl` has an inbound ALLOW rule for TCP 22 (SSH) from `0.0.0.0/0` (rule 120 in Note 12's example only allowed a specific IP, but suppose it were opened to anywhere for this scenario). The instance's SG, `myapp-web-sg`, only allows inbound 80/443 from `0.0.0.0/0` and 22 from a specific "My IP" — a different, unrelated IP tries to SSH in.
+`myapp-public-nacl` has an inbound ALLOW rule for TCP 22 (SSH) from `0.0.0.0/0` (the earlier walkthrough for this NACL only allowed a specific IP on rule 120, but suppose it were opened to anywhere for this scenario). The instance's SG, `myapp-web-sg`, only allows inbound 80/443 from `0.0.0.0/0` and 22 from a specific "My IP" — a different, unrelated IP tries to SSH in.
 1. Packet arrives at the subnet boundary → NACL rule 120 matches, port 22 is allowed → **passes the NACL**.
 2. Packet reaches the instance's ENI → SG is checked → no inbound SG rule matches this source IP for port 22 → **implicit deny at the SG**.
 3. **Result: connection refused/times out.** The NACL being permissive doesn't matter — the SG is the stricter of the two here, and *both* must allow it.

@@ -1,20 +1,20 @@
 # 06 - Predictive Scaling (Hands-On)
 
-> Goal: add **predictive scaling** to `myapp-asg` — instead of *reacting* to a CloudWatch alarm breach like Note 05's dynamic scaling, predictive scaling uses **machine learning on historical load** to *forecast* tomorrow's traffic and pre-launch capacity **before** it's needed. We enable it in Forecast-only mode first, review the forecast, then switch to Forecast-and-scale.
+> Goal: add **predictive scaling** to `demo-asg` — instead of *reacting* to a CloudWatch alarm breach like the previous note's dynamic scaling, predictive scaling uses **machine learning on historical load** to *forecast* tomorrow's traffic and pre-launch capacity **before** it's needed. We enable it in Forecast-only mode first, review the forecast, then switch to Forecast-and-scale.
 
 ---
 
 ## 1. What predictive scaling is
 
-**Predictive scaling** analyzes historical CloudWatch metric data for `myapp-asg` — at minimum **24 hours**, ideally up to **14 days** — to detect **recurring daily/weekly patterns**, then generates an **hourly forecast of the next 48 hours of capacity needs**. The forecast is refreshed roughly every 6 hours as new data arrives. Instead of waiting for CPU to actually cross 70% at 9 AM, predictive scaling looks at the last two weeks of "CPU always climbs around 8:45 AM on weekdays" and **launches instances in advance** so they're already warmed up when the real traffic hits.
+**Predictive scaling** analyzes historical CloudWatch metric data for `demo-asg` — at minimum **24 hours**, ideally up to **14 days** — to detect **recurring daily/weekly patterns**, then generates an **hourly forecast of the next 48 hours of capacity needs**. The forecast is refreshed roughly every 6 hours as new data arrives. Instead of waiting for CPU to actually cross 70% at 9 AM, predictive scaling looks at the last two weeks of "CPU always climbs around 8:45 AM on weekdays" and **launches instances in advance** so they're already warmed up when the real traffic hits.
 
-> 🧠 **Mental model:** dynamic scaling (Note 05) is a driver braking *after* seeing brake lights ahead. Predictive scaling is a driver who's driven this route every day for two weeks and already knows there's a red light coming — they ease off the gas *before* they even see it.
+> 🧠 **Mental model:** dynamic scaling (covered in the previous note) is a driver braking *after* seeing brake lights ahead. Predictive scaling is a driver who's driven this route every day for two weeks and already knows there's a red light coming — they ease off the gas *before* they even see it.
 
 ---
 
 ## 2. Predictive vs Dynamic vs Scheduled — the full picture
 
-| | **Predictive Scaling** | **Dynamic Scaling** (Note 05) | **Scheduled Scaling** (Note 04) |
+| | **Predictive Scaling** | **Dynamic Scaling** | **Scheduled Scaling** |
 |---|---|---|---|
 | Basis | ML forecast from historical CloudWatch data | Live CloudWatch alarm, right now | A fixed clock time you configure |
 | Timing | **Proactive** — scales ahead of predicted demand | **Reactive** — scales after a threshold is breached | Proactive, but with **no intelligence** — just a clock |
@@ -31,34 +31,34 @@
 
 | Mode | What it does | When to use |
 |---|---|---|
-| **Forecast only** | Generates capacity forecasts and lets you view them (forecast vs actual graphs), but does **not** actually change `myapp-asg`'s capacity | Always start here — validate the forecast is sane before trusting it to act |
+| **Forecast only** | Generates capacity forecasts and lets you view them (forecast vs actual graphs), but does **not** actually change `demo-asg`'s capacity | Always start here — validate the forecast is sane before trusting it to act |
 | **Forecast and scale** | Actually adjusts capacity ahead of the predicted demand curve, scaling **out** before forecasted peaks | Once you've confirmed (over a few days) that the forecast tracks real traffic well |
 
 Every predictive scaling policy starts life in **Forecast only** mode automatically — AWS deliberately doesn't let a brand-new policy immediately start changing your live capacity.
 
-> ⚠️ Even in **Forecast and scale** mode, predictive scaling by itself only ever scales **out** ahead of a predicted increase — it does **not** scale in when it forecasts a decrease. Pair it with a dynamic scaling policy (like Note 05's target tracking) to actually scale back down when load subsides; when both policies are active, the ASG's desired capacity becomes the **maximum** of what each policy independently calculates.
+> ⚠️ Even in **Forecast and scale** mode, predictive scaling by itself only ever scales **out** ahead of a predicted increase — it does **not** scale in when it forecasts a decrease. Pair it with a dynamic scaling policy (like the target tracking policy from the previous note) to actually scale back down when load subsides; when both policies are active, the ASG's desired capacity becomes the **maximum** of what each policy independently calculates.
 
 ---
 
-## 4. Hands-on: enable Forecast-only predictive scaling on `myapp-asg`
+## 4. Hands-on: enable Forecast-only predictive scaling on `demo-asg`
 
-We reuse the same metric as Note 05's target tracking policy — average CPU utilization at a target of 50% — so predictive scaling is forecasting the same signal target tracking reacts to.
+We reuse the same metric as the previous note's target tracking policy — average CPU utilization at a target of 50% — so predictive scaling is forecasting the same signal target tracking reacts to.
 
-1. Console → **EC2 → Auto Scaling Groups → `myapp-asg`**.
+1. Console → **EC2 → Auto Scaling Groups → `demo-asg`**.
 2. Select the **Automatic Scaling** tab.
 3. Scroll to **Predictive scaling** → **Create predictive scaling policy**.
-4. **Policy name**: `myapp-predictive-cpu-50`.
-5. **Metric type**: **Average CPU utilization** (matches `myapp-cpu-target-50` from Note 05), **Target value**: `50`.
+4. **Policy name**: `demo-predictive-cpu-50`.
+5. **Metric type**: **Average CPU utilization** (matches `demo-cpu-target-50` from the previous note), **Target value**: `50`.
 6. **Predictive scaling mode**: **Forecast only**.
-7. **Scheduling buffer time** (a.k.a. pre-launch instances): leave default for now (this controls how far ahead of the forecasted hour AWS starts launching instances — enough time for `t3.micro` instances running `myapp-lt`'s user data to boot and pass health checks before the predicted peak).
-8. **Max capacity behavior**: leave the default (don't auto-increase max capacity beyond `myapp-asg`'s Max of 6 for now).
+7. **Scheduling buffer time** (a.k.a. pre-launch instances): leave default for now (this controls how far ahead of the forecasted hour AWS starts launching instances — enough time for `t3.micro` instances running `demo-lt`'s user data to boot and pass health checks before the predicted peak).
+8. **Max capacity behavior**: leave the default (don't auto-increase max capacity beyond `demo-asg`'s Max of 6 for now).
 9. **Create**.
 
-Because `myapp-asg` is a fresh group with little history, the console will likely show a message that there isn't yet enough data (minimum 24 hours) to generate a forecast. Wait at least a day (ideally let it run through a couple of full days of your `myapp` load-testing/traffic pattern from earlier notes) before evaluating results.
+Because `demo-asg` is a fresh group with little history, the console will likely show a message that there isn't yet enough data (minimum 24 hours) to generate a forecast. Wait at least a day (ideally let it run through a couple of full days of your app's real traffic pattern) before evaluating results.
 
 ### View the forecast vs actual graph
 
-1. Same **Automatic Scaling** tab → select `myapp-predictive-cpu-50` → **View forecast**.
+1. Same **Automatic Scaling** tab → select `demo-predictive-cpu-50` → **View forecast**.
 2. You'll see two overlaid lines per metric:
    - **Forecasted capacity/load** (the ML prediction)
    - **Actual capacity/load** (what really happened)
@@ -72,13 +72,13 @@ Evaluate this for several days. If the forecast line tracks the actual line reas
 
 Once you trust the forecast:
 
-1. **Automatic Scaling** tab → select `myapp-predictive-cpu-50` → **Edit**.
+1. **Automatic Scaling** tab → select `demo-predictive-cpu-50` → **Edit**.
 2. **Predictive scaling mode**: change to **Forecast and scale**.
 3. **Save**.
 
-From now on, at the start of each forecasted hour (or earlier, per your **Scheduling buffer time**), `myapp-asg` pre-launches instances so they're already `InService` and passing `myapp-tg` health checks by the time the predicted peak actually arrives — rather than only starting to launch instances after Note 05's CPU alarm crosses 70%.
+From now on, at the start of each forecasted hour (or earlier, per your **Scheduling buffer time**), `demo-asg` pre-launches instances so they're already `InService` and passing `demo-tg` health checks by the time the predicted peak actually arrives — rather than only starting to launch instances after a CPU alarm crosses 70% the way pure dynamic scaling would.
 
-> ⚠️ Predictive scaling respects `myapp-asg`'s Min/Max (2/6) unless you've explicitly configured **Max capacity behavior** to allow the max to auto-increase when the forecast approaches it — and if you do, remember the max does **not** automatically shrink back down afterward; you'd have to lower it manually.
+> ⚠️ Predictive scaling respects `demo-asg`'s Min/Max (2/6) unless you've explicitly configured **Max capacity behavior** to allow the max to auto-increase when the forecast approaches it — and if you do, remember the max does **not** automatically shrink back down afterward; you'd have to lower it manually.
 
 ---
 
@@ -86,17 +86,17 @@ From now on, at the start of each forecasted hour (or earlier, per your **Schedu
 
 ```mermaid
 graph LR
-    subgraph Timeline["24-hour view of myapp-asg"]
+    subgraph Timeline["24-hour view of demo-asg"]
         direction LR
         T1["06:00<br/>Low traffic<br/>Desired=2"] --> T2["08:00<br/>Forecast predicts<br/>ramp starting ~08:45"]
         T2 --> T3["08:30<br/>Predictive scaling<br/>pre-launches instances<br/>(ahead of buffer time)"]
         T3 --> T4["08:45<br/>Actual traffic<br/>ramp begins"]
-        T4 --> T5["09:00<br/>New instances already<br/>InService + healthy<br/>in myapp-tg — no lag"]
+        T4 --> T5["09:00<br/>New instances already<br/>InService + healthy<br/>in demo-tg — no lag"]
         T5 --> T6["18:00<br/>Forecast predicts decline<br/>(dynamic scaling handles<br/>the actual scale-in)"]
     end
 ```
 
-Compare this to Note 05's sequence diagram: with pure dynamic scaling, the launch only *starts* after the 08:45 CPU alarm fires — meaning new instances aren't ready until several minutes *into* the traffic ramp. With predictive scaling, the launch already happened at 08:30, so capacity is ready right as the ramp begins.
+Compare this to the previous note's sequence diagram: with pure dynamic scaling, the launch only *starts* after the 08:45 CPU alarm fires — meaning new instances aren't ready until several minutes *into* the traffic ramp. With predictive scaling, the launch already happened at 08:30, so capacity is ready right as the ramp begins.
 
 ---
 
@@ -104,9 +104,9 @@ Compare this to Note 05's sequence diagram: with pure dynamic scaling, the launc
 
 | Workload pattern | Best scaling approach |
 |---|---|
-| Predictable daily/weekly cycle (e.g. `myapp` gets heavy business-hours traffic 9–6 IST, quiet overnight/weekends) | **Predictive scaling** |
+| Predictable daily/weekly cycle (e.g. heavy business-hours traffic 9–6 IST, quiet overnight/weekends) | **Predictive scaling** |
 | Sudden, unpredictable spikes (viral post, flash sale with no fixed time) | **Dynamic scaling** (reactive, no history needed) |
-| A one-off known event at a fixed time (a scheduled maintenance window, a marketing email blast at exactly 10 AM) | **Scheduled scaling** (Note 04) — no ML needed, you already know the time |
+| A one-off known event at a fixed time (a scheduled maintenance window, a marketing email blast at exactly 10 AM) | **Scheduled scaling** — no ML needed, you already know the time |
 | Slow-booting application instances where a few minutes of "cold" capacity during a ramp genuinely hurts users | **Predictive scaling** (pre-launch gives instances time to warm up before real load arrives) |
 
 ---
@@ -118,7 +118,7 @@ Compare this to Note 05's sequence diagram: with pure dynamic scaling, the launc
 | Console says "not enough data" | Fewer than 24 hours of CloudWatch history for the chosen metric — wait, or enable predictive scaling earlier next time |
 | Forecast looks flat/wrong | Traffic pattern isn't actually cyclical yet, or too little history (best results need ~14 days) — stay in Forecast-only longer |
 | Enabled Forecast-and-scale but capacity never seems to shrink after a predicted peak | Expected — predictive scaling **only scales out** proactively; pair it with a dynamic (target tracking) policy for scale-in |
-| Max capacity crept up and stayed high | **Max capacity behavior** was set to auto-increase and never reset — check `myapp-asg`'s Max field and lower it manually if no longer needed |
+| Max capacity crept up and stayed high | **Max capacity behavior** was set to auto-increase and never reset — check `demo-asg`'s Max field and lower it manually if no longer needed |
 
 ---
 
@@ -134,10 +134,10 @@ Compare this to Note 05's sequence diagram: with pure dynamic scaling, the launc
 
 ## 10. Recap
 
-- Predictive scaling uses ML on historical CloudWatch data (min 24h, ideally 14 days) to **forecast** load and proactively scale `myapp-asg` ahead of predicted peaks — unlike Note 05's reactive dynamic scaling.
+- Predictive scaling uses ML on historical CloudWatch data (min 24h, ideally 14 days) to **forecast** load and proactively scale `demo-asg` ahead of predicted peaks — unlike the previous note's reactive dynamic scaling.
 - Two modes: **Forecast only** (observe, don't act — always start here) and **Forecast and scale** (actually pre-launches capacity).
 - Best fit: recurring daily/weekly patterns. Contrast: dynamic scaling for unpredictable spikes, scheduled scaling for fixed, human-known times.
-- Built `myapp-predictive-cpu-50` on the same average-CPU-at-50% metric as Note 05's target tracking policy, validated the forecast-vs-actual graph, then switched to Forecast-and-scale.
+- Built `demo-predictive-cpu-50` on the same average-CPU-at-50% metric as the previous note's target tracking policy, validated the forecast-vs-actual graph, then switched to Forecast-and-scale.
 - Predictive scaling only scales **out** proactively — pair it with dynamic scaling for scale-in.
 - Next: Note 07 covers the **Instance Maintenance Policy** — controlling *how* instances get replaced (not *whether* to scale) during instance refresh, AZ rebalancing, and health-check-triggered replacement.
 

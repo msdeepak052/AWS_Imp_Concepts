@@ -79,7 +79,7 @@ Work down this list:
 2. **Instance running + 2/2 status checks?**
 3. **Security group inbound rule** for the port exists? (22 for SSH, 3389 RDP, 80/443 web.)
 4. **Source** of that rule includes **your current IP**? (Your home IP may have changed → set "My IP" again.)
-5. **Public IP / Elastic IP** assigned? (Note 09–10.)
+5. **Public IP / Elastic IP** assigned? A brand-new instance in a public subnet gets an auto-assigned public IPv4 address that changes if you stop/start it; an **Elastic IP** is a static public IP you allocate and attach yourself so it doesn't change. Without one of these attached, there's no address for the internet to reach.
 6. **Public subnet**? Route table has `0.0.0.0/0 → Internet Gateway`?
 7. **Network ACL** on the subnet allows the port **and** ephemeral return ports (1024–65535)?
 8. **OS-level firewall** (Windows Firewall, `firewalld`/`ufw`) not blocking?

@@ -40,7 +40,7 @@ aws --version
 
 ## 3. Create access keys (for your IAM user)
 
-⚠️ **Never use root account keys.** Create an **IAM user** with appropriate permissions first (see the IAM notes).
+⚠️ **Never use root account keys.** Create an **IAM user** first — a named identity (separate from your root login) that you attach a permissions policy to (e.g. `AmazonEC2FullAccess` for this hands-on) — and generate its access keys instead of the root account's.
 
 1. Console → **IAM → Users → (your user) → Security credentials**.
 2. **Create access key** → choose **Command Line Interface (CLI)** → Next → **Create**.

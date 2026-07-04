@@ -25,7 +25,7 @@ Example:
 - You allow inbound **HTTP (80)** so users can reach your web server.
 - The server's **response** back to the user is **automatically allowed out**, even if no outbound rule explicitly matches it.
 
-This is different from **Network ACLs** (subnet-level), which are **stateless** (you must allow both directions). More on that contrast in Part 3.
+This is different from **Network ACLs** (subnet-level), which are **stateless** — for a NACL, allowing inbound traffic does NOT automatically allow the matching outbound response; you must write a separate rule for each direction.
 
 ---
 
@@ -60,7 +60,7 @@ Each rule has:
 - **Source** (inbound) / **Destination** (outbound) — who the rule applies to:
   - a single IP (`203.0.113.5/32`),
   - a CIDR range (`0.0.0.0/0` = anywhere, `10.0.0.0/16` = a network),
-  - **another security group** (powerful — see Part 3),
+  - **another security group** (powerful — lets you allow traffic only from instances that belong to a specific security group, e.g. "allow port 3306 only from instances in the app-server SG", instead of hardcoding IP addresses),
   - a prefix list.
 - **Description** (optional but recommended — e.g. "office VPN").
 
@@ -93,7 +93,7 @@ Each rule has:
 
 > "My instance launched fine but I can't SSH / open the website."
 
-90% of the time the cause is a **missing inbound security group rule** (e.g. port 22 or 80 not allowed for your IP). Because the default blocks all inbound, you must add the rule. (Troubleshooting checklist is in Part 3.)
+90% of the time the cause is a **missing inbound security group rule** (e.g. port 22 or 80 not allowed for your IP). Because the default blocks all inbound, you must add the rule.
 
 ---
 

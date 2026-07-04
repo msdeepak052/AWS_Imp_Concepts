@@ -79,7 +79,7 @@ NAT Gateway pricing has two components:
 1. **Hourly charge** for every hour the NAT Gateway exists (whether or not it's processing traffic) — roughly **$0.045/hour** in most regions (~$32/month per gateway).
 2. **Per-GB data processing charge** — roughly **$0.045/GB** processed through the gateway, **on top of** normal AWS data transfer charges.
 
-> ⚠️ **This is one of the most common "surprise AWS bill" line items.** A forgotten NAT Gateway left running 24/7, or a private instance streaming large volumes of data outbound (e.g. logs, backups, container image pulls) through it, can rack up real cost fast. Always check the **NAT Gateways** page in the VPC console for orphaned gateways during cleanup, and consider **VPC Endpoints** (Note 18) to avoid routing AWS-service traffic through a NAT Gateway at all.
+> ⚠️ **This is one of the most common "surprise AWS bill" line items.** A forgotten NAT Gateway left running 24/7, or a private instance streaming large volumes of data outbound (e.g. logs, backups, container image pulls) through it, can rack up real cost fast. Always check the **NAT Gateways** page in the VPC console for orphaned gateways during cleanup, and consider **VPC Endpoints** — private, direct connections from your VPC to AWS services like S3 or DynamoDB that bypass the NAT Gateway (and the internet) entirely — to avoid routing AWS-service traffic through a NAT Gateway at all.
 
 ---
 

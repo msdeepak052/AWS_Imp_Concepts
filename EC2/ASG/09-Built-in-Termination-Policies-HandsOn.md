@@ -1,12 +1,12 @@
 # 09 - Built-in Termination Policies (Hands-On)
 
-> Goal: go beyond the **Default** termination policy (Note 08) and learn the other **predefined termination policy options** AWS lets you pick and combine explicitly. We reconfigure `myapp-asg` with a custom policy order and replay the same 3-instance scenario from Note 08 to see how the outcome changes.
+> Goal: go beyond the **Default** termination policy covered in the previous note and learn the other **predefined termination policy options** AWS lets you pick and combine explicitly. We reconfigure `demo-asg` with a custom policy order and replay the same 3-instance scenario from the previous note to see how the outcome changes.
 
 ---
 
 ## 1. Why you'd ever change it away from Default
 
-The Default policy (Note 08) is a reasonable general-purpose choice — it phases out outdated launch template versions first, then breaks ties by billing-hour proximity. But it doesn't let you express intent like:
+The Default policy (previous note) is a reasonable general-purpose choice — it phases out outdated launch template versions first, then breaks ties by billing-hour proximity. But it doesn't let you express intent like:
 
 - "I'm doing a fleet refresh — always kill the **oldest** instance, period."
 - "I'm canary-testing a new launch template version — if this goes wrong, kill the **newest** instances first to back out fast."
@@ -22,14 +22,14 @@ For these, AWS gives you **predefined (built-in) termination policies** you sele
 |---|---|---|
 | **`OldestInstance`** | Terminate the oldest running instance in the group | Regularly refreshing your fleet onto newer AMIs/instance types — gradually replace old instances with new ones over time |
 | **`NewestInstance`** | Terminate the newest instance in the group | You're testing a new launch template version (canary) and want to **back it out fast** if something's wrong, without touching stable older instances |
-| **`OldestLaunchTemplate`** | Terminate instances still running an outdated launch template version (or a different template entirely) | Phasing out an old configuration after updating `myapp-lt` — same idea as Default's first step, but usable standalone/reorderable |
+| **`OldestLaunchTemplate`** | Terminate instances still running an outdated launch template version (or a different template entirely) | Phasing out an old configuration after updating `demo-lt` — same idea as Default's first step, but usable standalone/reorderable |
 | **`ClosestToNextInstanceHour`** | Terminate the instance closest to completing a full, paid instance-hour | Historically a cost play (don't waste a partially-used hour). ⚠️ With **per-second billing** for Linux instances, this optimization barely matters anymore — you're billed for exactly what you use either way. Still useful as a **deterministic tie-breaker** even though it no longer "saves" a rounded-up hour. |
-| **`AllocationStrategy`** | Terminate instances to keep a **mixed instances group** (Spot + On-Demand, multiple instance types) aligned with your configured allocation strategy | Only relevant if `myapp-asg` used a [mixed instances policy](https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-mixed-instances-groups.html) — e.g. keep drifting back toward your cheapest Spot pools, or a preferred On-Demand instance type ordering |
-| **`Default`** | The full multi-step algorithm from Note 08 (outdated config → then closest-to-next-instance-hour) | Used automatically if you specify nothing; also useful as the **final catch-all tie-breaker** in a custom list |
+| **`AllocationStrategy`** | Terminate instances to keep a **mixed instances group** (Spot + On-Demand, multiple instance types) aligned with your configured allocation strategy | Only relevant if `demo-asg` used a [mixed instances policy](https://docs.aws.amazon.com/autoscaling/ec2/userguide/ec2-auto-scaling-mixed-instances-groups.html) — e.g. keep drifting back toward your cheapest Spot pools, or a preferred On-Demand instance type ordering |
+| **`Default`** | The full multi-step algorithm from the previous note (outdated config → then closest-to-next-instance-hour) | Used automatically if you specify nothing; also useful as the **final catch-all tie-breaker** in a custom list |
 
 > 🧠 **Mental model:** think of these as **named shortcuts into the Default algorithm's individual steps**. `OldestLaunchTemplate` and `ClosestToNextInstanceHour` are literally the two steps Default already performs, in order — picking them explicitly (and adding `OldestInstance`/`NewestInstance`) just lets you reorder, mix, or replace those steps with your own priorities.
 
-`myapp-asg` currently launches only `t3.micro` (no mixed instances policy), so `AllocationStrategy` doesn't apply to it today — it's listed here because the exam tests it as a concept, and it becomes directly relevant the moment you add Spot capacity to the group.
+`demo-asg` currently launches only `t3.micro` (no mixed instances policy), so `AllocationStrategy` doesn't apply to it today — it's listed here because the exam tests it as a concept, and it becomes directly relevant the moment you add Spot capacity to the group.
 
 ---
 
@@ -41,19 +41,19 @@ You don't have to pick just one — you supply an **ordered list**. AWS evaluate
 2. Within the imbalanced AZ, policy #1 in your list is applied. If it narrows the field to exactly one instance, that instance is terminated.
 3. If policy #1 still leaves a tie (multiple equally-qualifying instances), policy #2 in your list breaks the tie. And so on.
 4. If you include `Default`, it must be **last** in the list (it's the ultimate catch-all).
-5. If you include a **custom Lambda-backed policy** (Note 10), it must be **first** in the list.
+5. If you include a **custom Lambda-backed policy** (covered in the next note), it must be **first** in the list.
 
 > ⚠️ **AZ balancing always wins first**, even over a custom Lambda policy. You can never terminate your way into an AZ imbalance through termination policy choice alone — the group will rebalance itself over subsequent scale-in events if needed.
 
 ---
 
-## 4. Hands-on: set `myapp-asg`'s termination policy order
+## 4. Hands-on: set `demo-asg`'s termination policy order
 
-We'll configure `myapp-asg` to use **`[OldestLaunchTemplate, OldestInstance]`** — useful if the team's priority is "always finish rolling off old launch template versions first, and once everyone's on the current version, just cull the oldest instances to keep the fleet fresh."
+We'll configure `demo-asg` to use **`[OldestLaunchTemplate, OldestInstance]`** — useful if the team's priority is "always finish rolling off old launch template versions first, and once everyone's on the current version, just cull the oldest instances to keep the fleet fresh."
 
 ### Console
 
-1. EC2 console → **Auto Scaling Groups** → select **`myapp-asg`**.
+1. EC2 console → **Auto Scaling Groups** → select **`demo-asg`**.
 2. In the details pane at the bottom, go to the **Details** tab → **Advanced configurations** → **Edit**.
 3. Under **Termination policies**, remove `Default` and add, **in this order**:
    1. `OldestLaunchTemplate`
@@ -64,25 +64,25 @@ We'll configure `myapp-asg` to use **`[OldestLaunchTemplate, OldestInstance]`** 
 
 ```bash
 aws autoscaling update-auto-scaling-group \
-  --auto-scaling-group-name myapp-asg \
+  --auto-scaling-group-name demo-asg \
   --termination-policies "OldestLaunchTemplate" "OldestInstance"
 ```
 
 ---
 
-## 5. Replaying the Note 08 scenario with the new policy order
+## 5. Replaying the previous note's scenario with the new policy order
 
-Recall the shared 3-instance scenario (Note 08): `myapp-asg` briefly runs 3 instances across its two subnets while we observe a scale-in.
+Recall the shared 3-instance scenario from the previous note: `demo-asg` briefly runs 3 instances across its two private subnets while we observe a scale-in.
 
 | Instance | AZ / Subnet | Launched | Launch template version |
 |---|---|---|---|
-| **A** — `i-0a1b2c3d4e5f60111` | `ap-south-1a` / `myapp-private-subnet-1` | Day 1, 09:00 IST | `myapp-lt` v2 (current) |
-| **B** — `i-0a1b2c3d4e5f60222` | `ap-south-1b` / `myapp-private-subnet-2` | Day 1, 09:03 IST | `myapp-lt` v2 (current) |
-| **C** — `i-0a1b2c3d4e5f60333` | `ap-south-1a` / `myapp-private-subnet-1` | Day 3, 15:47 IST | `myapp-lt` v2 (current) |
+| **A** — `i-0a1b2c3d4e5f60111` | `AZ-a` / private subnet 1 | Day 1, 09:00 IST | `demo-lt` v2 (current) |
+| **B** — `i-0a1b2c3d4e5f60222` | `AZ-b` / private subnet 2 | Day 1, 09:03 IST | `demo-lt` v2 (current) |
+| **C** — `i-0a1b2c3d4e5f60333` | `AZ-a` / private subnet 1 | Day 3, 15:47 IST | `demo-lt` v2 (current) |
 
 All three now run the **same, current** launch template version (the earlier v1 instances have already cycled out). A CloudWatch alarm fires a scale-in event, dropping desired capacity from 3 to 2, at **Day 4, 10:40 IST**.
 
-**Step 1 — AZ balance (applies no matter what policy you use):** `ap-south-1a` has 2 instances (A, C), `ap-south-1b` has 1 (B). AZ-a is imbalanced → **candidates are narrowed to {A, C}** only. B is safe purely because of AZ balancing.
+**Step 1 — AZ balance (applies no matter what policy you use):** `AZ-a` has 2 instances (A, C), `AZ-b` has 1 (B). AZ-a is imbalanced → **candidates are narrowed to {A, C}** only. B is safe purely because of AZ balancing.
 
 **Step 2a — under the `Default` policy:** within {A, C}, both run the same current launch template version → tie, no outdated config. Move to the next Default step: **closest to next instance hour**.
 - A launched at `:00` past the hour → at 10:40, its next billing-hour boundary is 11:00 → **20 minutes away**.
@@ -128,7 +128,7 @@ flowchart LR
 |---|---|
 | Changed the policy but termination order looks unchanged | AZ balancing always applies first — if your AZs are imbalanced, only the imbalanced AZ's instances are candidates regardless of policy |
 | Put `Default` first in a custom list | Invalid — `Default` must always be **last** if included; the console/CLI will reject or reorder it |
-| Expected `AllocationStrategy` to do something | It only affects **mixed instances groups** (Spot/On-Demand or multiple instance types) — no effect on a single-instance-type ASG like today's `myapp-asg` |
+| Expected `AllocationStrategy` to do something | It only affects **mixed instances groups** (Spot/On-Demand or multiple instance types) — no effect on a single-instance-type ASG like today's `demo-asg` |
 | Assumed `ClosestToNextInstanceHour` saves money | Mostly true only for **hourly-billed** resources; Linux On-Demand/Spot instances bill per second, so this is now primarily a deterministic tie-breaker, not a cost lever |
 
 ---
@@ -145,11 +145,11 @@ flowchart LR
 
 ## 9. ⚠️ Clean up to avoid charges
 
-Changing termination policies costs nothing by itself — no extra billing risk here. But if you scaled `myapp-asg` up to 3 instances purely to run this demo, remember to bring it back down:
+Changing termination policies costs nothing by itself — no extra billing risk here. But if you scaled `demo-asg` up to 3 instances purely to run this demo, remember to bring it back down:
 
 ```bash
 aws autoscaling update-auto-scaling-group \
-  --auto-scaling-group-name myapp-asg \
+  --auto-scaling-group-name demo-asg \
   --desired-capacity 2 --min-size 2
 ```
 
@@ -157,7 +157,7 @@ And if you no longer want the custom order, revert to Default:
 
 ```bash
 aws autoscaling update-auto-scaling-group \
-  --auto-scaling-group-name myapp-asg \
+  --auto-scaling-group-name demo-asg \
   --termination-policies "Default"
 ```
 
@@ -167,7 +167,7 @@ aws autoscaling update-auto-scaling-group \
 
 - Built-in termination policies: `OldestInstance`, `NewestInstance`, `OldestLaunchTemplate`, `ClosestToNextInstanceHour`, `AllocationStrategy` (mixed instances only), and `Default` itself as a catch-all.
 - You supply an **ordered list**; each entry only breaks ties left by the previous one. AZ balancing always happens first, before any policy is consulted.
-- Reconfigured `myapp-asg` with `[OldestLaunchTemplate, OldestInstance]` and showed it terminates the truly oldest instance in a scenario where Default instead picked the newer one via billing-hour proximity.
+- Reconfigured `demo-asg` with `[OldestLaunchTemplate, OldestInstance]` and showed it terminates the truly oldest instance in a scenario where Default instead picked the newer one via billing-hour proximity.
 - Next: Note 10 covers **custom, Lambda-backed termination policies** for when even these built-in options aren't expressive enough for your business logic.
 
 ---

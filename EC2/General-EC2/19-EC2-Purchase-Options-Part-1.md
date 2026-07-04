@@ -63,7 +63,7 @@
 
 **✅ Best for:** **steady-state, always-on** workloads with **predictable** usage for 1–3 years (e.g. a production database or baseline web fleet running 24/7).
 
-> ⚠️ With Standard RIs you're committed even if you stop using the instance — you keep paying. Choose the term/flexibility carefully. (Savings Plans, in Part 2, are often easier and more flexible.)
+> ⚠️ With Standard RIs you're committed even if you stop using the instance — you keep paying. Choose the term/flexibility carefully. (Savings Plans, covered in Part 2, commit you to a **$/hour spend** instead of a specific instance configuration, so the discount keeps applying even if you change instance family, size, or Region — often easier and more flexible than an RI.)
 
 ---
 

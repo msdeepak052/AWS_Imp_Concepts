@@ -1,12 +1,12 @@
 # 11 - Cross-Zone Load Balancing (Hands-On)
 
-> Goal: understand exactly **how a load balancer node decides which targets it's allowed to send traffic to**, why that can silently cause uneven per-instance load across AZs, and how to fix it with **cross-zone load balancing**. Builds directly on `myapp-nlb` / `myapp-nlb-tg` from Note 10, and closes out the "core" load balancer concepts before we move into the advanced **Gateway Load Balancer** track (Note 12+).
+> Goal: understand exactly **how a load balancer node decides which targets it's allowed to send traffic to**, why that can silently cause uneven per-instance load across AZs, and how to fix it with **cross-zone load balancing**. Builds directly on the `demo-nlb` / `demo-nlb-tg` set up in the previous note, and closes out the "core" load balancer concepts before we move into the advanced **Gateway Load Balancer** track next.
 
 ---
 
 ## 1. The thing beginners miss: a load balancer isn't one box, it's one node *per AZ*
 
-When you enable an Availability Zone for a load balancer (by picking subnets in it), AWS provisions a **load balancer node in that AZ** — a physical piece of the load balancer's own fleet, not something you see or manage directly. An internet-facing NLB with subnets in `ap-south-1a` and `ap-south-1b` really has **two nodes**, one per AZ, each with its own IP address. DNS (with a 60-second TTL) hands clients a mix of both nodes' addresses.
+When you enable an Availability Zone for a load balancer (by picking subnets in it), AWS provisions a **load balancer node in that AZ** — a physical piece of the load balancer's own fleet, not something you see or manage directly. An internet-facing NLB with subnets in AZ-a and AZ-b really has **two nodes**, one per AZ, each with its own IP address. DNS (with a 60-second TTL) hands clients a mix of both nodes' addresses.
 
 The key question this note answers: **once a request lands on one specific node, which registered targets is that node allowed to forward it to?**
 
@@ -18,39 +18,39 @@ The key question this note answers: **once a request lands on one specific node,
 
 **When cross-zone load balancing is disabled**, each load balancer node distributes traffic **only across the registered targets in its own AZ**. If every AZ has the same number of targets, this is invisible — the split looks even. The problem appears the moment AZs have **different target counts**.
 
-### Our demo layout (reusing `myapp-nlb-tg` from Note 10)
+### Our demo layout (reusing `demo-nlb-tg` from the previous note)
 
-Note 10 registered a single target, `myapp-tcp-1`, in `myapp-private-subnet-1` (`ap-south-1a`). For this note, we temporarily add two more standalone TCP-echo instances to build the exact uneven layout used across this series:
+The previous note registered a single target, `demo-tcp-1`, in the private subnet in AZ-a. For this note, we temporarily add two more standalone TCP-echo instances to build the exact uneven layout used across this series:
 
 | Instance | AZ | Subnet |
 |---|---|---|
-| `myapp-tcp-1` | `ap-south-1a` | `myapp-private-subnet-1` |
-| `myapp-tcp-2` (new) | `ap-south-1a` | `myapp-private-subnet-1` |
-| `myapp-tcp-3` (new) | `ap-south-1b` | `myapp-private-subnet-2` |
+| `demo-tcp-1` | AZ-a | Private subnet in AZ-a |
+| `demo-tcp-2` (new) | AZ-a | Private subnet in AZ-a |
+| `demo-tcp-3` (new) | AZ-b | Private subnet in AZ-b |
 
-All three are registered with `myapp-nlb-tg` (TCP:5000). Both `myapp-nlb`'s AZs (`ap-south-1a`, `ap-south-1b`) are enabled, so there are exactly **2 NLB nodes**. Assuming clients' DNS resolution spreads requests roughly evenly across the two nodes (AWS's own documentation illustrates the effect this way), each node receives about **50% of total traffic**.
+All three are registered with `demo-nlb-tg` (TCP:5000). Both `demo-nlb`'s AZs (AZ-a, AZ-b) are enabled, so there are exactly **2 NLB nodes**. Assuming clients' DNS resolution spreads requests roughly evenly across the two nodes (AWS's own documentation illustrates the effect this way), each node receives about **50% of total traffic**.
 
 ### The math — without cross-zone
 
-- **Node A** (`ap-south-1a`) gets 50% of traffic, and can only forward to targets in its own AZ: `myapp-tcp-1` and `myapp-tcp-2`. It splits its 50% between them → **25% each**.
-- **Node B** (`ap-south-1b`) gets 50% of traffic, and can only forward to its own AZ's target: `myapp-tcp-3`. All of Node B's 50% goes to **one instance**.
+- **Node A** (AZ-a) gets 50% of traffic, and can only forward to targets in its own AZ: `demo-tcp-1` and `demo-tcp-2`. It splits its 50% between them → **25% each**.
+- **Node B** (AZ-b) gets 50% of traffic, and can only forward to its own AZ's target: `demo-tcp-3`. All of Node B's 50% goes to **one instance**.
 
 | Instance | AZ | Share of total traffic |
 |---|---|---|
-| `myapp-tcp-1` | `ap-south-1a` | 25% |
-| `myapp-tcp-2` | `ap-south-1a` | 25% |
-| `myapp-tcp-3` | `ap-south-1b` | **50%** |
+| `demo-tcp-1` | AZ-a | 25% |
+| `demo-tcp-2` | AZ-a | 25% |
+| `demo-tcp-3` | AZ-b | **50%** |
 
-`myapp-tcp-3` is a single instance carrying **twice the per-instance load** of either instance in `ap-south-1a` — even though nothing about that instance is "special." It's purely an artifact of uneven target counts per AZ combined with cross-zone being off.
+`demo-tcp-3` is a single instance carrying **twice the per-instance load** of either instance in AZ-a — even though nothing about that instance is "special." It's purely an artifact of uneven target counts per AZ combined with cross-zone being off.
 
 ```mermaid
 flowchart TD
-    C(("Clients")) -->|"~50%"| NA["NLB node<br/>ap-south-1a"]
-    C -->|"~50%"| NB["NLB node<br/>ap-south-1b"]
+    C(("Clients")) -->|"~50%"| NA["NLB node<br/>AZ-a"]
+    C -->|"~50%"| NB["NLB node<br/>AZ-b"]
 
-    NA -->|"25%"| T1["myapp-tcp-1"]
-    NA -->|"25%"| T2["myapp-tcp-2"]
-    NB -->|"50% (all of it)"| T3["myapp-tcp-3"]
+    NA -->|"25%"| T1["demo-tcp-1"]
+    NA -->|"25%"| T2["demo-tcp-2"]
+    NB -->|"50% (all of it)"| T3["demo-tcp-3"]
 ```
 
 ---
@@ -61,12 +61,12 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    C(("Clients")) -->|"~50%"| NA["NLB node<br/>ap-south-1a"]
-    C -->|"~50%"| NB["NLB node<br/>ap-south-1b"]
+    C(("Clients")) -->|"~50%"| NA["NLB node<br/>AZ-a"]
+    C -->|"~50%"| NB["NLB node<br/>AZ-b"]
 
-    NA -->|"16.7%"| T1["myapp-tcp-1"]
-    NA -->|"16.7%"| T2["myapp-tcp-2"]
-    NA -->|"16.7%"| T3["myapp-tcp-3"]
+    NA -->|"16.7%"| T1["demo-tcp-1"]
+    NA -->|"16.7%"| T2["demo-tcp-2"]
+    NA -->|"16.7%"| T3["demo-tcp-3"]
     NB -->|"16.7%"| T1
     NB -->|"16.7%"| T2
     NB -->|"16.7%"| T3
@@ -76,11 +76,11 @@ Each of the 3 targets now receives traffic from **both** nodes, so each ends up 
 
 | Instance | AZ | Share of total traffic |
 |---|---|---|
-| `myapp-tcp-1` | `ap-south-1a` | ~33.3% |
-| `myapp-tcp-2` | `ap-south-1a` | ~33.3% |
-| `myapp-tcp-3` | `ap-south-1b` | ~33.3% |
+| `demo-tcp-1` | AZ-a | ~33.3% |
+| `demo-tcp-2` | AZ-a | ~33.3% |
+| `demo-tcp-3` | AZ-b | ~33.3% |
 
-> ⚠️ Cross-zone load balancing fixes the **per-instance** imbalance, but it does so by sending more cross-AZ traffic (Node A now regularly talks to `myapp-tcp-3` in `ap-south-1b`, and Node B talks to `myapp-tcp-1`/`myapp-tcp-2` in `ap-south-1a`). For NLB and GWLB, that cross-AZ hop can carry a **real data transfer charge** — see the table below.
+> ⚠️ Cross-zone load balancing fixes the **per-instance** imbalance, but it does so by sending more cross-AZ traffic (Node A now regularly talks to `demo-tcp-3` in AZ-b, and Node B talks to `demo-tcp-1`/`demo-tcp-2` in AZ-a). For NLB and GWLB, that cross-AZ hop can carry a **real data transfer charge** — see the table below.
 
 ---
 
@@ -97,23 +97,23 @@ Each of the 3 targets now receives traffic from **both** nodes, so each ends up 
 
 ---
 
-## 5. Hands-on: toggle cross-zone load balancing on `myapp-nlb-tg`
+## 5. Hands-on: toggle cross-zone load balancing on `demo-nlb-tg`
 
 ### Step 1 — Check the current (default) state
 
 1. EC2 console → left nav, **Load Balancing** → **Target Groups**.
-2. Select **`myapp-nlb-tg`** → **Attributes** tab.
-3. Note **Cross-zone load balancing** — for a target group backing an NLB, this defaults to **"Use load balancer setting"**, and the load balancer itself defaults to **Off**. So out of the box, `myapp-nlb-tg` is running the "25% / 25% / 50%" scenario from Section 2.
+2. Select **`demo-nlb-tg`** → **Attributes** tab.
+3. Note **Cross-zone load balancing** — for a target group backing an NLB, this defaults to **"Use load balancer setting"**, and the load balancer itself defaults to **Off**. So out of the box, `demo-nlb-tg` is running the "25% / 25% / 50%" scenario from Section 2.
 
 ### Step 2 — Turn it On at the target group level
 
-1. Still on `myapp-nlb-tg` → **Attributes** → **Edit**.
+1. Still on `demo-nlb-tg` → **Attributes** → **Edit**.
 2. Find **Cross-zone load balancing** → select **On** (this explicitly overrides the load balancer-level setting for this target group only).
 3. **Save changes.**
 
 ### Step 3 — (Alternative) toggle it at the load balancer level instead
 
-1. **Load Balancers** → select `myapp-nlb` → **Attributes** tab → **Edit**.
+1. **Load Balancers** → select `demo-nlb` → **Attributes** tab → **Edit**.
 2. Toggle **Cross-zone load balancing**.
 3. **Save changes.** Any target group still set to "Use load balancer setting" now inherits this value.
 
@@ -125,10 +125,10 @@ Each of the 3 targets now receives traffic from **both** nodes, so each ends up 
 
 CloudWatch's built-in NLB metrics (`ActiveFlowCount`, `NewFlowCount`, `ProcessedBytes`, etc.) are published with **LoadBalancer**, **TargetGroup**, and **AvailabilityZone** dimensions — there's no native per-individual-target dimension, since that would be too high-cardinality for a managed metric. So to actually *see* the per-instance imbalance from Section 2, combine two views:
 
-1. **CloudWatch, filtered by the `AvailabilityZone` dimension** on `myapp-nlb-tg` — confirms the aggregate ~50/50 split is landing correctly on each AZ's node.
-2. **Per-instance evidence** — since our demo target is a minimal TCP echo service, the simplest approach is to have it log (or increment a counter for) every connection it accepts, then compare counts across `myapp-tcp-1`, `myapp-tcp-2`, and `myapp-tcp-3` after a test run. Alternatively, each instance's own `NetworkPacketsIn`/`NetworkIn` EC2 CloudWatch metrics will visibly show `myapp-tcp-3` running roughly double the traffic of `myapp-tcp-1`/`myapp-tcp-2` when cross-zone is off, and roughly equal to them once it's turned on.
+1. **CloudWatch, filtered by the `AvailabilityZone` dimension** on `demo-nlb-tg` — confirms the aggregate ~50/50 split is landing correctly on each AZ's node.
+2. **Per-instance evidence** — since our demo target is a minimal TCP echo service, the simplest approach is to have it log (or increment a counter for) every connection it accepts, then compare counts across `demo-tcp-1`, `demo-tcp-2`, and `demo-tcp-3` after a test run. Alternatively, each instance's own `NetworkPacketsIn`/`NetworkIn` EC2 CloudWatch metrics will visibly show `demo-tcp-3` running roughly double the traffic of `demo-tcp-1`/`demo-tcp-2` when cross-zone is off, and roughly equal to them once it's turned on.
 
-Generate test traffic against `myapp-nlb`'s DNS name (e.g. a short loop of TCP connections from a client), let it run for a few minutes with cross-zone **off**, note the per-instance counts, then repeat with cross-zone **on** and compare.
+Generate test traffic against `demo-nlb`'s DNS name (e.g. a short loop of TCP connections from a client), let it run for a few minutes with cross-zone **off**, note the per-instance counts, then repeat with cross-zone **on** and compare.
 
 ---
 
@@ -157,10 +157,10 @@ Generate test traffic against `myapp-nlb`'s DNS name (e.g. a short loop of TCP c
 - A load balancer is really **one node per enabled AZ** — each node makes its own routing decision.
 - **Without cross-zone load balancing**, a node only forwards to targets registered in its own AZ — uneven target counts per AZ directly translate into uneven **per-instance** traffic.
 - **With cross-zone load balancing**, every node can reach every registered target in every enabled AZ, evening out the per-instance share.
-- Demonstrated with `myapp-nlb-tg`: 2 targets in `ap-south-1a` + 1 in `ap-south-1b` → 25%/25%/50% without cross-zone, ~33.3% each with it on.
+- Demonstrated with `demo-nlb-tg`: 2 targets in AZ-a + 1 in AZ-b → 25%/25%/50% without cross-zone, ~33.3% each with it on.
 - **ALB** = always on, free. **NLB/GWLB** = off by default, billable cross-AZ data transfer when enabled. **CLB** = console-default on, API/CLI-default off, never billed extra.
-- Toggled cross-zone on `myapp-nlb-tg` via **Target Groups → Attributes → Edit**, and at the LB level via **Load Balancers → Attributes → Edit**; target-group-level setting always wins over the LB-level one.
-- Next: **Note 12** introduces the **Gateway Load Balancer** — a completely different use case (transparent traffic inspection) that still relies on the same underlying ELB node/target model covered here.
+- Toggled cross-zone on `demo-nlb-tg` via **Target Groups → Attributes → Edit**, and at the LB level via **Load Balancers → Attributes → Edit**; target-group-level setting always wins over the LB-level one.
+- Next: Note 12 — Gateway Load Balancer, a completely different use case (transparent traffic inspection) that still relies on the same underlying ELB node/target model covered here.
 
 ---
 

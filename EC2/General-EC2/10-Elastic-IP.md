@@ -6,7 +6,7 @@
 
 ## 1. The problem Elastic IP solves
 
-From Note 09: the **auto-assigned public IP changes** every time you stop/start an instance. That's bad if:
+Recall: the **auto-assigned public IP changes** every time you stop/start an instance (the old address is released and a new one is handed out). That's bad if:
 - DNS records, firewalls, or partners are configured to point at a **fixed** IP.
 - You need to **replace** a failed instance but keep the **same** public address.
 
@@ -95,7 +95,7 @@ An **Elastic IP (EIP)** is a **static public IPv4 address** that:
 |---|---|
 | Surprise small charge | EIP allocated but not associated, or attached to a stopped instance. Release unused EIPs. |
 | Can't associate | EIP already in use, or instance in a different Region. EIPs are Region-scoped. |
-| Still can't reach instance | EIP fixes the address, but you still need **security group** + **public subnet route** to allow traffic (Note 09). |
+| Still can't reach instance | EIP fixes the address, but you still need a **security group** rule allowing the port (e.g. 22/80/443) for your source, and the instance's subnet needs a route to an **Internet Gateway** (i.e. it must be a public subnet) — the fixed IP alone doesn't open a path through the firewall or the network. |
 
 ---
 

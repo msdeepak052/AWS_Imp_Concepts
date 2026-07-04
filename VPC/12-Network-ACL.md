@@ -1,6 +1,6 @@
 # 12 - Network ACL (NACL)
 
-> Goal: understand the **Network ACL (NACL)** — a **subnet-level, stateless** firewall — including rule numbers/evaluation order, ALLOW **and** DENY rules, and the **ephemeral port** requirement that trips up almost every beginner. Builds on the `myapp-vpc` subnets from Notes 04-09. Note 13 then directly compares NACL vs Security Group; Note 14 goes deep on stateless vs stateful.
+> Goal: understand the **Network ACL (NACL)** — a **subnet-level, stateless** firewall — including rule numbers/evaluation order, ALLOW **and** DENY rules, and the **ephemeral port** requirement that trips up almost every beginner. Builds on the `myapp-vpc` subnets, route tables, and security groups already set up earlier in this VPC walkthrough. Later notes in this folder put NACLs and Security Groups side by side in a direct comparison, and then go deeper into why stateless vs stateful firewall behavior works the way it does.
 
 ---
 
@@ -31,7 +31,7 @@ A **Network Access Control List (NACL)** is a **firewall that operates at the su
 
 ## 3. ALLOW and explicit DENY rules
 
-Unlike Security Groups (Note 11 — allow-only, nothing to deny explicitly), NACLs support **both**:
+Unlike Security Groups — which only support **allow** rules and have no way to explicitly block a specific source, since anything not explicitly allowed is just implicitly denied — NACLs support **both**:
 
 - **ALLOW** rules — permit matching traffic.
 - **DENY** rules — explicitly block matching traffic, even if a later/other rule would otherwise allow it.

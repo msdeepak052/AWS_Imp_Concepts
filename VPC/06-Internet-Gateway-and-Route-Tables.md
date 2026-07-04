@@ -13,7 +13,7 @@ Key facts (memorize these):
 - It is **horizontally scaled, redundant, and highly available** by design — AWS manages it, there's nothing to patch or scale yourself.
 - It is **one IGW per VPC**, and **one VPC per IGW** — a 1:1 relationship. You cannot attach the same IGW to two VPCs.
 - It must be **created, then attached** to a VPC as two separate steps (you can create it "floating" and attach later, or detach and reuse it elsewhere).
-- For instances with a **public IPv4 address**, the IGW performs **1:1 Network Address Translation (NAT)** — translating the instance's private IP to/from its public IP as traffic crosses the gateway. (This is a different, simpler NAT than the NAT Gateway in Note 09.)
+- For instances with a **public IPv4 address**, the IGW performs **1:1 Network Address Translation (NAT)** — translating the instance's private IP to/from its public IP as traffic crosses the gateway. (This is a different, simpler kind of NAT than the NAT Gateway used later in this build for private subnets: the IGW's NAT is two-way for instances that already have a public IP, while a NAT Gateway provides outbound-only access for instances that don't.)
 - An IGW is **free** — you don't pay for the gateway itself, only for standard data transfer.
 
 > 🧠 **Mental model:** the IGW is the **front door of the whole VPC** to the internet. But having a front door on the building doesn't mean every room (subnet) has a hallway leading to it — that's what the route table decides.
@@ -60,7 +60,7 @@ There is no checkbox called "make this subnet public" — subnet "type" is purel
 | **Public** | `0.0.0.0/0 → igw-xxxx` | Instances with a public IP can reach/be reached from the internet |
 | **Private** | No route to an IGW (only `local`, or a route to a NAT Gateway) | No direct inbound/outbound internet path |
 
-A public subnet also needs the instance itself to have a **public IPv4 address or Elastic IP** (Note 09 in the EC2 folder covers public/private IPs) — the route table alone doesn't put a public IP on an instance, it just gives it a path if it has one.
+A public subnet also needs the instance itself to have a **public IPv4 address or Elastic IP** — the route table alone doesn't put a public IP on an instance, it just gives it a path if it has one.
 
 ---
 
@@ -148,7 +148,7 @@ flowchart TD
 
 🎯 **Exam tip:** "A subnet is public because it has a route to an IGW" is one of the most frequently tested facts in the whole VPC section — memorize it word for word.
 
-🎯 **Exam tip:** IGW is **1 per VPC**, horizontally scaled/redundant by AWS — no HA design decision needed on your part (contrast with NAT Gateway in Note 09, which **is** AZ-scoped and needs one per AZ for HA).
+🎯 **Exam tip:** IGW is **1 per VPC**, horizontally scaled/redundant by AWS — no HA design decision needed on your part (contrast with a NAT Gateway, which **is** AZ-scoped and needs one per AZ for HA).
 
 🎯 **Exam tip:** a subnet not explicitly associated with any route table uses the **main route table** automatically — a classic "why can't my new subnet reach the internet" scenario.
 

@@ -67,7 +67,7 @@ Example: **`m5.xlarge`** or **`c8g.2xlarge`**
 
 ### f) HPC Optimized — tightly-coupled clusters
 - Prefix: **`hpc`** (e.g. `hpc7g`).
-- Use for: weather simulation, computational fluid dynamics, large-scale HPC. Pairs with **cluster placement groups** + **EFA** networking (see Note 17).
+- Use for: weather simulation, computational fluid dynamics, large-scale HPC. Pairs with **cluster placement groups** (a placement strategy that packs instances physically close together on the same underlying hardware/network to minimize inter-instance latency) and **EFA** (Elastic Fabric Adapter — a network interface that gives applications very low-latency, high-throughput, OS-bypass communication between instances, used for tightly-coupled HPC and distributed ML training).
 
 ---
 

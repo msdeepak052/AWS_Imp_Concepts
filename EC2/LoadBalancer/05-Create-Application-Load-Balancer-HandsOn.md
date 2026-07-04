@@ -1,30 +1,26 @@
 # 05 - Create an Application Load Balancer (Hands-On)
 
-> Goal: the core build of this whole folder — actually create **`myapp-alb`**, its default target group **`myapp-tg`**, and an HTTP:80 listener, then verify traffic is really load balanced across `myapp-asg`'s instances. Uses the network from Note 03 and the security groups from Note 04. This is the exact target group `EC2\ASG\02-Launch-Template-and-ASG-HandsOn.md` already assumed existed and registers into.
+> Goal: the core build of this whole folder — actually create **`demo-alb`**, its default target group **`demo-tg`**, and an HTTP:80 listener, then verify traffic is really load balanced across backend instances. Uses the network from Note 03 and the security groups from Note 04.
 
 ---
 
 ## 1. Prerequisites checklist (already built in earlier notes)
 
-- `myapp-vpc`, public subnets `myapp-public-subnet-1` (`ap-south-1a`) / `myapp-public-subnet-2` (`ap-south-1b`) — confirmed ALB-ready in Note 03.
-- Security groups `myapp-alb-sg` (inbound 80/443 from `0.0.0.0/0`) and updated `myapp-app-sg` (inbound 80 from `myapp-alb-sg` only) — built in Note 04.
-- `myapp-asg` (min 2 / desired 2 / max 6) already running healthy instances in `myapp-private-subnet-1/2`, per `EC2\ASG\02-Launch-Template-and-ASG-HandsOn.md` — its user data installs `httpd`, serves `index.html` with the instance ID, and serves `/health` returning `OK`.
-
-> Note that `EC2\ASG\02` was written **assuming** `myapp-tg` and `myapp-alb` already existed, since building an ASG's "integrate with load balancing" step requires picking an existing target group. **This note is where that assumption becomes real** — if you're following the whole series in order, build this note's resources first, then `EC2\ASG\02`'s ASG will actually find `myapp-tg` in its target group dropdown.
-
-AWS's own build order (per the official create-ALB flow) creates the target group **as part of** the load balancer wizard's "Listeners and routing" step — so you don't need a separate, earlier pass to create it; the walkthrough below does it in one flow, exactly as the console presents it.
+- Your VPC, with two public subnets across two Availability Zones — confirmed ALB-ready in Note 03.
+- Security groups `demo-alb-sg` (inbound 80/443 from `0.0.0.0/0`) and `demo-app-sg` (inbound 80 from `demo-alb-sg` only) — built in Note 04.
+- One or more backend instances (standalone, or managed by an Auto Scaling group) running in your private application subnets, serving HTTP on port 80, with a simple page (e.g. one that prints the instance ID) and a `/health` path returning `200 OK`. If you don't already have such instances, launch a couple of small EC2 instances with `httpd` installed via user data before continuing — any minimal web server works for this demo.
 
 ---
 
-## 2. Create the target group — `myapp-tg`
+## 2. Create the target group — `demo-tg`
 
 You can create the target group ahead of time, or inline during the ALB wizard's listener step (both produce the same result). Doing it first, standalone, makes the settings easier to see:
 
 1. **EC2 console** → left nav → **Load Balancing** → **Target Groups** → **Create target group**.
 2. **Choose a target type**: **Instances**.
-3. **Target group name**: `myapp-tg`.
+3. **Target group name**: `demo-tg`.
 4. **Protocol : Port**: **HTTP : 80**.
-5. **VPC**: `myapp-vpc`.
+5. **VPC**: your VPC.
 6. **Protocol version**: HTTP/1.1 (default).
 7. **Health checks**:
    - **Health check protocol**: HTTP.
@@ -41,25 +37,25 @@ You can create the target group ahead of time, or inline during the ALB wizard's
 
      We deliberately override the healthy/unhealthy thresholds to **3/3** (a symmetric, moderate setting) instead of AWS's asymmetric defaults (5 healthy / 2 unhealthy) — 3 consecutive failures marks a target down reasonably fast without being trigger-happy on a single blip, and 3 consecutive successes brings it back without waiting through 5 full intervals (~150s).
 8. Click **Next**.
-9. **Register targets** page: **skip this** — leave it empty and click **Create target group**. `myapp-asg` registers its own instances automatically (see Section 5) — manually registering here would just be redundant and gets undone by the ASG's own target-tracking anyway.
+9. **Register targets** page: if you already have backend instances running, select and register them here. If a target group is attached to an Auto Scaling group instead, skip this page and leave it empty — the ASG registers/deregisters its own instances automatically, and manually registering here would just be redundant.
 
 ---
 
-## 3. Create the load balancer — `myapp-alb`
+## 3. Create the load balancer — `demo-alb`
 
 1. **EC2 console** → left nav → **Load Balancers** → **Create load balancer**.
 2. Under **Application Load Balancer**, click **Create**.
 3. **Basic configuration**:
-   - **Load balancer name**: `myapp-alb`.
+   - **Load balancer name**: `demo-alb`.
    - **Scheme**: **Internet-facing**.
    - **Load balancer IP address type**: **IPv4**.
 4. **Network mapping**:
-   - **VPC**: `myapp-vpc` (only VPCs with an Internet Gateway are selectable for an internet-facing scheme — confirms Note 03's checks).
-   - **Availability Zones and subnets**: check **`ap-south-1a`** → select subnet **`myapp-public-subnet-1`**; check **`ap-south-1b`** → select subnet **`myapp-public-subnet-2`**.
-5. **Security groups**: remove the pre-selected default VPC security group, select **`myapp-alb-sg`** instead (built in Note 04).
+   - **VPC**: your VPC (only VPCs with an Internet Gateway are selectable for an internet-facing scheme — confirms Note 03's checks).
+   - **Availability Zones and subnets**: check the first AZ → select your first public subnet; check the second AZ → select your second public subnet.
+5. **Security groups**: remove the pre-selected default VPC security group, select **`demo-alb-sg`** instead (built in Note 04).
 6. **Listeners and routing**:
    - Default listener: **Protocol HTTP, Port 80** (leave as-is).
-   - **Default action**: **Forward to** → select the existing target group **`myapp-tg`**.
+   - **Default action**: **Forward to** → select the existing target group **`demo-tg`**.
 7. Skip **Secure listener settings** (no HTTPS listener yet — no certificate needed for this demo).
 8. Skip **Optimize with service integrations** and **Load balancer tags**.
 9. **Review** → **Create load balancer**. State starts as `Provisioning`, then becomes `Active` within a minute or two.
@@ -70,48 +66,48 @@ You can create the target group ahead of time, or inline during the ALB wizard's
 
 | Resource | Key configuration |
 |---|---|
-| `myapp-alb` | Internet-facing, IPv4, subnets `myapp-public-subnet-1/2`, SG `myapp-alb-sg` |
-| Listener | HTTP : 80 → default action: forward to `myapp-tg` |
-| `myapp-tg` | HTTP : 80, target type Instance, health check `/health`, interval 30s / timeout 5s / healthy 3 / unhealthy 3 |
+| `demo-alb` | Internet-facing, IPv4, two public subnets across two AZs, SG `demo-alb-sg` |
+| Listener | HTTP : 80 → default action: forward to `demo-tg` |
+| `demo-tg` | HTTP : 80, target type Instance, health check `/health`, interval 30s / timeout 5s / healthy 3 / unhealthy 3 |
 
 ---
 
-## 5. `myapp-asg` auto-registers into `myapp-tg` — no manual step needed
+## 5. Auto-registration into `demo-tg` — no manual step needed (if using an ASG)
 
-Per `EC2\ASG\02-Launch-Template-and-ASG-HandsOn.md` §3 step 4 ("Load balancing → Attach to an existing load balancer → choose `myapp-tg`"), `myapp-asg` is configured to attach directly to this target group. Once both this note's resources and that ASG exist:
+If your backend instances are managed by an Auto Scaling group that's attached to `demo-tg` (rather than registered manually):
 
-- Every instance `myapp-asg` launches is **automatically registered** with `myapp-tg` the moment it's `InService` — you never manually add instance IDs to the target group yourself.
-- Every instance `myapp-asg` terminates is **automatically deregistered** first (entering the `draining` state for up to the deregistration delay — Note 02 §8) before actually being terminated.
-- `myapp-alb`'s own health checks against `myapp-tg` feed back into the ASG's replacement decisions when **ELB health checks** are enabled on the ASG (which `EC2\ASG\02` does) — see `EC2\ASG\12-Auto-Scaling-vs-Elastic-Load-Balancer.md` for the full feedback-loop explanation.
+- Every instance the ASG launches is **automatically registered** with `demo-tg` the moment it's `InService` — you never manually add instance IDs to the target group yourself.
+- Every instance the ASG terminates is **automatically deregistered** first (entering the `draining` state for up to the deregistration delay — Note 02 §8) before actually being terminated.
+- `demo-alb`'s own health checks against `demo-tg` feed back into the ASG's replacement decisions when **ELB health checks** are enabled on the ASG — an unhealthy target is reported by the target group, and the ASG is what actually decides to terminate and replace the instance.
 
-This is the payoff of building the target group and load balancer first (or at least, having their names/settings agreed on first, per the spec both notes share): the ASG never needs manual target registration, ever.
+This is the payoff of attaching a target group to an Auto Scaling group: the ASG never needs manual target registration, ever. If you're using standalone instances instead, you register/deregister them manually on the target group's **Targets** tab.
 
 ---
 
 ## 6. Verify: DNS name, curl test, and load-balanced instance IDs
 
-1. **Load Balancers** → select `myapp-alb` → copy the **DNS name** shown under **Description**, e.g. `myapp-alb-1234567890.ap-south-1.elb.amazonaws.com`.
-2. **Target Groups** → `myapp-tg` → **Targets** tab: confirm both `myapp-asg` instances show **Health status = healthy** (give it a minute after the ASG launches them — the target passes `initial` only after its first successful health check).
+1. **Load Balancers** → select `demo-alb` → copy the **DNS name** shown under **Description**, e.g. `demo-alb-1234567890.us-east-1.elb.amazonaws.com`.
+2. **Target Groups** → `demo-tg` → **Targets** tab: confirm your backend instances show **Health status = healthy** (give it a minute after they launch — a target passes `initial` only after its first successful health check).
 3. From your own machine, `curl` the DNS name a few times:
 
    ```
-   curl http://myapp-alb-1234567890.ap-south-1.elb.amazonaws.com/
-   curl http://myapp-alb-1234567890.ap-south-1.elb.amazonaws.com/
-   curl http://myapp-alb-1234567890.ap-south-1.elb.amazonaws.com/
+   curl http://demo-alb-1234567890.us-east-1.elb.amazonaws.com/
+   curl http://demo-alb-1234567890.us-east-1.elb.amazonaws.com/
+   curl http://demo-alb-1234567890.us-east-1.elb.amazonaws.com/
    ```
 
-4. You should see the response body alternate between **different instance IDs** — e.g. `<h1>Hello from i-0abc123...</h1>` on one call and `<h1>Hello from i-0def456...</h1>` on the next — proving `myapp-alb` is genuinely distributing requests across both of `myapp-asg`'s instances, using the exact user-data script from `EC2\ASG\02` §2.
+4. You should see the response body alternate between **different instance IDs** — e.g. `<h1>Hello from i-0abc123...</h1>` on one call and `<h1>Hello from i-0def456...</h1>` on the next — proving `demo-alb` is genuinely distributing requests across all your backend instances.
 5. Open the same DNS name in a browser as an easier visual check — refresh a few times and watch the instance ID change.
 
 ```mermaid
 flowchart TD
-    CLIENT(("curl / browser")) -->|"HTTP GET :80"| ALB["myapp-alb<br/>internet-facing<br/>SG: myapp-alb-sg<br/>subnets: myapp-public-subnet-1/2"]
-    ALB -->|"listener HTTP:80<br/>default action: forward"| TG["myapp-tg<br/>HTTP:80, target type: instance<br/>health check: /health<br/>interval 30s / timeout 5s / 3-3 thresholds"]
+    CLIENT(("curl / browser")) -->|"HTTP GET :80"| ALB["demo-alb<br/>internet-facing<br/>SG: demo-alb-sg<br/>subnets: two public subnets"]
+    ALB -->|"listener HTTP:80<br/>default action: forward"| TG["demo-tg<br/>HTTP:80, target type: instance<br/>health check: /health<br/>interval 30s / timeout 5s / 3-3 thresholds"]
 
-    TG -->|"routes to"| I1["myapp-asg instance 1<br/>myapp-private-subnet-1<br/>SG: myapp-app-sg"]
-    TG -->|"routes to"| I2["myapp-asg instance 2<br/>myapp-private-subnet-2<br/>SG: myapp-app-sg"]
+    TG -->|"routes to"| I1["App instance 1<br/>private subnet 1<br/>SG: demo-app-sg"]
+    TG -->|"routes to"| I2["App instance 2<br/>private subnet 2<br/>SG: demo-app-sg"]
 
-    ASG["myapp-asg<br/>min 2 / desired 2 / max 6"] -.->|"auto-register/deregister"| TG
+    ASG["Auto Scaling group<br/>(optional)"] -.->|"auto-register/deregister"| TG
     I1 -.->|"health check"| TG
     I2 -.->|"health check"| TG
 ```
@@ -122,35 +118,35 @@ flowchart TD
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| **502 Bad Gateway** from `curl`/browser | `myapp-tg` has no healthy targets, or `myapp-app-sg` is blocking the ALB's traffic (SG chain from Note 04 broken) | Check **Targets** tab health status; re-verify `myapp-app-sg` inbound allows port 80 from `myapp-alb-sg` specifically |
+| **502 Bad Gateway** from `curl`/browser | `demo-tg` has no healthy targets, or `demo-app-sg` is blocking the ALB's traffic (SG chain from Note 04 broken) | Check **Targets** tab health status; re-verify `demo-app-sg` inbound allows port 80 from `demo-alb-sg` specifically |
 | **502 Bad Gateway**, targets show healthy | Target closed the connection with a TCP RST/FIN while a request was in flight, or an SSL handshake error on the backend | Check `httpd`'s keep-alive isn't shorter than the ALB's idle timeout (60s default); confirm no HTTPS mismatch between listener and target |
-| Targets stuck in `unhealthy` | Health check path `/health` doesn't match what the instance actually serves, or the health check port is blocked by `myapp-app-sg` | Confirm the user-data script created `/var/www/html/health` (per `EC2\ASG\02` §2); confirm SG allows the health check port |
-| Targets stuck in `initial` | Instance hasn't passed its **first** health check yet, or is still booting | Wait through the grace period (90s, per `EC2\ASG\02`) + at least one 30s health check interval |
-| `curl` to the DNS name hangs/times out entirely | `myapp-alb-sg` doesn't allow inbound 80 from your test client, or you selected private subnets by mistake when creating `myapp-alb` | Re-check `myapp-alb-sg` inbound rule from Note 04; re-check Note 03's subnet selection guidance |
-| Only ever see **one** instance ID in responses | Cross-zone/health issue is masking the second instance, or it genuinely isn't registered yet | Check `myapp-tg`'s **Targets** tab shows 2 healthy entries; give the ASG a minute to finish registering both |
-| `myapp-tg` doesn't appear when configuring `myapp-asg`'s load balancing step | `myapp-tg` wasn't created yet, or was created in the wrong VPC | Confirm this note's steps ran first, and that `myapp-tg`'s VPC is `myapp-vpc` |
+| Targets stuck in `unhealthy` | Health check path `/health` doesn't match what the instance actually serves, or the health check port is blocked by `demo-app-sg` | Confirm the instance's web server actually serves `/health`; confirm SG allows the health check port |
+| Targets stuck in `initial` | Instance hasn't passed its **first** health check yet, or is still booting | Wait through the instance's boot/grace period plus at least one 30s health check interval |
+| `curl` to the DNS name hangs/times out entirely | `demo-alb-sg` doesn't allow inbound 80 from your test client, or you selected private subnets by mistake when creating `demo-alb` | Re-check `demo-alb-sg` inbound rule from Note 04; re-check Note 03's subnet selection guidance |
+| Only ever see **one** instance ID in responses | Cross-zone/health issue is masking the second instance, or it genuinely isn't registered yet | Check `demo-tg`'s **Targets** tab shows all expected healthy entries; give the fleet a minute to finish registering |
+| Target group doesn't appear when attaching an Auto Scaling group to it | The target group wasn't created yet, or was created in the wrong VPC | Confirm this note's steps ran first, and that `demo-tg`'s VPC matches your ASG's VPC |
 
 ---
 
-## 8. ⚠️ Clean up to avoid charges
+## 8. Clean up to avoid charges
 
-`myapp-alb` is billed **hourly plus Load Balancer Capacity Units (LCU)** regardless of how much traffic it actually handles — a common source of surprise charges if a demo is left running.
+`demo-alb` is billed **hourly plus Load Balancer Capacity Units (LCU)** regardless of how much traffic it actually handles — a common source of surprise charges if a demo is left running.
 
-1. **Load Balancers** → select `myapp-alb` → **Actions** → **Delete load balancer** → confirm.
-2. **Target Groups** → select `myapp-tg` → **Actions** → **Delete** (only possible after the load balancer referencing it is gone, or after removing it from the listener).
-3. If you're not continuing to later notes, also zero out `myapp-asg` (see `EC2\ASG\02` §6 cleanup) so its instances stop billing too — an ALB with no targets still costs its hourly + LCU charge on its own.
-4. Security groups (`myapp-alb-sg`, `myapp-app-sg`) are free to leave in place; delete them only if you're tearing down the whole `myapp-vpc` build.
+1. **Load Balancers** → select `demo-alb` → **Actions** → **Delete load balancer** → confirm.
+2. **Target Groups** → select `demo-tg` → **Actions** → **Delete** (only possible after the load balancer referencing it is gone, or after removing it from the listener).
+3. If you're not continuing to later notes, also terminate/scale down your backend instances so they stop billing too — an ALB with no targets still costs its hourly + LCU charge on its own.
+4. Security groups (`demo-alb-sg`, `demo-app-sg`) are free to leave in place; delete them only if you're tearing down the whole demo VPC.
 
 ---
 
 ## 9. Recap
 
-- Built **`myapp-tg`** (HTTP:80, target type Instance, health check `/health`, interval 30s / timeout 5s / healthy 3 / unhealthy 3 — a deliberate override of the AWS defaults of 5 healthy / 2 unhealthy).
-- Built **`myapp-alb`** (internet-facing, IPv4, `myapp-public-subnet-1/2`, SG `myapp-alb-sg`) with an HTTP:80 listener whose default action forwards to `myapp-tg`.
-- `myapp-asg` (from `EC2\ASG\02`) registers/deregisters its own instances into `myapp-tg` automatically — no manual target registration, ever.
-- Verified via the ALB's DNS name that requests are genuinely load-balanced across different `myapp-asg` instance IDs.
-- This closes the loop between the `VPC\` network, the `EC2\ASG\` compute fleet, and this folder's load balancer — `myapp` is now a complete, load-balanced, self-healing two-tier application.
-- Next: Note 06 introduces **path-based vs host-based routing** — adding `myapp-tg-api` and `myapp-tg-admin` behind this same `myapp-alb` via additional listener rules.
+- Built **`demo-tg`** (HTTP:80, target type Instance, health check `/health`, interval 30s / timeout 5s / healthy 3 / unhealthy 3 — a deliberate override of the AWS defaults of 5 healthy / 2 unhealthy).
+- Built **`demo-alb`** (internet-facing, IPv4, two public subnets, SG `demo-alb-sg`) with an HTTP:80 listener whose default action forwards to `demo-tg`.
+- If backend instances are managed by an Auto Scaling group attached to `demo-tg`, they register/deregister automatically — no manual target registration, ever.
+- Verified via the ALB's DNS name that requests are genuinely load-balanced across different backend instance IDs.
+- This folder's demo is now a complete, load-balanced two-tier setup, independent of how the VPC or backend instances were originally built.
+- Next: Note 06 introduces **path-based vs host-based routing** — adding `demo-tg-api` and `demo-tg-admin` behind this same `demo-alb` via additional listener rules.
 
 ---
 

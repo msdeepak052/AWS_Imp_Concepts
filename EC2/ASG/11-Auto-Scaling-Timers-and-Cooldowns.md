@@ -1,12 +1,12 @@
 # 11 - Auto Scaling Timers and Cooldowns
 
-> Goal: untangle three timers that trip up nearly everyone learning Auto Scaling — **default cooldown**, **health check grace period**, and **default instance warmup**. They all involve "waiting a bit after launch," but they block/affect completely different things. We finish by tuning both the grace period and the warmup time on `myapp-asg`.
+> Goal: untangle three timers that trip up nearly everyone learning Auto Scaling — **default cooldown**, **health check grace period**, and **default instance warmup**. They all involve "waiting a bit after launch," but they block/affect completely different things. We finish by tuning both the grace period and the warmup time on `demo-asg`.
 
 ---
 
 ## 1. Why three separate timers exist
 
-`myapp-asg` launches a `t3.micro` running the Note 02 user-data script — it takes a little while after boot for `httpd`/`nginx` to actually start and begin serving `/health` successfully. During that startup window, several different ASG subsystems need to know: *"is this instance ready yet, and should I trust its data?"* Each one asks that question for a different reason, so AWS gives each its own timer instead of one blanket setting.
+`demo-asg` launches a `t3.micro` running the same user-data script we set up when building the launch template — it takes a little while after boot for `httpd`/`nginx` to actually start and begin serving `/health` successfully. During that startup window, several different ASG subsystems need to know: *"is this instance ready yet, and should I trust its data?"* Each one asks that question for a different reason, so AWS gives each its own timer instead of one blanket setting.
 
 > 🧠 **Mental model:** a new instance goes through three overlapping "not fully trusted yet" windows — one for *scaling decisions* (cooldown), one for *health-based replacement* (grace period), and one for *metric aggregation* (warmup). They can have completely different lengths, and mixing them up is the single most common source of confusion in this topic.
 
@@ -44,7 +44,7 @@
 **Why it exists:** a cold instance can show artificially high CPU/network usage right after boot (installing packages, warming caches, JIT-compiling, etc.). If that instance's numbers are averaged in immediately, they skew the group's aggregate metric — potentially triggering **more scale-out** than actually needed, or causing the alarm to flap.
 
 - **Default value:** **not enabled by default** — AWS explicitly recommends you turn it on. If left unset: Instance Refresh falls back to using the **health check grace period** as its warmup, and Target Tracking/Step Scaling fall back to the **default cooldown** value. Predictive Scaling has no fallback warmup at all.
-- **Applies to:** metric aggregation for dynamic scaling policies, and minimum-healthy-percentage counting during Instance Refresh / Instance Maintenance Policy operations (Note 07).
+- **Applies to:** metric aggregation for dynamic scaling policies, and minimum-healthy-percentage counting during Instance Refresh / Instance Maintenance Policy operations.
 - **Configured:** per-ASG, under **Details → Advanced configurations → Edit** (console) or `--default-instance-warmup` (CLI), 0–3600 seconds.
 
 ---
@@ -63,7 +63,7 @@
 
 ```mermaid
 gantt
-    title myapp-asg instance timeline (illustrative seconds after launch)
+    title demo-asg instance timeline (illustrative seconds after launch)
     dateFormat X
     axisFormat %Ss
 
@@ -87,13 +87,13 @@ gantt
 
 ---
 
-## 7. Hands-on: set grace period and warmup on `myapp-asg`
+## 7. Hands-on: set grace period and warmup on `demo-asg`
 
-The Note 02 user-data script (install + start web server, write instance ID to the index page) typically finishes within ~60–90 seconds on a `t3.micro`, but we'll size both timers generously to be safe: **120 seconds** health check grace period, **180 seconds** default instance warmup.
+The user-data script from when we built the launch template (install + start web server, write instance ID to the index page) typically finishes within ~60–90 seconds on a `t3.micro`, but we'll size both timers generously to be safe: **120 seconds** health check grace period, **180 seconds** default instance warmup.
 
 ### Console
 
-1. EC2 console → **Auto Scaling Groups** → `myapp-asg`.
+1. EC2 console → **Auto Scaling Groups** → `demo-asg`.
 2. **Details** tab → **Health checks** → **Edit**.
    - **Health check grace period**: `120` seconds → **Update**.
 3. **Details** tab → **Advanced configurations** → **Edit**.
@@ -103,7 +103,7 @@ The Note 02 user-data script (install + start web server, write instance ID to t
 
 ```bash
 aws autoscaling update-auto-scaling-group \
-  --auto-scaling-group-name myapp-asg \
+  --auto-scaling-group-name demo-asg \
   --health-check-grace-period 120 \
   --default-instance-warmup 180
 ```
@@ -112,7 +112,7 @@ Verify:
 
 ```bash
 aws autoscaling describe-auto-scaling-groups \
-  --auto-scaling-group-names myapp-asg \
+  --auto-scaling-group-names demo-asg \
   --query "AutoScalingGroups[0].[HealthCheckGracePeriod,DefaultInstanceWarmup]"
 ```
 
@@ -144,7 +144,7 @@ aws autoscaling describe-auto-scaling-groups \
 - **Default cooldown** (300s default) — blocks back-to-back **Simple Scaling** activities so new capacity has time to take load.
 - **Health check grace period** (300s console / 0s CLI default) — blocks **EC2/ELB health-check-triggered replacement** during early boot.
 - **Default instance warmup** (off by default, recommended to enable) — blocks a cold instance's **metrics** from skewing the Target Tracking/Step Scaling aggregate and Instance Refresh healthy-percentage math.
-- Tuned `myapp-asg` to a **120s grace period** and **180s default instance warmup** to match its user-data boot time.
+- Tuned `demo-asg` to a **120s grace period** and **180s default instance warmup** to match its user-data boot time.
 - Next: Note 12 closes out the series by clarifying exactly how **Auto Scaling and Elastic Load Balancing divide responsibilities** — a favorite exam comparison.
 
 ---

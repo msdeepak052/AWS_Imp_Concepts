@@ -33,7 +33,7 @@ An **IP address** is the unique number that identifies a device on a network so 
   - You do **not** get to choose it.
 - The instance itself never "sees" its public IP on its own OS — AWS maps it via **NAT** at the internet gateway to the private IP.
 
-> 🧠 This is why connecting by public IP "breaks" after a stop/start — the IP changed. The fix for a stable address is an **Elastic IP** (Note 10).
+> 🧠 This is why connecting by public IP "breaks" after a stop/start — the IP changed. The fix for a stable address is an **Elastic IP** — a static public IPv4 address that you allocate to your own AWS account and attach to an instance, which does **not** change across stop/start (unlike the auto-assigned public IP).
 
 ---
 

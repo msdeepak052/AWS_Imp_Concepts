@@ -55,7 +55,7 @@ Three-tier gives you finer-grained security (a compromised app server still can'
 
 ## 4. High availability: every tier spans 2+ AZs
 
-A subnet lives in exactly **one Availability Zone** (Note 01/05). If all your web servers sat in a single subnet/AZ, an AZ outage takes your whole site down. So **every tier is duplicated across at least two AZs**:
+A subnet lives in exactly **one Availability Zone** and can never span two. If all your web servers sat in a single subnet/AZ, an AZ outage takes your whole site down. So **every tier is duplicated across at least two AZs**:
 
 - Web tier: `myapp-public-subnet-1` (AZ-a) + `myapp-public-subnet-2` (AZ-b).
 - App/DB tier(s): same pattern, one subnet pair per AZ.
@@ -112,7 +112,7 @@ flowchart LR
 
 🎯 **Exam tip:** "Highly available" architecture questions almost always hinge on **spreading resources across at least 2 AZs** — for ALBs this means enabling the ALB across 2+ subnets in 2+ AZs, and for ASGs it means the launch template's subnets spanning multiple AZs. A single-AZ deployment is a classic wrong answer on HA questions.
 
-🎯 **Exam tip:** defense in depth in a VPC = **public subnet for internet-facing tiers only** + **private subnets for everything else** + **security groups scoped tier-to-tier** (Note 08 configures exactly this with `myapp-web-sg` and `myapp-app-sg`).
+🎯 **Exam tip:** defense in depth in a VPC = **public subnet for internet-facing tiers only** + **private subnets for everything else** + **security groups scoped tier-to-tier** (the next hands-on note configures exactly this, with a web-tier security group that only allows the app tier's security group in on the app port, not the whole internet).
 
 ---
 

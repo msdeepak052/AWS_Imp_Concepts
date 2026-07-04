@@ -6,7 +6,7 @@
 
 ## 0. Before you start
 
-- `myapp-vpc` (`10.0.0.0/16`) must already exist (Note 04).
+- `myapp-vpc` (`10.0.0.0/16`) must already exist, created in the previous hands-on step.
 - Region: **Asia Pacific (Mumbai) `ap-south-1`**, using AZs **`ap-south-1a`** and **`ap-south-1b`**.
 - Our target layout (from Notes 01–03):
 
@@ -25,7 +25,7 @@
 
 This is why our design has **2 public + 2 private subnets** instead of 1 of each — to get **high availability**, you must duplicate each tier into a second AZ, because if `ap-south-1a` has an outage, only the subnets physically in that AZ are affected. A subnet in `ap-south-1b` keeps running.
 
-🎯 **Exam tip:** "Deploy across multiple AZs for high availability" always means **create a subnet per AZ, per tier** — you can't fake it with one subnet. This same rule reappears for NAT Gateways (Note 09 — a NAT GW is AZ-scoped too).
+🎯 **Exam tip:** "Deploy across multiple AZs for high availability" always means **create a subnet per AZ, per tier** — you can't fake it with one subnet. This same rule reappears for NAT Gateways too — a NAT Gateway also lives in one specific AZ, so a highly available design needs one NAT Gateway per AZ, not just one for the whole VPC.
 
 ---
 
@@ -72,7 +72,7 @@ Click **Add new subnet** one more time:
 - **Availability Zone**: `ap-south-1b`
 - **IPv4 CIDR block**: `10.0.12.0/24`
 
-Leave **IPv6 CIDR block** blank for all 4 (this VPC is IPv4-only, Note 04 §4). Click **Create subnet** to create all 4 at once.
+Leave **IPv6 CIDR block** blank for all 4 (this VPC is IPv4-only). Click **Create subnet** to create all 4 at once.
 
 ---
 
@@ -125,7 +125,7 @@ All 4 subnets exist and use the default (main) route table for now — none of t
 
 ## 10. ⚠️ Clean up to avoid charges
 
-Subnets themselves are **free** — no charge for creating or holding them, same as the VPC in Note 04. Nothing to clean up at this stage. (Charges start once we add a NAT Gateway in Note 09.)
+Subnets themselves are **free** — no charge for creating or holding them, same as the VPC itself. Nothing to clean up at this stage. (Charges start once we add a NAT Gateway later in this build.)
 
 ---
 
@@ -133,11 +133,11 @@ Subnets themselves are **free** — no charge for creating or holding them, same
 
 | Mistake | Symptom / consequence | Fix |
 |---|---|---|
-| Two subnets given overlapping CIDRs (e.g. both `10.0.1.0/24`) | Console rejects the second subnet — "CIDR conflicts with another subnet" | Double-check third-octet values before creating (Note 03 §4 math) |
+| Two subnets given overlapping CIDRs (e.g. both `10.0.1.0/24`) | Console rejects the second subnet — "CIDR conflicts with another subnet" | Double-check third-octet values before creating — each subnet needs a distinct, non-overlapping slice of the VPC's CIDR |
 | Subnet CIDR not inside the VPC's CIDR range | Console rejects it immediately | Subnet CIDR must be a subset of `10.0.0.0/16` |
 | Left Availability Zone as "No preference" for all 4 | AWS might place two subnets you intended to separate into the **same AZ**, breaking your HA design | Explicitly pick `ap-south-1a` / `ap-south-1b` per the design table |
 | Forgot to enable auto-assign public IP on the public subnets | Instances launched later get **no public IP** by default, even in a "public" subnet | Edit subnet settings → enable it, or set it explicitly at instance launch |
-| Assumed enabling auto-assign public IP makes the subnet internet-reachable | Instance gets a public IP but still has no internet access | Remember: routing (IGW + route table, Note 06) is what actually makes a subnet public — the checkbox is just a convenience for IP assignment |
+| Assumed enabling auto-assign public IP makes the subnet internet-reachable | Instance gets a public IP but still has no internet access | Remember: routing (an Internet Gateway plus a route table entry sending `0.0.0.0/0` to it) is what actually makes a subnet public — the checkbox is just a convenience for IP assignment |
 | Mixed up public/private subnet names when picking a subnet at EC2 launch time later | Web server accidentally lands in a private subnet (unreachable) or a DB accidentally lands in a public one (security risk) | Keep the naming/tagging consistent (`public-*` vs `private-*`) and double-check at launch |
 
 ---

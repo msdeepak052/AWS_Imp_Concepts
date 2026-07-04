@@ -1,6 +1,6 @@
 # 20 - VPC Flow Logs
 
-> Goal: understand what VPC Flow Logs capture (and what they **don't**), the three capture scopes, the three destinations, how to read a flow log record, and how to use flow logs to troubleshoot "why can't my instance connect" alongside Security Groups/NACLs (Notes 12-14). Next: Note 21 (Managed Prefix Lists).
+> Goal: understand what VPC Flow Logs capture (and what they **don't**), the three capture scopes, the three destinations, how to read a flow log record, and how to use flow logs to troubleshoot "why can't my instance connect" alongside Security Groups and NACLs — the two firewall layers that actually decide whether traffic is allowed.
 
 ---
 
@@ -92,9 +92,9 @@ A **REJECT** record tells you traffic **was blocked at that ENI** — but flow l
 
 Practical troubleshooting flow:
 1. Look for the expected traffic (e.g. `srcport`/`dstport` 443 from your test client's IP) in the flow log.
-2. **No record at all** → traffic never reached the ENI (check routing — Note 06 — or the NACL, which is stateless and evaluated before the packet is even delivered to the ENI in some cases).
+2. **No record at all** → traffic never reached the ENI (check the subnet's route table for a missing/misconfigured route, or the NACL, which is stateless and evaluated before the packet is even delivered to the ENI in some cases).
 3. **A `REJECT` record exists** → something blocked it at this ENI. Now go check:
-   - The instance's **Security Group** inbound rules (stateful, Note 11-14).
+   - The instance's **Security Group** inbound rules (stateful — return traffic is automatically allowed, so only the inbound rule for the initiating request matters here).
    - The subnet's **Network ACL** inbound/outbound rules (stateless — remember, you need BOTH directions allowed).
 4. Absence of the expected `ACCEPT` record + presence of a `REJECT` confirms *something* in the path is blocking it — flow logs **narrow down** the problem, they don't pinpoint SG vs NACL by themselves.
 
@@ -143,8 +143,8 @@ sequenceDiagram
 |---|---|
 | No log streams appearing | IAM role for the flow log lacks permission to write to the CloudWatch log group — recheck the role's policy. |
 | Log group fills up fast / costs rising | Use a **longer aggregation interval** (10 min), filter to **Reject only**, or switch destination to **S3** for cheaper long-term storage. |
-| Can't tell if SG or NACL blocked traffic | Flow logs only show the net **ACCEPT/REJECT** at the ENI — cross-check the SG rules and NACL rules directly (Notes 12-14) to find which one is responsible. |
-| Missing expected traffic entirely | Check routing (Note 06) and NACLs first — some traffic never reaches the ENI to be logged at all if it's dropped earlier in the path. |
+| Can't tell if SG or NACL blocked traffic | Flow logs only show the net **ACCEPT/REJECT** at the ENI — cross-check the SG rules and NACL rules directly to find which one is responsible. |
+| Missing expected traffic entirely | Check the subnet's route table and NACLs first — some traffic never reaches the ENI to be logged at all if it's dropped earlier in the path. |
 
 ---
 
@@ -162,7 +162,7 @@ sequenceDiagram
 - Three capture scopes: **VPC** (cascades to everything), **Subnet**, or a single **ENI**.
 - Three destinations: **CloudWatch Logs** (real-time/alerting), **S3** (cheap long-term + Athena), **Kinesis Data Firehose** (stream to a 3rd-party SIEM).
 - Record format: `version account-id interface-id srcaddr dstaddr srcport dstport protocol packets bytes start end action log-status`.
-- A `REJECT` record proves traffic was blocked at that ENI, but **doesn't say whether it was the Security Group or the NACL** — you still check both (Notes 12-14).
+- A `REJECT` record proves traffic was blocked at that ENI, but **doesn't say whether it was the Security Group or the NACL** — you still have to check both directly.
 - 🎯 **Exam tip:** flow logs are metadata-only and don't capture payload; if the question needs packet **contents**, the answer is **not** flow logs (that would need something like traffic mirroring).
 - Next: **Note 21** — Managed Prefix Lists (reusable CIDR lists for SGs and route tables).
 

@@ -97,6 +97,9 @@ flowchart TD
 ```
 <img width="956" height="731" alt="image" src="https://github.com/user-attachments/assets/392bc3b6-afdf-4fe5-b52f-af816786308b" />
 
+<img width="632" height="611" alt="image" src="https://github.com/user-attachments/assets/fd1b7855-3448-4bd1-96a6-a060b4f668a2" />
+
+
 ---
 
 ## 6. Exam tips

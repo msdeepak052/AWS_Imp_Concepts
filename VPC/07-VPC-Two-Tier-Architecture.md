@@ -68,24 +68,22 @@ An **Auto Scaling Group (ASG)** launches instances across both public subnets, a
 
 ```mermaid
 flowchart TD
-    INTERNET(("Internet")) --> ALB["Application Load Balancer"]
+    INTERNET(("Internet")) --> ALB["Application Load Balancer<br/>(myapp-vpc — 10.0.0.0/16)"]
 
-    subgraph VPC["myapp-vpc — 10.0.0.0/16"]
-        subgraph AZ_A["ap-south-1a"]
-            WEB1["Web tier (public)<br/>myapp-public-subnet-1<br/>10.0.1.0/24<br/>EC2: myapp-web-1"]
-            APP1["App/DB tier (private)<br/>myapp-private-subnet-1<br/>10.0.11.0/24<br/>EC2: myapp-app-1"]
-        end
-
-        subgraph AZ_B["ap-south-1b"]
-            WEB2["Web tier (public)<br/>myapp-public-subnet-2<br/>10.0.2.0/24"]
-            APP2["App/DB tier (private)<br/>myapp-private-subnet-2<br/>10.0.12.0/24"]
-        end
-
-        ALB --> WEB1
-        ALB --> WEB2
-        WEB1 -->|"port 8080<br/>(private IP only)"| APP1
-        WEB2 -->|"port 8080<br/>(private IP only)"| APP2
+    subgraph AZ_A["ap-south-1a"]
+        WEB1["Web tier (public)<br/>myapp-public-subnet-1<br/>10.0.1.0/24<br/>EC2: myapp-web-1"]
+        APP1["App/DB tier (private)<br/>myapp-private-subnet-1<br/>10.0.11.0/24<br/>EC2: myapp-app-1"]
     end
+
+    subgraph AZ_B["ap-south-1b"]
+        WEB2["Web tier (public)<br/>myapp-public-subnet-2<br/>10.0.2.0/24"]
+        APP2["App/DB tier (private)<br/>myapp-private-subnet-2<br/>10.0.12.0/24"]
+    end
+
+    ALB --> WEB1
+    ALB --> WEB2
+    WEB1 -->|"port 8080<br/>(private IP only)"| APP1
+    WEB2 -->|"port 8080<br/>(private IP only)"| APP2
 ```
 
 ### 2-tier vs 3-tier at a glance

@@ -70,18 +70,16 @@ We add:
 
 ```mermaid
 flowchart TD
-    subgraph VPC["myapp-vpc — 10.0.0.0/16"]
-        subgraph AZ1["ap-south-1a"]
-            APP1["myapp-app-1<br/>private-subnet-1"]
-            IF1["Interface Endpoint ENI<br/>Secrets Manager"]
-        end
-        subgraph AZ2["ap-south-1b"]
-            APP2["myapp-app-2<br/>private-subnet-2"]
-            IF2["Interface Endpoint ENI<br/>Secrets Manager"]
-        end
-        RT["myapp-private-rt"]
-        GWE(["Gateway Endpoint<br/>com.amazonaws.ap-south-1.s3"])
+    subgraph AZ1["ap-south-1a"]
+        APP1["myapp-app-1<br/>private-subnet-1"]
+        IF1["Interface Endpoint ENI<br/>Secrets Manager"]
     end
+    subgraph AZ2["ap-south-1b"]
+        APP2["myapp-app-2<br/>private-subnet-2"]
+        IF2["Interface Endpoint ENI<br/>Secrets Manager"]
+    end
+    RT["myapp-private-rt"]
+    GWE(["Gateway Endpoint<br/>com.amazonaws.ap-south-1.s3"])
     S3[("Amazon S3")]
     SECMGR[("AWS Secrets Manager")]
 

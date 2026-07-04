@@ -69,30 +69,12 @@ This folder is self-contained: it needs only a VPC with two public subnets (in t
 
 ```mermaid
 flowchart TD
-    CLIENTS(("Clients<br/>(internet)"))
-    CLIENTS -->|"HTTP/HTTPS"| ALB["demo-alb<br/>(Application Load Balancer)"]
+    CLIENTS(("Clients<br/>(internet)")) -->|"HTTP/HTTPS"| ALB["demo-alb<br/>(Application Load Balancer,<br/>deployed across 2 public subnets)"]
 
     subgraph VPC["Your VPC"]
-        subgraph PUB["Public subnets"]
-            direction LR
-            PUB1["Public subnet 1<br/>(AZ-a)"]
-            PUB2["Public subnet 2<br/>(AZ-b)"]
-        end
-        ALB -.->|"deployed across"| PUB1
-        ALB -.->|"deployed across"| PUB2
-
-        ALB -->|"balances traffic"| TG["demo-tg<br/>(target group)"]
-
-        subgraph PRIV["Private application subnets"]
-            direction LR
-            PRIV1["Private subnet 1<br/>(AZ-a)"]
-            PRIV2["Private subnet 2<br/>(AZ-b)"]
-        end
-
-        TG -->|"routes to healthy targets"| I1["App instance"]
-        TG -->|"routes to healthy targets"| I2["App instance"]
-        I1 -.-> PRIV1
-        I2 -.-> PRIV2
+        ALB --> TG["demo-tg<br/>(target group)"]
+        TG -->|"routes to healthy targets"| I1["App instance<br/>(private subnet, AZ-a)"]
+        TG -->|"routes to healthy targets"| I2["App instance<br/>(private subnet, AZ-b)"]
     end
 ```
 <img width="956" height="731" alt="image" src="https://github.com/user-attachments/assets/392bc3b6-afdf-4fe5-b52f-af816786308b" />

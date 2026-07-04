@@ -11,57 +11,40 @@ CloudMart is a **3-tier architecture** spread across **two Availability Zones** 
 ```mermaid
 flowchart TB
     USER((Internet User)) --> R53[Route 53<br/>www.cloudmart.example]
-    R53 --> PALB[cloudmart-public-alb<br/>internet-facing, HTTP:80]
+    R53 --> PALB
 
     subgraph VPC["cloudmart-vpc — 10.20.0.0/16"]
+        PALB[cloudmart-public-alb<br/>internet-facing :80]
+        IALB[cloudmart-internal-alb<br/>internal :8080]
         IGW[cloudmart-igw]
 
-        subgraph AZA["Availability Zone A — ap-south-1a"]
-            WEBSUB1["cloudmart-web-subnet-1<br/>10.20.1.0/24 (public)"]
-            APPSUB1["cloudmart-app-subnet-1<br/>10.20.11.0/24 (private)"]
-            DBSUB1["cloudmart-db-subnet-1<br/>10.20.21.0/24 (private)"]
-            NAT1[cloudmart-nat-gw-1]
-            WEB1[["Web ASG instance"]]
-            APP1[["App ASG instance"]]
+        subgraph AZA["AZ-A — ap-south-1a"]
+            WEB1[["Web instance"]]
+            APP1[["App instance"]]
             DB1[["cloudmart-db-1<br/>MariaDB"]]
-            WEBSUB1 --- WEB1
-            APPSUB1 --- APP1
-            DBSUB1 --- DB1
-            WEBSUB1 --- NAT1
+            NAT1[cloudmart-nat-gw-1]
         end
 
-        subgraph AZB["Availability Zone B — ap-south-1b"]
-            WEBSUB2["cloudmart-web-subnet-2<br/>10.20.2.0/24 (public)"]
-            APPSUB2["cloudmart-app-subnet-2<br/>10.20.12.0/24 (private)"]
-            DBSUB2["cloudmart-db-subnet-2<br/>10.20.22.0/24 (private, reserved)"]
+        subgraph AZB["AZ-B — ap-south-1b"]
+            WEB2[["Web instance"]]
+            APP2[["App instance"]]
             NAT2[cloudmart-nat-gw-2]
-            WEB2[["Web ASG instance"]]
-            APP2[["App ASG instance"]]
-            WEBSUB2 --- WEB2
-            APPSUB2 --- APP2
-            WEBSUB2 --- NAT2
         end
 
-        IALB[cloudmart-internal-alb<br/>internal, HTTP:8080]
-
+        PALB --> WEB1
+        PALB --> WEB2
         WEB1 -.proxy /api.-> IALB
         WEB2 -.proxy /api.-> IALB
         IALB --> APP1
         IALB --> APP2
-        APP1 -->|SQL:3306| DB1
-        APP2 -->|SQL:3306| DB1
-
-        APPSUB1 -.outbound.-> NAT1
-        APPSUB2 -.outbound.-> NAT2
-        DBSUB1 -.outbound.-> NAT1
+        APP1 -->|SQL :3306| DB1
+        APP2 -->|SQL :3306| DB1
         NAT1 --> IGW
         NAT2 --> IGW
     end
-
-    PALB --> WEB1
-    PALB --> WEB2
-    IGW --> USER
 ```
+
+Subnets and their exact CIDRs aren't drawn as separate boxes here (that would make this diagram very crowded) — they're listed in the resource inventory table in Section 3 below. This diagram focuses purely on the traffic relationships between resources: one AZ's web/app/db instances and NAT Gateway, mirrored in the other AZ, both tiers of compute fronted by their own load balancer.
 
 **Traffic path for one request:** Internet → Route 53 resolves `www.cloudmart.example` → `cloudmart-public-alb` → a healthy instance in `cloudmart-web-asg` (whichever AZ) → that instance's Nginx serves the static page, and its JavaScript calls `/api/products`, which Nginx reverse-proxies to `cloudmart-internal-alb` → a healthy instance in `cloudmart-app-asg` → that instance's Flask app queries `cloudmart-db-1` over port 3306 → the response bubbles back up the same chain to the browser.
 

@@ -59,17 +59,8 @@ Because GWLB only ever has the one fixed listener/target-group pairing, there's 
 
 ```mermaid
 flowchart LR
-    CLIENT(("Internet client"))
-    CLIENT --> GWLB["demo-gwlb<br/>(single fixed listener)"]
-
-    subgraph TG["demo-gwlb-tg — GENEVE:6081"]
-        FW1["demo-firewall-1<br/>(AZ-a)"]
-        FW2["demo-firewall-2<br/>(AZ-b)"]
-    end
-
-    GWLB -->|"GENEVE-encapsulated<br/>original packet"| TG
-    FW1 -->|"inspected + allowed<br/>back via GENEVE"| GWLB
-    FW2 -->|"inspected + allowed<br/>back via GENEVE"| GWLB
+    CLIENT(("Internet client")) --> GWLB["demo-gwlb<br/>(single fixed listener)"]
+    GWLB <-->|"GENEVE-encapsulated<br/>original packet, both ways"| TG["demo-gwlb-tg — GENEVE:6081<br/>demo-firewall-1 (AZ-a)<br/>demo-firewall-2 (AZ-b)"]
     GWLB -->|"decapsulated,<br/>original packet"| ALB["demo-alb"]
 ```
 

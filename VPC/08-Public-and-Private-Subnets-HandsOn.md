@@ -126,21 +126,18 @@ This is exactly why Note 09 exists: we add a **NAT Gateway** so private instance
 ```mermaid
 flowchart TD
     INTERNET(("Internet")) <--> IGW["myapp-igw"]
+    IGW --> RT_PUB["myapp-public-rt<br/>0.0.0.0/0 -> igw"]
 
-    subgraph VPC["myapp-vpc — 10.0.0.0/16"]
-        IGW --> RT_PUB["myapp-public-rt<br/>0.0.0.0/0 -> igw"]
-
-        subgraph PUB["myapp-public-subnet-1 (10.0.1.0/24)"]
-            WEB["myapp-web-1<br/>public IP + private IP<br/>SG: myapp-web-sg"]
-        end
-
-        subgraph PRIV["myapp-private-subnet-1 (10.0.11.0/24)"]
-            APP["myapp-app-1<br/>private IP ONLY<br/>SG: myapp-app-sg<br/>NO internet route"]
-        end
-
-        RT_PUB -.assoc.- PUB
-        WEB -->|"SSH 22, private network<br/>(bastion / jump)"| APP
+    subgraph PUB["myapp-public-subnet-1 (10.0.1.0/24)"]
+        WEB["myapp-web-1<br/>public IP + private IP<br/>SG: myapp-web-sg"]
     end
+
+    subgraph PRIV["myapp-private-subnet-1 (10.0.11.0/24)"]
+        APP["myapp-app-1<br/>private IP ONLY<br/>SG: myapp-app-sg<br/>NO internet route"]
+    end
+
+    RT_PUB -.assoc.- PUB
+    WEB -->|"SSH 22, private network<br/>(bastion / jump)"| APP
 
     YOU(("Your laptop")) -->|"SSH 22 (My IP)"| WEB
     APP -.->|"ping/curl: FAILS<br/>(no route out)"| INTERNET

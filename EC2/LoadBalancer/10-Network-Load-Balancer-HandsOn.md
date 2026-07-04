@@ -111,21 +111,11 @@ To do it: allocate one Elastic IP per AZ ahead of time (**VPC console → Elasti
 
 ```mermaid
 flowchart TD
-    CLIENT(("TCP client")) -->|"TCP:5000<br/>(optionally via a static EIP per AZ)"| NLB["demo-nlb<br/>internet-facing<br/>listener TCP:5000"]
+    CLIENT(("TCP client")) -->|"TCP:5000<br/>(optionally via a static EIP per AZ)"| NLB["demo-nlb<br/>internet-facing, nodes in AZ-a and AZ-b<br/>listener TCP:5000"]
 
     subgraph VPC["Your VPC"]
-        subgraph AZ_A["AZ-a"]
-            PUB1["Public subnet"]
-            PRIV1["Private subnet<br/>demo-tcp-1 (port 5000)"]
-        end
-        subgraph AZ_B["AZ-b"]
-            PUB2["Public subnet"]
-        end
-
-        NLB -.->|"node in"| PUB1
-        NLB -.->|"node in"| PUB2
         NLB --> TG["demo-nlb-tg<br/>TCP:5000, target type: Instance"]
-        TG --> PRIV1
+        TG --> PRIV1["demo-tcp-1<br/>private subnet, AZ-a<br/>listening on port 5000"]
     end
 ```
 

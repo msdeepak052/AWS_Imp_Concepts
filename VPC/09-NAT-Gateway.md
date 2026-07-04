@@ -135,32 +135,28 @@ Both private subnets now have **outbound-only** internet access. Re-running the 
 flowchart TD
     INTERNET(("Internet"))
     INTERNET <--> IGW["myapp-igw"]
+    IGW --> RT_PUB["myapp-public-rt<br/>0.0.0.0/0 -> igw<br/>10.0.0.0/16 -> local"]
 
-    subgraph VPC["myapp-vpc — 10.0.0.0/16"]
-        RT_PUB["myapp-public-rt<br/>0.0.0.0/0 -> igw<br/>10.0.0.0/16 -> local"]
-        RT_PRIV["myapp-private-rt<br/>0.0.0.0/0 -> nat-gw<br/>10.0.0.0/16 -> local"]
-        IGW --> RT_PUB
-
-        subgraph AZ_A["ap-south-1a"]
-            PUB1["myapp-public-subnet-1 (10.0.1.0/24)<br/>EC2: myapp-web-1 (myapp-web-sg)<br/>NAT: myapp-nat-gw (+ EIP)"]
-            PRIV1["myapp-private-subnet-1 (10.0.11.0/24)<br/>EC2: myapp-app-1 (myapp-app-sg)"]
-        end
-
-        subgraph AZ_B["ap-south-1b"]
-            PUB2["myapp-public-subnet-2 (10.0.2.0/24)"]
-            PRIV2["myapp-private-subnet-2 (10.0.12.0/24)"]
-        end
-
-        RT_PUB -.assoc.- PUB1
-        RT_PUB -.assoc.- PUB2
-        RT_PRIV -.assoc.- PRIV1
-        RT_PRIV -.assoc.- PRIV2
-
-        PRIV1 -->|"outbound only"| RT_PRIV
-        PRIV2 -->|"outbound only"| RT_PRIV
-        RT_PRIV --> PUB1
-        PUB1 --> IGW
+    subgraph AZ_A["ap-south-1a"]
+        PUB1["myapp-public-subnet-1 (10.0.1.0/24)<br/>EC2: myapp-web-1 (myapp-web-sg)<br/>NAT: myapp-nat-gw (+ EIP)"]
+        PRIV1["myapp-private-subnet-1 (10.0.11.0/24)<br/>EC2: myapp-app-1 (myapp-app-sg)"]
     end
+
+    subgraph AZ_B["ap-south-1b"]
+        PUB2["myapp-public-subnet-2 (10.0.2.0/24)"]
+        PRIV2["myapp-private-subnet-2 (10.0.12.0/24)"]
+    end
+
+    RT_PRIV["myapp-private-rt<br/>0.0.0.0/0 -> nat-gw<br/>10.0.0.0/16 -> local"]
+
+    RT_PUB -.assoc.- PUB1
+    RT_PUB -.assoc.- PUB2
+    RT_PRIV -.assoc.- PRIV1
+    RT_PRIV -.assoc.- PRIV2
+
+    PRIV1 -->|"outbound only"| RT_PRIV
+    PRIV2 -->|"outbound only"| RT_PRIV
+    RT_PRIV -->|"via myapp-nat-gw<br/>in myapp-public-subnet-1"| IGW
 ```
 
 ---

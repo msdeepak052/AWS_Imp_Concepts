@@ -84,21 +84,19 @@ Also recall from the previous note: the GWLB Endpoint itself must live in a subn
 flowchart TD
     INTERNET(("Internet")) <--> IGW["IGW"]
 
-    subgraph VPC["Your VPC — 10.0.0.0/16"]
-        subgraph AZ_A["AZ-a"]
-            PUB1["Public subnet<br/>demo-alb"]
-            PRIV1["Private subnet<br/>app instances"]
-            GWLB1["gwlb-appliance-subnet-1<br/>10.0.101.0/24<br/>(new) demo-firewall-1"]
-        end
-
-        subgraph AZ_B["AZ-b"]
-            PUB2["Public subnet"]
-            PRIV2["Private subnet"]
-            GWLB2["gwlb-appliance-subnet-2<br/>10.0.102.0/24<br/>(new) demo-firewall-2"]
-        end
-
-        IGW -.->|"planned edge-association redirect<br/>(later): 10.0.1.0/24 -> demo-gwlbe-1"| PUB1
+    subgraph AZ_A["AZ-a"]
+        PUB1["Public subnet<br/>demo-alb"]
+        PRIV1["Private subnet<br/>app instances"]
+        GWLB1["gwlb-appliance-subnet-1<br/>10.0.101.0/24 (new)<br/>demo-firewall-1"]
     end
+
+    subgraph AZ_B["AZ-b"]
+        PUB2["Public subnet"]
+        PRIV2["Private subnet"]
+        GWLB2["gwlb-appliance-subnet-2<br/>10.0.102.0/24 (new)<br/>demo-firewall-2"]
+    end
+
+    IGW -.->|"planned edge-association redirect<br/>(later): 10.0.1.0/24 -> demo-gwlbe-1"| AZ_A
 ```
 
 The dotted arrow marks the **future** redirect — not yet configured. Right now, the IGW still delivers traffic to the ALB's public subnet normally via its existing route table; nothing changes in traffic behavior until the redirect is wired up.

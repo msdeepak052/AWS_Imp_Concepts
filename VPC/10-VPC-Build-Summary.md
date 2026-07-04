@@ -45,42 +45,29 @@ The result: a complete, working, highly-available 2-tier VPC.
 flowchart TD
     INTERNET(("Internet"))
     INTERNET <--> IGW["Internet Gateway<br/>myapp-igw"]
+    IGW --> RT_PUB["myapp-public-rt<br/>local + 0.0.0.0/0 -> igw"]
 
-    subgraph VPC["myapp-vpc — 10.0.0.0/16 (ap-south-1)"]
-        RT_PUB["myapp-public-rt<br/>local + 0.0.0.0/0 -> igw"]
-        RT_PRIV["myapp-private-rt<br/>local + 0.0.0.0/0 -> nat-gw"]
-        IGW --> RT_PUB
-
-        subgraph AZ_A["Availability Zone: ap-south-1a"]
-            subgraph PUB1["myapp-public-subnet-1 (10.0.1.0/24)"]
-                WEB1["EC2: myapp-web-1<br/>SG: myapp-web-sg<br/>(80/443 from 0.0.0.0/0, 22 from My IP)"]
-                NAT["NAT Gateway: myapp-nat-gw<br/>+ Elastic IP"]
-            end
-            subgraph PRIV1["myapp-private-subnet-1 (10.0.11.0/24)"]
-                APP1["EC2: myapp-app-1<br/>SG: myapp-app-sg<br/>(22/8080 from myapp-web-sg only)"]
-            end
-        end
-
-        subgraph AZ_B["Availability Zone: ap-south-1b"]
-            subgraph PUB2["myapp-public-subnet-2 (10.0.2.0/24)"]
-                WEB2["(future) 2nd web instance"]
-            end
-            subgraph PRIV2["myapp-private-subnet-2 (10.0.12.0/24)"]
-                APP2["(future) 2nd app instance"]
-            end
-        end
-
-        RT_PUB -.assoc.- PUB1
-        RT_PUB -.assoc.- PUB2
-        RT_PRIV -.assoc.- PRIV1
-        RT_PRIV -.assoc.- PRIV2
-
-        WEB1 -->|"22/8080, private network"| APP1
-        PRIV1 -->|"outbound only"| RT_PRIV
-        PRIV2 -->|"outbound only"| RT_PRIV
-        RT_PRIV --> NAT
-        NAT --> RT_PUB
+    subgraph AZ_A["Availability Zone: ap-south-1a"]
+        PUB1["myapp-public-subnet-1 (10.0.1.0/24)<br/>EC2: myapp-web-1, SG: myapp-web-sg<br/>(80/443 from 0.0.0.0/0, 22 from My IP)<br/>NAT Gateway: myapp-nat-gw + EIP"]
+        PRIV1["myapp-private-subnet-1 (10.0.11.0/24)<br/>EC2: myapp-app-1, SG: myapp-app-sg<br/>(22/8080 from myapp-web-sg only)"]
     end
+
+    subgraph AZ_B["Availability Zone: ap-south-1b"]
+        PUB2["myapp-public-subnet-2 (10.0.2.0/24)<br/>(future) 2nd web instance"]
+        PRIV2["myapp-private-subnet-2 (10.0.12.0/24)<br/>(future) 2nd app instance"]
+    end
+
+    RT_PRIV["myapp-private-rt<br/>local + 0.0.0.0/0 -> nat-gw"]
+
+    RT_PUB -.assoc.- PUB1
+    RT_PUB -.assoc.- PUB2
+    RT_PRIV -.assoc.- PRIV1
+    RT_PRIV -.assoc.- PRIV2
+
+    PUB1 -->|"22/8080, private network"| PRIV1
+    PRIV1 -->|"outbound only"| RT_PRIV
+    PRIV2 -->|"outbound only"| RT_PRIV
+    RT_PRIV -->|"via myapp-nat-gw<br/>in myapp-public-subnet-1"| IGW
 ```
 
 <img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/d3a00b01-6cba-482a-9722-8b66d45f70ef" />

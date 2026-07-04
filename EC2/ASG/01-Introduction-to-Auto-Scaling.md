@@ -75,21 +75,17 @@ flowchart TD
     USER(("Client")) --> ALB["Load balancer<br/>(e.g. an ALB in public subnets)"]
     ALB --> TG["demo-tg (target group, HTTP:80, /health)"]
 
-    subgraph ASG["demo-asg (min 2 / desired 2 / max 6)"]
-        subgraph AZ_A["Availability Zone A"]
-            SUB1["Private subnet 1"]
-            I1["EC2 instance (from demo-lt)"]
-            SUB1 --> I1
-        end
-        subgraph AZ_B["Availability Zone B"]
-            SUB2["Private subnet 2"]
-            I2["EC2 instance (from demo-lt)"]
-            SUB2 --> I2
-        end
+    subgraph AZ_A["Availability Zone A — private subnet 1"]
+        I1["EC2 instance<br/>(from demo-lt)"]
+    end
+    subgraph AZ_B["Availability Zone B — private subnet 2"]
+        I2["EC2 instance<br/>(from demo-lt)"]
     end
 
     TG -->|"registered target"| I1
     TG -->|"registered target"| I2
+    ASG(["demo-asg<br/>min 2 / desired 2 / max 6"]) -.manages.-> I1
+    ASG -.manages.-> I2
 ```
 
 ---

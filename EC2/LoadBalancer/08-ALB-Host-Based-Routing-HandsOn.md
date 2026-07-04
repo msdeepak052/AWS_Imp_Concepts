@@ -2,6 +2,8 @@
 
 > Goal: add a **third** backend service behind `demo-alb`, this time routed by the **`Host` header** instead of the URL path — requests for `admin.example.internal` go to a new "Admin service", everything else keeps working exactly as Notes 05/07 left it. Continues Note 07; wraps up with a full recap of every rule on `demo-alb`.
 
+<img width="629" height="550" alt="image" src="https://github.com/user-attachments/assets/e86477f8-6bbe-42c3-988b-668e001f8fe5" />
+
 ---
 
 ## 0. Prerequisites

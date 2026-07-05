@@ -36,7 +36,7 @@
 2. **Name**: `cloudmart-web-lt`
 3. **AMI**: Amazon Linux 2023; **Instance type**: `t3.micro`
 4. **Key pair**: none needed
-5. **Network settings**: security group `cloudmart-web-asg-sg`; leave subnet unset here (the ASG assigns subnets, same pattern as the backend launch template in Part 4); **Auto-assign public IP**: **Disable** — the frontend instance is now private, so it never gets a public IP; it reaches the internet outbound (to install Nginx) only via `cloudmart-nat-gw-1`, exactly like the app and database tiers.
+5. **Network settings**: security group `cloudmart-web-asg-sg`; leave subnet unset here (the ASG assigns subnets, same pattern as the backend launch template in Part 4); **Auto-assign public IP**: **Disable** — the frontend instance is now private, so it never gets a public IP; it reaches the internet outbound (to install Nginx) only via the regional `cloudmart-nat-gw`, exactly like the app and database tiers.
 6. **Advanced details** → **IAM instance profile**: `cloudmart-ssm-role`
 7. **Advanced details** → **User data** — paste the script from Section 4, substituting the real Internal ALB DNS name you noted at the end of Part 4 wherever `<INTERNAL_ALB_DNS>` appears.
 8. **Create launch template**.

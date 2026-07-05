@@ -32,7 +32,7 @@ This becomes the CloudMart 3-tier web application: a frontend (product catalog p
 
 - The application must survive the loss of a single Availability Zone without full downtime: every compute tier (frontend, backend) is deployed across **two AZs** (`ap-south-1a` and `ap-south-1b`), never one.
 - Losing a single EC2 instance (crash, patching reboot, underlying host retirement) must be self-healing — an unhealthy instance is detected and replaced automatically, with no human paging a phone.
-- Outbound internet access from the private tiers uses a single, shared NAT Gateway rather than one per AZ — a deliberate cost trade-off, not an oversight. It means both AZs' outbound package-update traffic depends on one AZ's NAT infrastructure staying up; inbound traffic to the app (via the load balancers, across both AZs) is completely unaffected if that NAT Gateway fails. Note 02 names this gap explicitly.
+- Outbound internet access from the private tiers uses a single **Regional NAT Gateway** — one logical resource that AWS automatically maintains a presence in every AZ where a private-subnet workload actually runs, rather than the classic pattern of hand-provisioning one zonal NAT Gateway (and a public subnet to host it) per AZ. This gives genuine multi-AZ NAT resilience without doubling the NAT bill or the setup work. Note 02 covers how this differs from the older zonal NAT Gateway pattern.
 
 ### 3.2 Security
 
@@ -51,7 +51,7 @@ This becomes the CloudMart 3-tier web application: a frontend (product catalog p
 
 ### 3.5 Cost-awareness
 
-- The founders explicitly want a small, well-understood service footprint. Every additional always-on resource is a recurring cost: one NAT Gateway, two Application Load Balancers, and a Route 53 health check all bill continuously (hourly plus usage-based charges) whether or not a single customer visits the site that hour. Using a single shared NAT Gateway instead of one per AZ is itself a cost-awareness decision — half the hourly NAT charge, accepted in exchange for the named HA gap in Section 3.1. This capstone accepts that remaining cost as the price of the HA/security requirements above, but it should be stated plainly rather than discovered later on a bill — Note 11 (End-to-End Testing, HA Validation, and Cleanup) closes the loop by tearing every one of these resources back down in the correct order once the capstone is complete.
+- The founders explicitly want a small, well-understood service footprint. Every additional always-on resource is a recurring cost: one NAT Gateway, two Application Load Balancers, and a Route 53 health check all bill continuously (hourly plus usage-based charges) whether or not a single customer visits the site that hour. Using a single Regional NAT Gateway instead of one zonal NAT Gateway per AZ is itself a cost-awareness decision — one hourly NAT charge instead of two, with no HA trade-off accepted in exchange, since AWS automatically maintains the regional NAT Gateway's presence across whichever AZs actually have workloads. This capstone accepts the remaining cost as the price of the HA/security requirements above, but it should be stated plainly rather than discovered later on a bill — Note 11 (End-to-End Testing, HA Validation, and Cleanup) closes the loop by tearing every one of these resources back down in the correct order once the capstone is complete.
 
 ---
 
@@ -72,7 +72,7 @@ This becomes the CloudMart 3-tier web application: a frontend (product catalog p
 
 - CloudMart is a startup outgrowing a single manually-managed EC2 instance; it needs HA, security isolation, independent auto scaling per tier, and friendly DNS — using only VPC, EC2, ASG, ELB, and Route 53.
 - Functional requirements center on a working 3-tier product catalog app (frontend page, backend REST API, database) reachable under `www.cloudmart.example`.
-- Non-functional requirements cover HA (2 AZs everywhere, self-healing, one named NAT gap), security (no SSH, private subnets for all three tiers, chained security groups), scalability (independent per-tier auto scaling), DNS (health-check-aware), and honest cost-awareness (a shared NAT Gateway/ALBs/health checks bill continuously).
+- Non-functional requirements cover HA (2 AZs everywhere, self-healing, NAT resilience via a Regional NAT Gateway), security (no SSH, private subnets for all three tiers, chained security groups), scalability (independent per-tier auto scaling), DNS (health-check-aware), and honest cost-awareness (a single NAT Gateway/ALBs/health checks bill continuously).
 - VPN, Direct Connect, RDS, and multi-region DR are explicitly out of scope, each for a stated reason — not oversights.
 - Next: Note 02 — Architecture and Design, where these requirements become concrete named resources: the VPC, subnets, security group chain, load balancers, and Auto Scaling Groups.
 

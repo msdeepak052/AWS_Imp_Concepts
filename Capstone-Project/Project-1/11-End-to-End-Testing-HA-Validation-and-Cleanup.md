@@ -36,9 +36,9 @@ Both tests should show **zero failed requests** from the browser/curl's perspect
 
 ---
 
-## 4. The other named gap — a single NAT Gateway, not tested destructively
+## 4. Why the NAT Gateway isn't a named gap here
 
-Unlike the database gap above, this one is safe to reason about without actually breaking anything: if `cloudmart-nat-gw-1` (or all of `ap-south-1a`) failed, every private-subnet instance across **both** AZs would lose outbound internet access at the same time — no package updates, no outbound SSM calls — because all six private subnets share this one NAT Gateway via `cloudmart-private-rt`. Critically, this does **not** take the storefront down: inbound traffic through `cloudmart-public-alb` and `cloudmart-internal-alb` never touches the NAT Gateway at all, so the site keeps serving requests normally throughout. This is exactly the trade-off named in Note 01 (Section 3.1) and Note 02 (Section 4) — cost savings today, at the cost of NAT-level (not application-level) resilience.
+Unlike the database above, `cloudmart-nat-gw` isn't a deliberately-accepted weak point — it's a **Regional NAT Gateway**, which AWS automatically keeps present in every AZ that has an active private-subnet workload. Even though all six private subnets share this one NAT Gateway ID via `cloudmart-private-rt`, that single ID is backed by AWS-managed redundancy across both `ap-south-1a` and `ap-south-1b`, not a single zonal instance the way `cloudmart-nat-gw-1` would have been under the classic pattern. And even in the classic zonal pattern, an outbound-path failure was never an inbound/application-availability failure: traffic through `cloudmart-public-alb` and `cloudmart-internal-alb` never touches NAT at all, so the storefront itself stays up regardless. This is why, unlike the database, NAT doesn't appear in Note 01's or Note 02's list of accepted HA gaps.
 
 ---
 
@@ -53,7 +53,7 @@ Every resource below bills continuously while it exists. Delete them in this exa
 | 3 | `cloudmart-app-tg` and `cloudmart-web-tg` | Target groups can only be deleted once no load balancer references them |
 | 4 | Route 53: delete the `www.cloudmart.example` record, then `cloudmart-alb-health-check`, then the `cloudmart.example` hosted zone | The record must go before the health check it references; the zone can't be deleted while custom records (other than the default NS/SOA) remain |
 | 5 | `cloudmart-db-1` — terminate the instance | The last EC2 instance still running |
-| 6 | `cloudmart-nat-gw-1` — delete the single NAT Gateway, then **release** its Elastic IP | An EIP still associated with a NAT Gateway can't be released; deleting the gateway first frees it |
+| 6 | `cloudmart-nat-gw` — delete the Regional NAT Gateway | It's in automatic IP-management mode, so AWS releases the public IP addresses it allocated for you — there's no separate Elastic IP to release by hand, unlike the classic zonal NAT Gateway pattern |
 | 7 | `cloudmart-igw` — detach from `cloudmart-vpc`, then delete | A VPC can't be deleted while an Internet Gateway is still attached |
 | 8 | All 8 subnets (`cloudmart-web-subnet-1/2`, `cloudmart-web-private-1/2`, `cloudmart-app-subnet-1/2`, `cloudmart-db-subnet-1/2`) | Subnets can't be deleted while a NAT Gateway or any ENI still lives inside them — by this point, none do |
 | 9 | The 2 route tables (`cloudmart-web-rt`, `cloudmart-private-rt`) | Only the default/main route table is required to remain; custom ones can be deleted once unassociated |
@@ -76,9 +76,9 @@ Every resource below bills continuously while it exists. Delete them in this exa
 | Security: no SSH, private tiers (all three, including frontend), chained SGs | Notes 05-06, 09, verified throughout the build |
 | Scalability: independent per-tier auto scaling | Both ASGs' target-tracking policies, Notes 08-09 |
 | DNS: health-check-aware | Note 10 |
-| Cost-awareness: stated plainly, not discovered later | Note 01, Section 3.5 — a single shared NAT Gateway instead of one per AZ, and now torn down in Section 4 above |
+| Cost-awareness: stated plainly, not discovered later | Note 01, Section 3.5 — a single Regional NAT Gateway instead of one zonal NAT Gateway per AZ, and now torn down in Section 5 above |
 
-CloudMart has two honestly-acknowledged gaps, both named up front in Note 01 rather than discovered later: a single-instance, non-Multi-AZ database, and a single shared NAT Gateway instead of one per AZ. Both are deliberate costs of staying within exactly five AWS services and a small monthly bill, confirmed in Section 3 above rather than glossed over. Every other requirement was built, tested under simulated failure, and just as importantly, cleanly torn back down.
+CloudMart has one honestly-acknowledged gap, named up front in Note 01 rather than discovered later: a single-instance, non-Multi-AZ database. That's the deliberate cost of staying within exactly five AWS services and a small monthly bill, confirmed in Section 3 above rather than glossed over. The NAT Gateway, by contrast, gets real multi-AZ resilience from its regional availability mode at no extra HA cost — see Section 4. Every requirement was built, tested under simulated failure where it made sense to, and just as importantly, cleanly torn back down.
 
 ### Sources
 - [Deleting an Auto Scaling group — AWS docs](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-process-shutdown.html)

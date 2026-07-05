@@ -1,6 +1,6 @@
 # 05 - Build Part 1: VPC and Networking (Hands-On)
 
-> Goal: build the network foundation every other part of this capstone sits on — the VPC, all 8 subnets, the Internet Gateway, the single shared NAT Gateway, and the route tables that tie them together. Nothing in this part costs much beyond the NAT Gateway's hourly charge, and nothing here is application-specific — it's pure networking, matching the design from Note 02.
+> Goal: build the network foundation every other part of this capstone sits on — the VPC, all 8 subnets, the Internet Gateway, a single Regional NAT Gateway, and the route tables that tie them together. Nothing in this part costs much beyond the NAT Gateway's hourly charge, and nothing here is application-specific — it's pure networking, matching the design from Note 02.
 
 ---
 
@@ -45,16 +45,18 @@ For the two `cloudmart-web-subnet-*` subnets only: select each → **Actions** �
 
 ---
 
-## 4. Create the single shared NAT Gateway
+## 4. Create the Regional NAT Gateway
 
-A NAT Gateway needs its own Elastic IP and must sit in a **public** subnet (it needs a route to the internet itself, to translate outbound traffic from the private subnets).
+A classic ("zonal") NAT Gateway needs its own Elastic IP and must sit in a public subnet in one specific AZ. This build instead uses the newer **Regional NAT Gateway** (GA since November 2025), which needs neither — it's a standalone VPC-level resource that automatically maintains its own presence in whichever AZs actually have private-subnet workloads.
 
-1. **Elastic IPs** → **Allocate Elastic IP address** → **Allocate**.
-2. **NAT Gateways** → **Create NAT gateway**:
-   - Name: `cloudmart-nat-gw-1`, Subnet: `cloudmart-web-subnet-1`, Connectivity type: **Public**, Elastic IP: pick the allocated EIP → **Create NAT gateway**.
-3. Wait until it shows **Available** (usually a few minutes) before continuing.
+1. **NAT Gateways** → **Create NAT gateway**.
+2. **Name**: `cloudmart-nat-gw`
+3. **Availability mode**: **Regional** — notice no subnet picker appears once you select this; a regional NAT Gateway doesn't live inside any subnet at all.
+4. **VPC**: `cloudmart-vpc`
+5. Leave IP address management on **Automatic** (AWS allocates and manages the public IP addresses it needs itself) → **Create NAT gateway**.
+6. Wait until it shows **Available** before continuing. It may take up to 60 minutes to fully "expand" into a new AZ the first time a workload appears there, but for this build (which launches instances into both AZs from the start once Parts 3-5 run) that's rarely noticeable in practice.
 
-> 🎯 **Exam tip:** a NAT Gateway is scoped to a single Availability Zone — it is not itself a multi-AZ resource. The textbook HA answer is **one NAT Gateway per AZ**, so that one AZ's NAT failing never strands another AZ's outbound traffic. This capstone deliberately deviates from that textbook answer: it uses **one shared NAT Gateway** for all six private subnets across both AZs, to halve the always-on NAT cost, and names the resulting single point of failure explicitly (Note 02, Section 4) rather than hiding it. A route table in one AZ (e.g. `ap-south-1b`) pointing at a NAT Gateway that physically lives in another AZ (`ap-south-1a`) is completely valid — AWS routes across the AZ boundary transparently, at a small per-GB inter-AZ data charge. Know both the "textbook HA" answer and this cost-optimized variant; the exam tests the textbook answer, but real-world architecture regularly makes this exact trade-off.
+> 🎯 **Exam tip:** a **zonal** NAT Gateway (the classic, still-default type) is scoped to a single Availability Zone and is not itself multi-AZ — the textbook HA answer has always been **one zonal NAT Gateway per AZ**, each in its own public subnet, so that one AZ's NAT failing never strands another AZ's outbound traffic. AWS's newer **Regional NAT Gateway** availability mode changes this: one resource, no subnet of its own, automatically redundant across every AZ with an active workload. The exam (SAA-C03) was written around the older zonal-only world, so expect exam questions to test the "one NAT Gateway per AZ" pattern — but know that regional NAT Gateways now exist as the modern, simpler way to get the same multi-AZ outcome from a single resource.
 
 ---
 
@@ -65,8 +67,10 @@ A NAT Gateway needs its own Elastic IP and must sit in a **public** subnet (it n
    - Select it → **Routes** tab → **Edit routes** → **Add route**: destination `0.0.0.0/0`, target **Internet Gateway** → `cloudmart-igw` → **Save**.
    - **Subnet associations** tab → **Edit subnet associations** → select `cloudmart-web-subnet-1` and `cloudmart-web-subnet-2` → **Save**.
 2. `cloudmart-private-rt`, VPC: `cloudmart-vpc` → **Create**.
-   - **Edit routes** → add `0.0.0.0/0` → target **NAT Gateway** → `cloudmart-nat-gw-1` → **Save**.
-   - **Edit subnet associations** → select all six private subnets: `cloudmart-web-private-1`, `cloudmart-web-private-2`, `cloudmart-app-subnet-1`, `cloudmart-app-subnet-2`, `cloudmart-db-subnet-1`, `cloudmart-db-subnet-2` → **Save**. All six share the same single route (`0.0.0.0/0 → cloudmart-nat-gw-1`), so one route table is enough — there's no per-AZ split anymore since there's only one NAT Gateway to point at.
+   - **Edit routes** → add `0.0.0.0/0` → target **NAT Gateway** → `cloudmart-nat-gw` → **Save**.
+   - **Edit subnet associations** → select all six private subnets: `cloudmart-web-private-1`, `cloudmart-web-private-2`, `cloudmart-app-subnet-1`, `cloudmart-app-subnet-2`, `cloudmart-db-subnet-1`, `cloudmart-db-subnet-2` → **Save**. All six share the same single route (`0.0.0.0/0 → cloudmart-nat-gw`), and because `cloudmart-nat-gw` is regional (not tied to one AZ), this one route table correctly serves subnets in both `ap-south-1a` and `ap-south-1b` with no per-AZ split needed — unlike the classic zonal-NAT pattern where each AZ's private subnets would need their own route table pointing at that AZ's own NAT Gateway.
+
+> 🧠 Note that AWS also auto-creates its own route table for the regional NAT Gateway itself (with a pre-configured route out to `cloudmart-igw`) the moment you create it in Section 4 — that's a separate, AWS-managed table you don't need to touch; `cloudmart-private-rt` above is the one *you* create and associate with your private subnets.
 
 Every subnet also automatically keeps its `10.20.0.0/16 → local` route — that's implicit and lets every subnet in the VPC reach every other subnet directly, regardless of which route table it's associated with.
 
@@ -78,13 +82,12 @@ Every subnet also automatically keeps its `10.20.0.0/16 → local` route — tha
 flowchart TB
     subgraph VPC["cloudmart-vpc — 10.20.0.0/16"]
         IGW[cloudmart-igw]
-        N1[cloudmart-nat-gw-1<br/>single shared NAT]
+        N1[cloudmart-nat-gw<br/>Regional — no subnet of its own]
         subgraph AZA["ap-south-1a"]
             WS1["cloudmart-web-subnet-1<br/>10.20.1.0/24 (public)"]
             WP1["cloudmart-web-private-1<br/>10.20.31.0/24 (private)"]
             AS1["cloudmart-app-subnet-1<br/>10.20.11.0/24 (private)"]
             DS1["cloudmart-db-subnet-1<br/>10.20.21.0/24 (private)"]
-            WS1 --- N1
         end
         subgraph AZB["ap-south-1b"]
             WS2["cloudmart-web-subnet-2<br/>10.20.2.0/24 (public)"]
@@ -105,16 +108,17 @@ No compute or load balancers exist yet — that starts in Part 2 (security group
 
 | Symptom | Likely cause |
 |---|---|
-| Can't select a subnet when creating the NAT Gateway | You're looking at a private subnet — a NAT Gateway must launch in a **public** subnet (one with an IGW route) |
+| No subnet picker appears when creating the NAT Gateway | Expected — this is only true for **Regional** availability mode; a regional NAT Gateway isn't placed in any subnet. If you instead see a subnet picker, double check **Availability mode** is set to **Regional**, not **Zonal** |
 | Subnet CIDR error on creation | Overlap with an already-created subnet — double check the octets in the table above, none of `1`, `2`, `11`, `12`, `21`, `22`, `31`, `32` should repeat |
 | An instance later can't reach the internet | Check which route table its subnet is associated with, and that route table's `0.0.0.0/0` target — a common mistake is leaving a subnet on the VPC's default **main** route table instead of `cloudmart-private-rt` |
+| NAT Gateway shows **Available** but a brand-new instance in a freshly-added AZ still can't reach the internet | Regional NAT Gateways can take up to ~60 minutes to expand into a new AZ the first time a workload appears there; give it time before troubleshooting further |
 
 ---
 
 ## 8. Recap
 
-- `cloudmart-vpc` (`10.20.0.0/16`) now has 8 subnets across 2 AZs, one Internet Gateway, one shared NAT Gateway, and 2 route tables wiring it all together.
-- Only the two public web subnets have a direct route to the internet; all six private subnets (including the new `cloudmart-web-private-1/2`) route outbound-only through the single `cloudmart-nat-gw-1` via `cloudmart-private-rt`.
+- `cloudmart-vpc` (`10.20.0.0/16`) now has 8 subnets across 2 AZs, one Internet Gateway, one Regional NAT Gateway (no subnet of its own), and 2 route tables wiring it all together.
+- Only the two public web subnets have a direct route to the internet; all six private subnets (including the new `cloudmart-web-private-1/2`) route outbound-only through the single `cloudmart-nat-gw` via `cloudmart-private-rt`.
 - Next: Note 06 — Build Part 2: Security Groups and IAM, where the SG chain from Note 02 gets created for real.
 
 ### Sources

@@ -1,0 +1,5 @@
+Little change i need
+
+i want to put the frintend , backend , and db all in private subnets. needed we can create seperate subnet -> cloudmart-web-private for frontend and alb, nat still stays in the public sunet cloudmart-web-subnet-1 or cloudmart-web-subnet-2
+
+secondly i can create one NAT Gateways as a regional so no need to create 2 (maintain HA) check internet and confirm first and then start the changes

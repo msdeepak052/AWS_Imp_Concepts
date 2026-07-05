@@ -36,7 +36,13 @@ Both tests should show **zero failed requests** from the browser/curl's perspect
 
 ---
 
-## 4. ⚠️ Cleanup — tear everything down, in this order
+## 4. The other named gap — a single NAT Gateway, not tested destructively
+
+Unlike the database gap above, this one is safe to reason about without actually breaking anything: if `cloudmart-nat-gw-1` (or all of `ap-south-1a`) failed, every private-subnet instance across **both** AZs would lose outbound internet access at the same time — no package updates, no outbound SSM calls — because all six private subnets share this one NAT Gateway via `cloudmart-private-rt`. Critically, this does **not** take the storefront down: inbound traffic through `cloudmart-public-alb` and `cloudmart-internal-alb` never touches the NAT Gateway at all, so the site keeps serving requests normally throughout. This is exactly the trade-off named in Note 01 (Section 3.1) and Note 02 (Section 4) — cost savings today, at the cost of NAT-level (not application-level) resilience.
+
+---
+
+## 5. ⚠️ Cleanup — tear everything down, in this order
 
 Every resource below bills continuously while it exists. Delete them in this exact order — AWS will block several of the later deletions if you try to skip ahead (e.g. it won't let you delete a VPC while a NAT Gateway or an attached Internet Gateway still exists inside it).
 
@@ -47,10 +53,10 @@ Every resource below bills continuously while it exists. Delete them in this exa
 | 3 | `cloudmart-app-tg` and `cloudmart-web-tg` | Target groups can only be deleted once no load balancer references them |
 | 4 | Route 53: delete the `www.cloudmart.example` record, then `cloudmart-alb-health-check`, then the `cloudmart.example` hosted zone | The record must go before the health check it references; the zone can't be deleted while custom records (other than the default NS/SOA) remain |
 | 5 | `cloudmart-db-1` — terminate the instance | The last EC2 instance still running |
-| 6 | `cloudmart-nat-gw-1` and `cloudmart-nat-gw-2` — delete both NAT Gateways, then **release** their two Elastic IPs separately | An EIP still associated with a NAT Gateway can't be released; deleting the gateway first frees it |
+| 6 | `cloudmart-nat-gw-1` — delete the single NAT Gateway, then **release** its Elastic IP | An EIP still associated with a NAT Gateway can't be released; deleting the gateway first frees it |
 | 7 | `cloudmart-igw` — detach from `cloudmart-vpc`, then delete | A VPC can't be deleted while an Internet Gateway is still attached |
-| 8 | All 6 subnets (`cloudmart-web-subnet-1/2`, `cloudmart-app-subnet-1/2`, `cloudmart-db-subnet-1/2`) | Subnets can't be deleted while a NAT Gateway or any ENI still lives inside them — by this point, none do |
-| 9 | The 3 route tables (`cloudmart-web-rt`, `cloudmart-app-rt-1`, `cloudmart-app-rt-2`) | Only the default/main route table is required to remain; custom ones can be deleted once unassociated |
+| 8 | All 8 subnets (`cloudmart-web-subnet-1/2`, `cloudmart-web-private-1/2`, `cloudmart-app-subnet-1/2`, `cloudmart-db-subnet-1/2`) | Subnets can't be deleted while a NAT Gateway or any ENI still lives inside them — by this point, none do |
+| 9 | The 2 route tables (`cloudmart-web-rt`, `cloudmart-private-rt`) | Only the default/main route table is required to remain; custom ones can be deleted once unassociated |
 | 10 | `cloudmart-vpc` itself | Deletable only once nothing above still references it |
 | 11 | The 5 security groups (`cloudmart-alb-web-sg`, `cloudmart-web-asg-sg`, `cloudmart-alb-internal-sg`, `cloudmart-app-asg-sg`, `cloudmart-db-sg`) | Deleted automatically with the VPC, or manually beforehand if you prefer to see it happen explicitly |
 | 12 | The IAM role/instance profile `cloudmart-ssm-role` | Not VPC-scoped, safe to delete any time after step 5, once no instance references it |
@@ -59,20 +65,20 @@ Every resource below bills continuously while it exists. Delete them in this exa
 
 ---
 
-## 5. Recap — did this build meet Note 01's requirements?
+## 6. Recap — did this build meet Note 01's requirements?
 
 | Requirement (Note 01) | Met by |
 |---|---|
 | F1-F3: dynamic product catalog with a real read+write API | Notes 03, 08, 09 — confirmed again in Section 1 above |
 | F4: friendly domain name | Note 10's Alias record |
 | F5: backend never directly internet-reachable | Note 02's subnet isolation + SG chain, confirmed by the internal-scheme ALB in Note 08 |
-| HA: survive losing an AZ, self-healing | Confirmed for real in Section 2 above, for both compute tiers |
-| Security: no SSH, private tiers, chained SGs | Notes 05-06, verified throughout the build |
+| HA: survive losing an AZ, self-healing | Confirmed for real in Section 2 above, for both compute tiers (frontend now private, same result) |
+| Security: no SSH, private tiers (all three, including frontend), chained SGs | Notes 05-06, 09, verified throughout the build |
 | Scalability: independent per-tier auto scaling | Both ASGs' target-tracking policies, Notes 08-09 |
 | DNS: health-check-aware | Note 10 |
-| Cost-awareness: stated plainly, not discovered later | Note 01, Section 3.5 — and now torn down in Section 4 above |
+| Cost-awareness: stated plainly, not discovered later | Note 01, Section 3.5 — a single shared NAT Gateway instead of one per AZ, and now torn down in Section 4 above |
 
-CloudMart's one honestly-acknowledged gap — a single-instance, non-Multi-AZ database — was named up front in Note 01 as the deliberate cost of staying within exactly five AWS services, and confirmed in Section 3 above rather than glossed over. Every other requirement was built, tested under simulated failure, and just as importantly, cleanly torn back down.
+CloudMart has two honestly-acknowledged gaps, both named up front in Note 01 rather than discovered later: a single-instance, non-Multi-AZ database, and a single shared NAT Gateway instead of one per AZ. Both are deliberate costs of staying within exactly five AWS services and a small monthly bill, confirmed in Section 3 above rather than glossed over. Every other requirement was built, tested under simulated failure, and just as importantly, cleanly torn back down.
 
 ### Sources
 - [Deleting an Auto Scaling group — AWS docs](https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-process-shutdown.html)

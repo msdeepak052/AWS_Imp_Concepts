@@ -32,12 +32,12 @@ This becomes the CloudMart 3-tier web application: a frontend (product catalog p
 
 - The application must survive the loss of a single Availability Zone without full downtime: every compute tier (frontend, backend) is deployed across **two AZs** (`ap-south-1a` and `ap-south-1b`), never one.
 - Losing a single EC2 instance (crash, patching reboot, underlying host retirement) must be self-healing — an unhealthy instance is detected and replaced automatically, with no human paging a phone.
-- Outbound internet access from the private tiers must not depend on a single choke point — each AZ needs its own path out, so one AZ's NAT infrastructure failing doesn't strand the other AZ.
+- Outbound internet access from the private tiers uses a single, shared NAT Gateway rather than one per AZ — a deliberate cost trade-off, not an oversight. It means both AZs' outbound package-update traffic depends on one AZ's NAT infrastructure staying up; inbound traffic to the app (via the load balancers, across both AZs) is completely unaffected if that NAT Gateway fails. Note 02 names this gap explicitly.
 
 ### 3.2 Security
 
 - No security group in this project may open inbound port 22 (SSH) from anywhere. Administrative access to any instance happens through **AWS Systems Manager Session Manager**, not SSH keys or a bastion host.
-- The backend (application) tier and the database tier must live in **private subnets** with no route to the internet other than outbound-only via NAT — neither is directly reachable from a public IP.
+- All three tiers — frontend, backend, and database — must live in **private subnets** with no route to the internet other than outbound-only via NAT; none of them is directly reachable from a public IP. Only the load balancers themselves sit in public subnets.
 - Each tier must only accept inbound traffic from the specific tier immediately in front of it (a chained security-group model), never from a broad CIDR range.
 
 ### 3.3 Scalability
@@ -51,7 +51,7 @@ This becomes the CloudMart 3-tier web application: a frontend (product catalog p
 
 ### 3.5 Cost-awareness
 
-- The founders explicitly want a small, well-understood service footprint. Every additional always-on resource is a recurring cost: two NAT Gateways, two Application Load Balancers, and a Route 53 health check all bill continuously (hourly plus usage-based charges) whether or not a single customer visits the site that hour. This capstone accepts that cost as the price of the HA/security requirements above, but it should be stated plainly rather than discovered later on a bill — Note 11 (End-to-End Testing, HA Validation, and Cleanup) closes the loop by tearing every one of these resources back down in the correct order once the capstone is complete.
+- The founders explicitly want a small, well-understood service footprint. Every additional always-on resource is a recurring cost: one NAT Gateway, two Application Load Balancers, and a Route 53 health check all bill continuously (hourly plus usage-based charges) whether or not a single customer visits the site that hour. Using a single shared NAT Gateway instead of one per AZ is itself a cost-awareness decision — half the hourly NAT charge, accepted in exchange for the named HA gap in Section 3.1. This capstone accepts that remaining cost as the price of the HA/security requirements above, but it should be stated plainly rather than discovered later on a bill — Note 11 (End-to-End Testing, HA Validation, and Cleanup) closes the loop by tearing every one of these resources back down in the correct order once the capstone is complete.
 
 ---
 
@@ -72,7 +72,7 @@ This becomes the CloudMart 3-tier web application: a frontend (product catalog p
 
 - CloudMart is a startup outgrowing a single manually-managed EC2 instance; it needs HA, security isolation, independent auto scaling per tier, and friendly DNS — using only VPC, EC2, ASG, ELB, and Route 53.
 - Functional requirements center on a working 3-tier product catalog app (frontend page, backend REST API, database) reachable under `www.cloudmart.example`.
-- Non-functional requirements cover HA (2 AZs everywhere, self-healing), security (no SSH, private subnets for app/db, chained security groups), scalability (independent per-tier auto scaling), DNS (health-check-aware), and honest cost-awareness (NAT Gateways/ALBs/health checks bill continuously).
+- Non-functional requirements cover HA (2 AZs everywhere, self-healing, one named NAT gap), security (no SSH, private subnets for all three tiers, chained security groups), scalability (independent per-tier auto scaling), DNS (health-check-aware), and honest cost-awareness (a shared NAT Gateway/ALBs/health checks bill continuously).
 - VPN, Direct Connect, RDS, and multi-region DR are explicitly out of scope, each for a stated reason — not oversights.
 - Next: Note 02 — Architecture and Design, where these requirements become concrete named resources: the VPC, subnets, security group chain, load balancers, and Auto Scaling Groups.
 

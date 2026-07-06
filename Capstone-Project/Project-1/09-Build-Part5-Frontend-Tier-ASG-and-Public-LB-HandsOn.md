@@ -51,21 +51,296 @@ dnf install -y nginx
 
 cat > /usr/share/nginx/html/index.html << 'HTMLEOF'
 <!DOCTYPE html>
-<html>
-<head><title>CloudMart</title></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CloudMart</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      min-height: 100vh;
+      color: #fff;
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 1.5rem 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(90deg, #f093fb, #f5576c, #4facfe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 0.5rem;
+      font-size: 1.1rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 3rem auto;
+      padding: 0 2rem;
+    }
+
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 3rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 1.2rem 2rem;
+      text-align: center;
+      backdrop-filter: blur(5px);
+    }
+
+    .stat-card .number {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #4facfe;
+    }
+
+    .stat-card .label {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 0.3rem;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .product-card {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 20px;
+      padding: 2rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .product-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #f093fb, #f5576c, #4facfe);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .product-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255, 255, 255, 0.25);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .product-card:hover::before {
+      opacity: 1;
+    }
+
+    .product-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .product-name {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 0.8rem;
+    }
+
+    .product-price {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #4facfe;
+      margin-bottom: 1rem;
+    }
+
+    .product-stock {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 1rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .stock-high {
+      background: rgba(46, 213, 115, 0.15);
+      color: #2ed573;
+      border: 1px solid rgba(46, 213, 115, 0.3);
+    }
+
+    .stock-medium {
+      background: rgba(255, 165, 2, 0.15);
+      color: #ffa502;
+      border: 1px solid rgba(255, 165, 2, 0.3);
+    }
+
+    .stock-low {
+      background: rgba(255, 71, 87, 0.15);
+      color: #ff4757;
+      border: 1px solid rgba(255, 71, 87, 0.3);
+    }
+
+    .btn-cart {
+      margin-top: 1.5rem;
+      width: 100%;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-cart:hover {
+      transform: scale(1.02);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 4rem;
+    }
+
+    .loading .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top-color: #4facfe;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    footer {
+      text-align: center;
+      padding: 3rem;
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.8rem; }
+      .products-grid { grid-template-columns: 1fr; }
+      .stats-bar { gap: 1rem; }
+    }
+  </style>
+</head>
 <body>
-  <h1>🛒 CloudMart</h1>
-  <ul id="products"></ul>
+  <header>
+    <h1>&#x1F6D2; CloudMart</h1>
+    <p>Your cloud-native marketplace</p>
+  </header>
+
+  <div class="container">
+    <div class="stats-bar" id="stats"></div>
+    <div class="products-grid" id="products">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading products...</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Powered by AWS &mdash; Flask &bull; MariaDB &bull; Nginx &bull; ALB</p>
+  </footer>
+
   <script>
+    const icons = ['&#x1F455;', '&#x2615;', '&#x1F3A8;', '&#x1F9E5;', '&#x1F9E2;'];
+    const colors = [
+      'linear-gradient(135deg, #a18cd1, #fbc2eb)',
+      'linear-gradient(135deg, #fccb90, #d57eeb)',
+      'linear-gradient(135deg, #84fab0, #8fd3f4)',
+      'linear-gradient(135deg, #f093fb, #f5576c)',
+      'linear-gradient(135deg, #4facfe, #00f2fe)'
+    ];
+
+    function getStockClass(stock) {
+      if (stock >= 150) return 'stock-high';
+      if (stock >= 80) return 'stock-medium';
+      return 'stock-low';
+    }
+
     fetch('/api/products')
       .then(r => r.json())
       .then(items => {
-        const ul = document.getElementById('products');
-        items.forEach(p => {
-          const li = document.createElement('li');
-          li.textContent = `${p.name} — $${p.price} (${p.stock} in stock)`;
-          ul.appendChild(li);
-        });
+        const totalProducts = items.length;
+        const totalStock = items.reduce((sum, p) => sum + p.stock, 0);
+        const avgPrice = (items.reduce((sum, p) => sum + parseFloat(p.price), 0) / items.length).toFixed(2);
+
+        document.getElementById('stats').innerHTML = `
+          <div class="stat-card">
+            <div class="number">${totalProducts}</div>
+            <div class="label">Products</div>
+          </div>
+          <div class="stat-card">
+            <div class="number">${totalStock}</div>
+            <div class="label">Total Stock</div>
+          </div>
+          <div class="stat-card">
+            <div class="number">$${avgPrice}</div>
+            <div class="label">Avg Price</div>
+          </div>
+        `;
+
+        document.getElementById('products').innerHTML = items.map((p, i) => `
+          <div class="product-card">
+            <div class="product-icon" style="background: ${colors[i % colors.length]}">
+              ${icons[i % icons.length]}
+            </div>
+            <div class="product-name">${p.name}</div>
+            <div class="product-price">$${p.price}</div>
+            <span class="product-stock ${getStockClass(p.stock)}">
+              &#x25CF; ${p.stock} in stock
+            </span>
+            <button class="btn-cart">Add to Cart</button>
+          </div>
+        `).join('');
+      })
+      .catch(() => {
+        document.getElementById('products').innerHTML = '<p style="text-align:center;color:#ff4757;">Failed to load products. Please try again.</p>';
       });
   </script>
 </body>
@@ -73,13 +348,28 @@ cat > /usr/share/nginx/html/index.html << 'HTMLEOF'
 HTMLEOF
 
 cat > /etc/nginx/conf.d/cloudmart-api-proxy.conf << 'CONFEOF'
-location /api/ {
-    proxy_pass http://<INTERNAL_ALB_DNS>:8080/api/;
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api/ {
+        proxy_pass http://internal-cloudmart-internal-alb-1730972046.ap-south-1.elb.amazonaws.com:8080/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
 }
 CONFEOF
 
+rm -f /etc/nginx/conf.d/default.conf
 systemctl enable --now nginx
-systemctl restart nginx
+
 ```
 
 > ⚠️ Nginx's default `server {}` block lives in `/etc/nginx/nginx.conf`; a bare `location` block dropped into `/etc/nginx/conf.d/` only gets picked up if that directory is included inside a `server {}` context (it is, by default, on Amazon Linux 2023's stock Nginx config). If the proxy doesn't take effect, check that `/etc/nginx/nginx.conf`'s `server {}` block includes `conf.d/*.conf`, and confirm you replaced `<INTERNAL_ALB_DNS>` with the actual DNS name from Part 4 (e.g. `cloudmart-internal-alb-123456789.ap-south-1.elb.amazonaws.com`) — a placeholder left unedited is the single most common mistake in this step.

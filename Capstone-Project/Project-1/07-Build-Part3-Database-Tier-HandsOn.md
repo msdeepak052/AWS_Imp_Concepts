@@ -70,6 +70,19 @@ SQL
 2. In the shell that opens:
    ```bash
    sudo mysql -u cloudmart_app -pChangeMe123! cloudmart -e "SELECT * FROM products;"
+
+   sudo mysql cloudmart -e "SELECT * FROM products;"
+   
+   +----+------------------------+-------+-------+
+   | id | name                   | price | stock |
+   +----+------------------------+-------+-------+
+   |  1 | CloudMart T-Shirt      | 19.99 |   120 |
+   |  2 | CloudMart Mug          |  9.99 |   200 |
+   |  3 | CloudMart Sticker Pack |  4.99 |   500 |
+   |  4 | CloudMart Hoodie       | 39.99 |    60 |
+   |  5 | CloudMart Cap          | 14.99 |   150 |
+   +----+------------------------+-------+-------+
+
    ```
 3. You should see all 5 seeded rows (T-Shirt, Mug, Sticker Pack, Hoodie, Cap) print out.
 4. Note the instance's **private IPv4 address** from the EC2 console (**Details** tab) — the backend tier in Part 4 needs it. This capstone uses the illustrative value `10.20.21.10` throughout; substitute whatever private IP your instance actually received.

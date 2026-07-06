@@ -84,6 +84,9 @@ SQL
    +----+------------------------+-------+-------+
 
    ```
+- sudo mysql cloudmart -e "SELECT * FROM products;"
+- It bypasses the cloudmart_app user entirely. sudo mysql authenticates as root via unix socket (no password needed), which has full access. The original error was because cloudmart_app is only authorized from 10.20.1% hosts — not localhost.
+  
 3. You should see all 5 seeded rows (T-Shirt, Mug, Sticker Pack, Hoodie, Cap) print out.
 4. Note the instance's **private IPv4 address** from the EC2 console (**Details** tab) — the backend tier in Part 4 needs it. This capstone uses the illustrative value `10.20.21.10` throughout; substitute whatever private IP your instance actually received.
 

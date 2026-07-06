@@ -360,7 +360,7 @@ server {
     }
 
     location /api/ {
-        proxy_pass http://internal-cloudmart-internal-alb-1730972046.ap-south-1.elb.amazonaws.com:8080/api/;
+        proxy_pass http://<INTERNAL_ALB_DNS>:8080/api/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }

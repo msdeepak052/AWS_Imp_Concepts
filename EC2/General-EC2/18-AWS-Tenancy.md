@@ -18,31 +18,78 @@ Three levels:
 
 ---
 
-## 2. Shared Tenancy (default)
+To clearly understand how instance placement changes across the three tenancy levels, visualize the underlying **physical racks/servers** inside an AWS data center.
 
-- Your instance may run on the same physical host as **other customers**, but each is strongly **isolated by virtualization** (you can't see or reach theirs).
-- **Cheapest** and used for the vast majority of workloads.
-- This is what you've been launching in earlier notes.
+Here is exactly how instances are placed relative to physical hosts and different AWS accounts:
 
 ---
 
-## 3. Dedicated Instance
+### 1. Shared Tenancy (Default)
 
-- Runs on hardware **dedicated to a single customer (your account)** — no other AWS customers share that physical server.
-- You **don't** get visibility/control over the specific physical host; AWS still places your instances on dedicated hardware for you.
-- Billed **per instance** (plus a regional per-Region dedicated fee).
-- ✅ Use when: regulatory/compliance rules require physical isolation from other tenants, but you don't need host-level control or socket-based licensing.
+Your instance is placed on a server alongside virtual machines owned by completely different AWS customers. Strong logical isolation (via the hypervisor) keeps them secure, but you share the physical CPU, memory bus, and power supply.
+
+```text
+┌────────────────────────────────────────────────────────┐
+│               PHYSICAL SERVER (HOST A)                 │
+├───────────────┬──────────────────────┬─────────────────┤
+│ Your Instance │ Customer B Instance  │ Cust. C Inst.   │
+│  (Account 1)  │     (Account 2)      │   (Account 3)   │
+└───────────────┴──────────────────────┴─────────────────┘
+
+```
 
 ---
 
-## 4. Dedicated Host
+### 2. Dedicated Instance Tenancy
 
+AWS dedicates the entire physical server hardware exclusively to *your* AWS account. No other customer's instances will ever be placed on this box. However, **AWS completely controls the placement.** If you stop and restart your instance, AWS might move it to a totally different physical box (Host B) that is also dedicated to you. You cannot see the underlying sockets or physical cores.
+
+```text
+┌────────────────────────────────────────────────────────┐
+│               PHYSICAL SERVER (HOST B)                 │
+├───────────────────────┬────────────────────────────────┤
+│  Your Instance #1     │      Your Instance #2          │
+│     (Account 1)       │        (Account 1)             │
+└───────────────────────┴────────────────────────────────┘
+  ▲
+  │ AWS automatically manages placement. Stopping/starting 
+  │ the instance might shift it to another dedicated server.
+
+```
+
+---
+
+### 3. Dedicated Host Tenancy
+
+You rent the entire physical server explicitly by its physical ID. You gain full visibility into the hardware layout (exactly how many physical sockets and cores exist). You choose exactly which instance lands on which socket. Because you own the host boundary, features like **Host Affinity** keep your instances permanently pinned to this exact physical box even through stops, restarts, and reboots—which is required to legally track socket/core-bound software licenses.
+
+```text
+┌────────────────────────────────────────────────────────┐
+│          PHYSICAL SERVER ID: h-0123456789abcdef0       │
+│  [Socket 1: 16 Cores]       │   [Socket 2: 16 Cores]   │
+├─────────────────────────────┼──────────────────────────┤
+│      Your Database          │     Your App Instance    │
+│   (Pinned to Socket 1)      │   (Pinned to Socket 2)   │
+└─────────────────────────────┴──────────────────────────┘
+  ▲
+  │ You control the physical sockets/cores. The instance 
+  │ is structurally locked to this specific hardware host ID.
+
+```
 - You reserve an **entire physical server** and have **visibility into its sockets, physical cores, and host ID**.
 - You control **which instances run on which host** and how they're placed.
 - ✅ **Key use case — Bring Your Own License (BYOL):** software licensed **per physical socket/core** (e.g. some Windows Server, SQL Server, Oracle licenses) can be used legally because you can see and pin to the physical hardware.
 - Can be purchased **On-Demand** or with a **Savings Plan / Dedicated Host Reservation** for discounts.
 - Supports **host affinity** — keep an instance on the same host across stop/start (important for license tracking).
 - Most management-heavy and **most expensive** option.
+---
+
+### 4. Summary of Placement Differences
+
+* **Shared:** Multi-tenant box. Mixed accounts on one server.
+* **Dedicated Instance:** Single-tenant box. Dedicated to your account, but you have no visibility into the host and AWS shifts instances around dynamically.
+* **Dedicated Host:** Single-tenant box. Locked down to a specific host ID, providing layout visibility so you can manually map workloads to physical hardware sockets.
+
 
 ---
 

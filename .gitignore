@@ -1,0 +1,6 @@
+# Claude Code local settings/config
+.claude/
+
+# OS cruft
+.DS_Store
+Thumbs.db

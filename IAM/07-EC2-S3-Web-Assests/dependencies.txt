@@ -1,0 +1,7 @@
+Core Application Dependencies - devopswithdeepak
+=================================================
+Web Server        : httpd (Apache) 2.4+
+Runtime           : Python 3.9+
+AWS CLI           : v2 (bundled on Amazon Linux 2023)
+Access Model      : EC2 Instance Role (no static credentials)
+Fetched From      : Amazon S3 (private bucket, role-based s3:GetObject)

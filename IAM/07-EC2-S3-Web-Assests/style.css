@@ -1,0 +1,53 @@
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 40px 60px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.card h1 {
+  color: #ff6a00;
+  margin-bottom: 10px;
+}
+
+.card p {
+  color: #333;
+  font-size: 15px;
+}
+
+.status.ok {
+  color: green;
+  font-weight: bold;
+}
+
+.status.fail {
+  color: red;
+  font-weight: bold;
+}
+
+a {
+  display: inline-block;
+  margin-top: 10px;
+  color: #0f2027;
+  text-decoration: none;
+  font-weight: bold;
+  border: 1px solid #0f2027;
+  padding: 6px 14px;
+  border-radius: 6px;
+}
+
+a:hover {
+  background: #0f2027;
+  color: #fff;
+}

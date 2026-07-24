@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CloudFront CDN Demo</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <img src="assets/logo.svg" alt="logo" class="logo">
+      <span>CloudFront CDN Demo</span>
+    </div>
+    <span class="badge" id="build-badge">build v1.0.0</span>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>This page is a static file, served through Amazon CloudFront.</h1>
+      <p>
+        It lives as three files in an S3 bucket &mdash; <code>index.html</code>, <code>style.css</code>,
+        <code>script.js</code> &mdash; with zero server-side code. CloudFront caches all three at edge
+        locations around the world so most visitors get them from a nearby edge location instead of
+        round-tripping all the way back to the origin bucket.
+      </p>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Live client clock</h2>
+        <p>
+          Proves personalization can still happen <em>after</em> a cached static shell loads &mdash;
+          this runs entirely in your browser via <code>script.js</code>, not on any server.
+        </p>
+        <p class="clock" id="clock">--:--:--</p>
+        <p class="muted" id="tz">detecting timezone&hellip;</p>
+      </div>
+
+      <div class="card">
+        <h2>Which edge location served you?</h2>
+        <p>
+          Static HTML can't read CloudFront's response headers about itself. Run this from a terminal
+          to see the actual edge Point of Presence (POP) and cache status:
+        </p>
+        <pre><code>curl -sI https://&lt;your-distribution&gt;.cloudfront.net/ | grep -iE "x-cache|x-amz-cf-pop"</code></pre>
+      </div>
+
+      <div class="card">
+        <h2>Prove the CDN is actually helping</h2>
+        <p>
+          Open this same URL in <a href="https://geopeeker.com" target="_blank" rel="noopener noreferrer">GeoPeeker</a>
+          and compare load time / screenshot against the raw S3 website endpoint, from several global
+          regions at once.
+        </p>
+      </div>
+
+      <div class="card">
+        <h2>Trigger a 404</h2>
+        <p>
+          Request a path that doesn't exist to see the custom <code>error.html</code> served by S3's
+          error-document routing, right through CloudFront:
+        </p>
+        <p><a href="/does-not-exist">/does-not-exist &rarr;</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      Deployed <span id="year"></span> &middot; Served via Amazon S3 + CloudFront &middot;
+      bump the version in <span class="badge-inline">build-badge</span> above and re-upload to test
+      cache-busting without an invalidation.
+    </p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

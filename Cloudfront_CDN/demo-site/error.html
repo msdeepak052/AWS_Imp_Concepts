@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — Not Found</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <img src="assets/logo.svg" alt="logo" class="logo">
+      <span>CloudFront CDN Demo</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>404 — This page doesn't exist.</h1>
+      <p>
+        This is S3's <strong>error document</strong> (<code>error.html</code>), served for any path that
+        doesn't match an object in the bucket — routed through CloudFront exactly like every other file.
+      </p>
+      <p><a href="/">&larr; Back to the demo home page</a></p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Served via Amazon S3 + CloudFront</p>
+  </footer>
+</body>
+</html>

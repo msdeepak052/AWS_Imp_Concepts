@@ -1,6 +1,8 @@
 # 02 - AWS CloudFront Hands-On Lab 1 (End-to-End: S3 Static Website + CloudFront CDN)
 
-> Goal: build a real, complete demo from scratch — a small static site in S3, a CloudFront distribution in front of it — and directly observe the cache-hit/cache-miss behavior Note 01 described, plus **prove** CloudFront is actually helping using a real multi-region testing tool (GeoPeeker), not just take it on faith.
+> Goal: build a real, complete demo from scratch — entirely through the **AWS Console**, click by click — a small static site in S3, a CloudFront distribution in front of it, then directly observe the cache-hit/cache-miss behavior Note 01 described, and **prove** CloudFront is actually helping using a real multi-region testing tool (GeoPeeker), not just take it on faith.
+
+> 🧠 Everything below is done via the Console on purpose, no CLI, no scripts. At this learning stage the goal is to *see* every setting and understand what it does — automation (CLI/Terraform) is worth reaching for later, once the console flow is second nature.
 
 This lab is fully self-contained: every file it needs lives in [`demo-site/`](demo-site/) right next to this note, and is also inlined below so you can copy-paste directly from here if you prefer.
 
@@ -166,39 +168,50 @@ if (tzEl) {
 </svg>
 ```
 
----
-
-## 3. Create and configure the S3 bucket
-
-Fastest path is the AWS CLI — every command below is copy-paste-ready (adjust `REGION` if needed).
-
-```bash
-# 1. Pick a globally-unique bucket name and region
-export BUCKET="cf-demo-static-site-$(date +%s)"
-export REGION="ap-south-1"
-echo "Using bucket: $BUCKET"
-
-# 2. Create the bucket
-aws s3 mb "s3://$BUCKET" --region "$REGION"
-
-# 3. Enable static website hosting (index + error document)
-aws s3 website "s3://$BUCKET/" --index-document index.html --error-document error.html
-
-# 4. Relax Block Public Access so a bucket policy can take effect (Note S3/25)
-aws s3api put-public-access-block \
-  --bucket "$BUCKET" \
-  --public-access-block-configuration \
-  BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
-
-# 5. Attach a public-read bucket policy
-sed "s/<BUCKET_NAME>/$BUCKET/" demo-site/bucket-policy.json > /tmp/bucket-policy-resolved.json
-aws s3api put-bucket-policy --bucket "$BUCKET" --policy file:///tmp/bucket-policy-resolved.json
-
-# 6. Upload the demo site
-aws s3 sync demo-site/ "s3://$BUCKET/" --exclude "bucket-policy.json" --exclude "cloudfront-distribution-config.json"
+**`bucket-policy.json`** (used manually in Section 3, Step 4 — not applied via CLI)
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "PublicReadForWebsite",
+      "Effect": "Allow",
+      "Principal": "*",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::<BUCKET_NAME>/*"
+    }
+  ]
+}
 ```
 
-Run these from inside the `Cloudfront_CDN/` folder (so the relative `demo-site/` path resolves).
+---
+
+## 3. Create and configure the S3 bucket (AWS Console)
+
+### Step 1 — Create the bucket
+1. Open the **S3 console** → **Create bucket**.
+2. **Bucket name**: something globally unique, e.g. `cf-demo-static-site-<your-name-or-date>`.
+3. **AWS Region**: pick one close to you, e.g. `ap-south-1` (Mumbai).
+4. **Object Ownership**: leave as **ACLs disabled (Bucket owner enforced)** — the default; access will be controlled via bucket policy, not ACLs.
+5. **Block Public Access settings for this bucket**: uncheck **Block all public access**, then check the acknowledgement box. (We'll grant public read explicitly via a bucket policy in Step 4.)
+6. Leave everything else default → **Create bucket**.
+
+### Step 2 — Upload the demo site files
+1. Open the new bucket → **Upload** → **Add files**: select `index.html`, `style.css`, `script.js`, `error.html` from `demo-site/`.
+2. **Add folder**: select the `assets` folder (so `logo.svg` uploads to `assets/logo.svg`, preserving the path the HTML expects).
+3. **Upload**.
+4. Confirm the bucket now shows: `index.html`, `style.css`, `script.js`, `error.html`, and an `assets/` folder containing `logo.svg`.
+
+### Step 3 — Enable static website hosting
+1. **Properties** tab → scroll to **Static website hosting** → **Edit**.
+2. **Static website hosting**: Enable. **Hosting type**: Host a static website.
+3. **Index document**: `index.html`. **Error document**: `error.html`.
+4. **Save changes** — the console now shows a **Bucket website endpoint** URL, e.g. `http://cf-demo-static-site-xxxx.s3-website.ap-south-1.amazonaws.com`. Note this URL down, it's needed in Section 5.
+
+### Step 4 — Attach a public-read bucket policy
+1. **Permissions** tab → **Bucket policy** → **Edit**.
+2. Paste the JSON from `demo-site/bucket-policy.json` (shown in Section 2 above), replacing `<BUCKET_NAME>` with your actual bucket name.
+3. **Save changes**.
 
 ---
 
@@ -206,75 +219,48 @@ Run these from inside the `Cloudfront_CDN/` folder (so the relative `demo-site/`
 
 Get the baseline working before adding CloudFront on top — isolates which layer is responsible if something breaks later.
 
-```bash
-export S3_WEBSITE_URL="http://$BUCKET.s3-website.$REGION.amazonaws.com"
-curl -I "$S3_WEBSITE_URL/"
-curl -I "$S3_WEBSITE_URL/does-not-exist"
-```
-
-You should see `200 OK` for the first and `404 Not Found` (serving `error.html`) for the second. Open `$S3_WEBSITE_URL` in a browser too — you should see the demo page, live clock ticking, over **plain HTTP** (Note 26: website endpoints are HTTP-only).
+1. Open the **Bucket website endpoint** URL from Section 3, Step 3 in a browser. You should see the demo page, with the live clock ticking, served over **plain HTTP** (Note 26: website endpoints are HTTP-only).
+2. Try a path that doesn't exist, e.g. append `/does-not-exist` to the URL — you should see the styled `error.html` page with a `404` status (check via browser dev tools **Network** tab, **Status** column).
 
 ---
 
-## 5. Create the CloudFront distribution
+## 5. Create the CloudFront distribution (AWS Console)
 
-### 5a. Console (recommended for your first time through)
+1. Open the **CloudFront console** → **Distributions** → **Create distribution**.
+2. **Origin domain**: start typing your bucket name — the console will suggest entries for it. Pick the one that matches the **website endpoint** format, `<bucket>.s3-website-<region>.amazonaws.com` (**not** the plain `<bucket>.s3.amazonaws.com` REST endpoint). If the console only auto-fills the REST endpoint, manually type/paste the website endpoint URL from Section 3, Step 3 instead (dropping the `http://` prefix).
 
-1. **CloudFront console** → **Distributions** → **Create distribution**.
-2. **Origin domain**: paste in the bucket's **website endpoint** domain (`$BUCKET.s3-website.$REGION.amazonaws.com`) — *not* the plain bucket name the console tries to auto-suggest. The console offers two sub-choices here worth noting up front (detailed fully in Note 03 and Note 06):
-   - The bucket's **REST API endpoint** (`<bucket>.s3.amazonaws.com`) — works with Origin Access Control (Note 06) to keep the bucket private.
-   - The bucket's **website endpoint** (`<bucket>.s3-website-<region>.amazonaws.com`) — required for index/error-document routing behind CloudFront, but this path **cannot** use Origin Access Control/OAI, since website endpoints only serve public content.
-3. For this lab, use the **website endpoint** — leave the bucket public exactly as configured in Section 3.
-4. **Default cache behavior**: leave defaults for now (fully explored in Note 04).
-5. **Create distribution**. Provisioning takes several minutes to propagate to all edge locations.
-
-### 5b. (Optional) Automate it via AWS CLI
-
-For repeatable, scriptable setups — the real-world pattern once you're past manual console clicking:
-
-```bash
-sed -e "s/<BUCKET_NAME>/$BUCKET/" -e "s/<REGION>/$REGION/" -e "s/<UNIQUE-SUFFIX>/$(date +%s)/" \
-  demo-site/cloudfront-distribution-config.json > /tmp/cf-dist-config.json
-
-aws cloudfront create-distribution --distribution-config file:///tmp/cf-dist-config.json
-```
-
-The config in [`demo-site/cloudfront-distribution-config.json`](demo-site/cloudfront-distribution-config.json) targets the S3 **website endpoint** as a `CustomOriginConfig` (website endpoints are always custom HTTP origins to CloudFront, never `S3OriginConfig` — that variant is reserved for the REST endpoint + OAC path in Note 06), forces HTTPS at the viewer, and uses AWS's managed `CachingOptimized` policy.
+   > This distinction matters a lot and is covered fully in Note 03 (origin types) and Note 06 (Origin Access Control): the REST endpoint supports private buckets via OAC; the website endpoint is what gives you index/error-document routing, but only works with a public bucket.
+3. **Origin protocol policy**: since the website endpoint only speaks HTTP, this is fixed to **HTTP only** — CloudFront will still serve HTTPS to your visitors regardless (more on this in Section 6).
+4. **Default cache behavior**:
+   - **Viewer protocol policy**: **Redirect HTTP to HTTPS**.
+   - **Allowed HTTP methods**: leave default (**GET, HEAD**) — this is a static site, nothing to write.
+   - **Cache policy**: leave the default **CachingOptimized** managed policy.
+5. **Settings** (bottom of the page): **Default root object**: `index.html`.
+6. Leave **WAF**, **Price class**, and everything else at their defaults for this lab (all explored in later notes).
+7. **Create distribution**. Status will show **Deploying** — provisioning takes several minutes to propagate to all edge locations. Wait until it shows **Enabled** / **Deployed**.
 
 ---
 
 ## 6. Test it end-to-end
 
-1. Copy the distribution's **domain name** (e.g. `d1234abcdefgh.cloudfront.net`) once status shows **Enabled/Deployed**.
-2. ```bash
-   export CF_URL="https://d1234abcdefgh.cloudfront.net"   # replace with yours
-   curl -I "$CF_URL/"
-   ```
-3. Notice the response is served over **HTTPS** automatically, even though the underlying S3 website endpoint is HTTP-only — CloudFront terminates HTTPS at the edge and can talk to the origin over whichever protocol the origin supports, decoupling the visitor-facing protocol from the origin's own capability.
-4. Open `$CF_URL` in a browser — same page as Section 4, now over HTTPS, with a CloudFront domain. Click **"/does-not-exist"** on the page and confirm the styled 404 (`error.html`) still renders correctly through CloudFront.
+1. Once status shows **Enabled/Deployed**, copy the distribution's **Domain name** from the console (e.g. `d1234abcdefgh.cloudfront.net`).
+2. Open `https://d1234abcdefgh.cloudfront.net/` in a browser. Same page as Section 4, but now served over **HTTPS**, from a CloudFront domain — even though the underlying S3 website endpoint is HTTP-only. CloudFront terminates HTTPS at the edge and talks to the origin over whichever protocol the origin supports, decoupling the visitor-facing protocol from the origin's own capability.
+3. Click **"/does-not-exist"** on the page and confirm the styled 404 (`error.html`) still renders correctly through CloudFront.
+4. Open browser dev tools → **Network** tab → reload the page → click the `index.html` (or `/`) request → check the **Response Headers**. Look for:
+   - `x-cache`: `Miss from cloudfront` (first load) or `Hit from cloudfront` (on a reload within the cache TTL).
+   - `x-amz-cf-pop`: a code like `BOM50-C1` (Mumbai) or `IAD89-C2` (Virginia/Ashburn) — the physical edge location that answered you.
 
 ---
 
 ## 7. Observe cache hit vs. cache miss
 
-```bash
-curl -sI "$CF_URL/index.html" | grep -i x-cache
-curl -sI "$CF_URL/style.css" | grep -i x-cache
-curl -sI "$CF_URL/index.html" | grep -i x-cache   # run again
-```
+Using the same **Network** tab in dev tools:
 
-- **First request** (or first after cache expiration): `X-Cache: Miss from cloudfront` — CloudFront had to fetch from the origin.
-- **Subsequent requests** (within the cache TTL): `X-Cache: Hit from cloudfront` — served entirely from the edge, no origin hit at all.
+1. Reload the CloudFront URL a few times and watch the `x-cache` header on `index.html`, `style.css`, and `script.js`.
+2. **First request** (or first after the cache expires): `X-Cache: Miss from cloudfront` — CloudFront had to fetch from the origin.
+3. **Subsequent requests** (within the cache TTL): `X-Cache: Hit from cloudfront` — served entirely from the edge, no origin hit at all.
 
-Also check which physical edge location answered you:
-
-```bash
-curl -sI "$CF_URL/" | grep -i x-amz-cf-pop
-```
-
-`X-Amz-Cf-Pop` returns a code like `BOM50-C1` (Mumbai) or `IAD89-C2` (Virginia/Ashburn) — the actual edge location that handled your request.
-
-> 🧠 The `X-Cache` and `X-Amz-Cf-Pop` headers are the two fastest ways to confirm, hands-on, whether CloudFront actually served a request from cache and *where* — worth checking any time cache behavior needs debugging throughout this folder.
+> 🧠 `X-Cache` and `X-Amz-Cf-Pop` are the two fastest ways to confirm, hands-on, whether CloudFront actually served a request from cache and *where* — worth checking any time cache behavior needs debugging throughout this folder.
 
 ---
 
@@ -283,8 +269,8 @@ curl -sI "$CF_URL/" | grep -i x-amz-cf-pop
 Headers confirm caching is *happening*; they don't show the **user-experienced latency win** a CDN is actually for. [GeoPeeker](https://geopeeker.com) is a free tool that loads a URL simultaneously from several real-world regions (its free tier covers Singapore, Brazil, Virginia, California, Ireland, and Australia) and reports back screenshots and load times from each — exactly the "users far from the origin" problem Note 01 opened with.
 
 1. Go to **https://geopeeker.com**.
-2. Paste in your **raw S3 website endpoint** (`$S3_WEBSITE_URL`) first, and run the check. Note the load times per region — regions far from your bucket's AWS Region (e.g. Sydney or São Paulo, if your bucket is in `ap-south-1`) will visibly lag, since every single region has to fetch directly from that one physical bucket location.
-3. Now paste in your **CloudFront domain** (`$CF_URL`) and run the check again. After the first pass warms the cache at each region's nearest edge location, re-run it — load times across *all* regions should tighten up and even out, because each is now being served from a nearby CloudFront edge location instead of the single distant origin.
+2. Paste in your **raw S3 website endpoint** (from Section 3, Step 3) first, and run the check. Note the load times per region — regions far from your bucket's AWS Region (e.g. Sydney or São Paulo, if your bucket is in `ap-south-1`) will visibly lag, since every single region has to fetch directly from that one physical bucket location.
+3. Now paste in your **CloudFront domain** (from Section 6) and run the check again. After the first pass warms the cache at each region's nearest edge location, re-run it — load times across *all* regions should tighten up and even out, because each is now being served from a nearby CloudFront edge location instead of the single distant origin.
 4. Compare the two result sets side by side — this is the actual, observable effect Note 01 described in theory: CloudFront collapsing "far from origin = slow" down to roughly the same fast experience everywhere.
 
 > ⚠️ GeoPeeker is a free community tool and its uptime isn't guaranteed. If it's unavailable, equivalent alternatives for the same before/after, multi-region comparison are [KeyCDN Performance Test](https://tools.keycdn.com/performance) and [dotcom-tools Website Speed Test](https://www.dotcom-tools.com/website-speed-test) — both run the same "load this URL from many regions" check.
@@ -295,33 +281,26 @@ Headers confirm caching is *happening*; they don't show the **user-experienced l
 
 | Symptom | Likely cause |
 |---|---|
-| `403 Forbidden` on the S3 website endpoint | Block Public Access still blocking the bucket policy, or the bucket policy wasn't attached/scoped correctly (Section 3) |
-| CloudFront returns `504` or times out | Origin domain in Section 5 points at the REST endpoint (`$BUCKET.s3.amazonaws.com`) instead of the **website endpoint** (`$BUCKET.s3-website.$REGION.amazonaws.com`) |
-| CSS/JS/logo don't load, only raw HTML | Relative paths broken during upload — confirm `style.css`, `script.js`, and `assets/logo.svg` actually landed in the bucket root/`assets/` via `aws s3 ls s3://$BUCKET --recursive` |
+| `403 Forbidden` on the S3 website endpoint | Block Public Access still blocking the bucket policy, or the bucket policy wasn't attached/scoped correctly (Section 3, Steps 1 & 4) |
+| CloudFront returns `504` or times out | Origin domain in Section 5 points at the REST endpoint (`<bucket>.s3.amazonaws.com`) instead of the **website endpoint** (`<bucket>.s3-website-<region>.amazonaws.com`) |
+| CSS/JS/logo don't load, only raw HTML | Relative paths broken during upload — confirm `style.css`, `script.js`, and `assets/logo.svg` actually landed in the bucket in the right locations (check the bucket's **Objects** list) |
 | Browser shows old content after re-uploading a file | Expected — CloudFront is still serving the cached copy until its TTL expires; force a refresh with an invalidation (Note 18) or bump the filename/query string (cache-busting) |
-| `X-Cache` header missing entirely | You curled the raw S3 endpoint by mistake, not the `.cloudfront.net` domain |
+| `X-Cache` header missing entirely | You opened the raw S3 endpoint by mistake, not the `.cloudfront.net` domain |
 
 ---
 
 ## 10. Cleanup (avoid ongoing charges)
 
-```bash
-# Empty and delete the bucket
-aws s3 rm "s3://$BUCKET" --recursive
-aws s3 rb "s3://$BUCKET"
-
-# Disable, then delete the distribution (console is easiest: select it → Disable → wait for Deployed → Delete)
-```
-
-CloudFront distributions must be **disabled and fully deployed** before they can be deleted — this takes several minutes, same as the original creation.
+1. **CloudFront console** → select your distribution → **Disable** → wait until status shows **Deployed** (a distribution must be fully disabled and deployed before it can be deleted, same propagation delay as creation) → **Delete**.
+2. **S3 console** → open the bucket → select all objects → **Delete** (empties the bucket) → then delete the bucket itself from the bucket list.
 
 ---
 
 ## 11. Recap
 
-- A complete S3 + CloudFront static site demo needs: the site files (`demo-site/`), a public bucket with static website hosting enabled, and a CloudFront distribution pointed at the bucket's **website endpoint** (not the REST endpoint, for this simple path).
+- A complete S3 + CloudFront static site demo needs: the site files (`demo-site/`), a public bucket with static website hosting enabled, and a CloudFront distribution pointed at the bucket's **website endpoint** (not the REST endpoint, for this simple path) — all configurable entirely from the AWS Console.
 - CloudFront terminates HTTPS at the edge regardless of the origin's own protocol support.
-- `X-Cache` and `X-Amz-Cf-Pop` response headers directly show hit/miss and which physical edge location answered — the fastest hands-on way to confirm caching behavior.
+- `X-Cache` and `X-Amz-Cf-Pop` response headers (visible in browser dev tools' Network tab) directly show hit/miss and which physical edge location answered — the fastest hands-on way to confirm caching behavior.
 - Tools like **GeoPeeker** make the latency benefit *observable*, not just theoretical — comparing the same page via the raw origin vs. via CloudFront from multiple real-world regions is the clearest demonstration of what a CDN is actually for.
 - Next: Note 03 — AWS CloudFront Origin Setting, covering every origin configuration option in depth.
 

@@ -77,8 +77,8 @@ flowchart LR
         C2["Cached: 4K · Hindi only"]
     end
 
-    E1 -. "cache miss -> pulled once" .-> Origin
-    E2 -. "cache miss -> pulled once" .-> Origin
+    E1 -. "cache miss, pulled once" .-> Origin
+    E2 -. "cache miss, pulled once" .-> Origin
 ```
 
 - **Origin** always holds the *full* catalog of variants — it's unaffected by any CloudFront cache configuration, since it's the authoritative source every edge eventually pulls from.
@@ -104,34 +104,34 @@ sequenceDiagram
     Note over U,O: 1. Opens the web app — static UI files
     U->>E: GET /index.html, /main.js, /styles.css
     alt Already cached at this edge (an earlier Indian visitor warmed it)
-        E-->>U: LEG 1 - CACHE KEY match -> HIT, served in a few ms
+        E-->>U: LEG 1 - CACHE KEY match, HIT, served in a few ms
     else First hit at this edge
-        E->>O: LEG 1 miss -> LEG 2 forwarded per ORIGIN REQUEST POLICY
+        E->>O: LEG 1 miss, LEG 2 forwarded per ORIGIN REQUEST POLICY
         O-->>E: Static files
-        E->>E: Cached (path-only key; updates via versioned filenames)
+        E->>E: Cached, path-only key, updates via versioned filenames
         E-->>U: Served
     end
 
     Note over U,O: 2. Login — POST, dynamic, NEVER cached
     U->>E: POST /api/login (credentials)
-    E->>O: CachingDisabled -> LEG 2 always runs, per ORIGIN REQUEST POLICY
+    E->>O: CachingDisabled, LEG 2 always runs, per ORIGIN REQUEST POLICY
     O-->>E: Auth token / session cookie
-    E-->>U: Full India<->US round trip, every single time
+    E-->>U: Full India to US round trip, every single time
 
     Note over U,O: 3. Search "Inception" in Hindi — personalized
     U->>E: GET /api/search?q=Inception&lang=hi (+ session cookie)
-    E->>O: Ranked by this user's history -> CachingDisabled
+    E->>O: Ranked by this user's history, CachingDisabled
     O-->>E: Personalized results
     E-->>U: Round trip again — can't be shared across users
 
     Note over U,O: 4. Watches the movie — video segments
     U->>E: GET /videos/inception/hi/1080p/seg0042.ts
     alt Already cached at this edge
-        E-->>U: LEG 1 - CACHE KEY match -> HIT, smooth playback
+        E-->>U: LEG 1 - CACHE KEY match, HIT, smooth playback
     else First Indian viewer requesting this exact segment
-        E->>O: LEG 1 miss -> LEG 2 forwarded per ORIGIN REQUEST POLICY
+        E->>O: LEG 1 miss, LEG 2 forwarded per ORIGIN REQUEST POLICY
         O-->>E: Video segment
-        E->>E: Cached (path already encodes movie+language+quality)
+        E->>E: Cached, path already encodes movie, language, quality
         E-->>U: Served
     end
 ```

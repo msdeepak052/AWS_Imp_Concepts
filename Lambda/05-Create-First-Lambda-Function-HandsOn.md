@@ -34,7 +34,7 @@ flowchart LR
    - **Durable execution**: adds automatic failure recovery for stateful applications — a more advanced capability, not needed here.
    - **EC2 capacity provider**: runs the function on your own chosen EC2 instance types instead of Lambda's default serverless compute.
    - Leave both **off** — note the console's own warning here: **"Cannot add or remove after creation"**, so this is a real, one-time decision if you ever do need either later.
-5. **Additional settings** (collapsed by default) — this is where **function architecture** (x86_64 vs. arm64), a **custom execution role**, VPC, code signing, KMS key, and tags all now live. Leave this collapsed entirely for this demo — the defaults (x86_64 architecture, the auto-created basic execution role) are exactly what you want.
+5. **Additional settings** (collapsed by default, expand with the ▶ arrow) — inside, the **General** subsection has an **ARM64 architecture** toggle (**off** by default, meaning x86_64 — turn it on to switch to arm64) and a **Custom execution role** toggle (also off by default). Turning *that* one on slides out a separate **Configure custom execution role** panel on the right side of the page, with a **Choose an existing role** dropdown or a **Create new role** button — that's the actual current path to a non-default execution role, not an inline field on the main page. VPC, code signing, KMS key, and tags also live in this same expanded section. Leave everything here at its default (collapsed, both toggles off) for this demo — the defaults (x86_64 architecture, the auto-created basic execution role) are exactly what you want.
 6. **Create function**.
 
 ---

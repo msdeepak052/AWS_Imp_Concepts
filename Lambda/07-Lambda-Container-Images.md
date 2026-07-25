@@ -92,7 +92,7 @@ This is worth remembering for the exam: switching to a container image doesn't c
 - A container image must implement the **Lambda Runtime API** — either via an AWS base image or the Runtime Interface Client added to a custom one.
 - Building and pushing the image genuinely requires Docker outside the AWS Console — this is a real, acknowledged limit of a console-only workflow, not something worked around here.
 - Everything else about how Lambda runs (billing, 15-minute limit, scaling, execution role) is unaffected by which packaging format you choose.
-- Next: the [Lambda Execution Role](08-Lambda-Execution-Role.md) note, covering the permissions every Lambda function runs with, regardless of packaging format.
+- Next: the [Container Images hands-on demo](07.01-Container-Images_Demo.md) — a real build-push-deploy walkthrough, with the one unavoidable local Docker step clearly scoped and everything else done in the console. Then the [Lambda Execution Role](08-Lambda-Execution-Role.md) note, covering the permissions every Lambda function runs with, regardless of packaging format.
 
 ### Sources
 - [Deploying Lambda functions as container images — AWS docs](https://docs.aws.amazon.com/lambda/latest/dg/images-create.html)

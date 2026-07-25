@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DevopsWithDeepak - CloudFront (502)</title>
+<style>
+  :root { --aws-orange:#FF9900; --aws-dark:#131A22; --aws-darker:#0F1111; --aws-text:#E9ECEF; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    background: radial-gradient(circle at top, #24211B, var(--aws-darker));
+    color: var(--aws-text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: var(--aws-dark);
+    border: 1px solid #2b3542;
+    border-top: 4px solid #545B64;
+    border-radius: 12px;
+    max-width: 560px; width: 100%;
+    padding: 36px 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    text-align: center;
+  }
+  .badge {
+    display: inline-block;
+    background: #545B64;
+    color: #fff;
+    font-weight: 700; font-size: 12px; letter-spacing: 1px;
+    padding: 6px 14px; border-radius: 999px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  h1 { font-size: 26px; margin-bottom: 12px; }
+  h1 span { color: var(--aws-orange); }
+  p { color:#9AA5B1; font-size:14px; line-height:1.6; margin-bottom: 10px; }
+  code { background:#0F1111; padding:2px 6px; border-radius:4px; color:var(--aws-orange); }
+  a { color: var(--aws-orange); }
+  footer { margin-top:24px; color:#5C6773; font-size:12px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">502 Bad Gateway — Custom Error Response</span>
+    <h1>DevopsWith<span>Deepak</span> - CloudFront</h1>
+    <p>We're experiencing technical difficulties — the Application Load Balancer has no healthy targets to forward this request to right now. Rather than showing you the ALB's raw <code>502 Bad Gateway</code>, CloudFront substituted this branded page from S3.</p>
+    <p>This is the last line of defense: no Origin Group is configured for this behavior, so there's no automatic secondary origin to fail over to — just a friendlier face on the same underlying outage.</p>
+    <p><a href="/error-demo/index.html">&larr; Try the demo home page again</a></p>
+    <footer>Served from S3 — the error-pages origin, not the ALB/EC2 origin.</footer>
+  </div>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DevopsWithDeepak - CloudFront (403)</title>
+<style>
+  :root { --aws-orange:#FF9900; --aws-dark:#131A22; --aws-darker:#0F1111; --aws-text:#E9ECEF; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    background: radial-gradient(circle at top, #2A1B1B, var(--aws-darker));
+    color: var(--aws-text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: var(--aws-dark);
+    border: 1px solid #2b3542;
+    border-top: 4px solid #D13212;
+    border-radius: 12px;
+    max-width: 560px; width: 100%;
+    padding: 36px 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    text-align: center;
+  }
+  .badge {
+    display: inline-block;
+    background: #D13212;
+    color: #fff;
+    font-weight: 700; font-size: 12px; letter-spacing: 1px;
+    padding: 6px 14px; border-radius: 999px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  h1 { font-size: 26px; margin-bottom: 12px; }
+  h1 span { color: var(--aws-orange); }
+  p { color:#9AA5B1; font-size:14px; line-height:1.6; margin-bottom: 10px; }
+  code { background:#0F1111; padding:2px 6px; border-radius:4px; color:var(--aws-orange); }
+  a { color: var(--aws-orange); }
+  footer { margin-top:24px; color:#5C6773; font-size:12px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">403 Forbidden — Custom Error Response</span>
+    <h1>DevopsWith<span>Deepak</span> - CloudFront</h1>
+    <p>You tried to reach a path the origin has deliberately locked down. Apache returned a raw <code>403 Forbidden</code> — CloudFront intercepted that status code and substituted this branded page from S3 instead.</p>
+    <p>Note the browser's actual HTTP status for this page is <code>200</code> — the <strong>Custom Error Response</strong>'s HTTP Response Code setting rewrote it, so the page renders normally instead of triggering a browser error screen.</p>
+    <p><a href="/error-demo/index.html">&larr; Back to the demo home page</a></p>
+    <footer>Served from S3 — the error-pages origin, not the ALB/EC2 origin.</footer>
+  </div>
+</body>
+</html>

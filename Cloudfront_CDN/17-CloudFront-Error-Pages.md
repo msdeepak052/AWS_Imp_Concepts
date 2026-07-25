@@ -85,7 +85,7 @@ This TTL is **independent** of the [Default Cache Behavior Options](04-Default-C
 - This is a **post-response** substitution — it only runs after geo restriction, the cache key check, and any Origin Group failover attempts have already produced a final status code, never as a pre-request gate (Section 2).
 - **Error Caching Minimum TTL** independently controls how long an error response itself stays cached before CloudFront retries the origin — a real tuning trade-off between masking a since-recovered origin and hammering a still-struggling one.
 - It's the natural finishing touch for two earlier scenarios in this folder — geo-blocked requests and exhausted Origin Group failover — turning a raw error into a branded page in both cases (Section 5).
-- Next: the [Cache Invalidation](18-CloudFront-Cache-Invalidation.md) note, the mechanism for forcibly clearing cached content before its TTL naturally expires — the final note in this folder.
+- Next: the [Error Pages hands-on demo](17.01-Error-Pages_Demo.md) — a hands-on demo proving this live with a real ALB + EC2 origin and a private, OAC-protected S3 error-pages origin, including a genuinely simulated `502`. Then the [Cache Invalidation](18-CloudFront-Cache-Invalidation.md) note, the mechanism for forcibly clearing cached content before its TTL naturally expires — the final note in this folder.
 
 ### Sources
 - [Creating custom error pages for specific HTTP status codes — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/HTTPStatusCodes.html#custom-error-pages)

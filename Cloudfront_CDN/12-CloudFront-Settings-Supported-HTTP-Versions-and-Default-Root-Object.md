@@ -1,6 +1,6 @@
 # 12 - AWS CloudFront Setting Options: Supported HTTP Versions & Default Root Object
 
-> Goal: cover two **distribution-wide** settings (as opposed to Notes 04-11's cache-behavior-specific ones) — which HTTP protocol versions viewers can use, and what CloudFront serves for a bare root/subdirectory request.
+> Goal: cover two **distribution-wide** settings (as opposed to the [Default Cache Behavior Options](04-Default-Cache-Behavior-Options.md), [CloudFront Custom HTTPS](05-CloudFront-Custom-HTTPS.md), [CloudFront Origin Access](06-CloudFront-Origin-Access.md), [CloudFront Allowed HTTP Methods](07-CloudFront-Allowed-HTTP-Methods.md), [Restrict Viewer Access](08-Default-Cache-Behavior-Restrict-Viewer-Access.md), [Cache Key and Origin Requests](09-Default-Cache-Behavior-Cache-Key-and-Origin-Requests.md), [Response Headers Policy](10-Default-Cache-Behavior-Response-Header-Policy.md), and [CloudFront Function Associations](11-CloudFront-Function-Associations.md) notes' cache-behavior-specific ones) — which HTTP protocol versions viewers can use, and what CloudFront serves for a bare root/subdirectory request.
 
 ---
 
@@ -16,7 +16,7 @@ A distribution can be configured to accept viewer connections over:
 
 Enabling the newer versions is generally a **free performance improvement** with no downside for compatible clients — older/incompatible clients simply negotiate down to a version they support, so there's little reason not to enable HTTP/2 and HTTP/3 unless a specific legacy client requirement says otherwise.
 
-> 🧠 **Mental model:** this setting only affects the **viewer-to-CloudFront** leg (same scope as Note 05's viewer protocol policy) — it has no bearing on what protocol CloudFront uses when talking to the **origin**, which is governed independently by the origin protocol policy.
+> 🧠 **Mental model:** this setting only affects the **viewer-to-CloudFront** leg (same scope as the [CloudFront Custom HTTPS](05-CloudFront-Custom-HTTPS.md) note's viewer protocol policy) — it has no bearing on what protocol CloudFront uses when talking to the **origin**, which is governed independently by the origin protocol policy.
 
 ---
 
@@ -24,7 +24,7 @@ Enabling the newer versions is generally a **free performance improvement** with
 
 **Default Root Object** tells CloudFront what to serve when a viewer requests the **distribution's root URL** with no specific file path (e.g. `https://d1234abcdefgh.cloudfront.net/` with nothing after the trailing slash) — typically set to `index.html`.
 
-> ⚠️ **Default Root Object only applies to the distribution's actual root** — it does **not** automatically apply to every subdirectory (e.g. a request for `/photos/` doesn't automatically get `/photos/index.html` from this setting alone). Getting subdirectory-level default-document behavior requires either an **S3 website endpoint origin** (which has its own index-document logic, `S3-Simple_Storage_Services/26`) or a **CloudFront Function** (Note 11) rewriting the URI, as shown in that note's own example.
+> ⚠️ **Default Root Object only applies to the distribution's actual root** — it does **not** automatically apply to every subdirectory (e.g. a request for `/photos/` doesn't automatically get `/photos/index.html` from this setting alone). Getting subdirectory-level default-document behavior requires either an **S3 website endpoint origin** (which has its own index-document logic, `S3-Simple_Storage_Services/26`) or a **CloudFront Function** (the [CloudFront Function Associations](11-CloudFront-Function-Associations.md) note) rewriting the URI, as shown in that note's own example.
 
 ---
 
@@ -52,7 +52,7 @@ curl https://d1234abcdefgh.cloudfront.net/       # should return index.html's co
 
 - **Supported HTTP versions** governs the viewer-to-CloudFront protocol only — enabling HTTP/2 and HTTP/3 alongside HTTP/1.1 is a low-risk, generally-beneficial default.
 - **Default Root Object** serves a specified file (e.g. `index.html`) for the distribution's bare root — but does **not** extend that behavior to subdirectories automatically; that needs an S3 website-endpoint origin or a CloudFront Function URI rewrite instead.
-- Next: Note 13 — AWS CloudFront Setting Options, Part 2, covering the remaining distribution-wide settings (price class, logging, WAF association).
+- Next: the [CloudFront Settings Options Part 2](13-CloudFront-Settings-Options-Part2.md) note, covering the remaining distribution-wide settings (price class, logging, WAF association).
 
 ### Sources
 - [Values that you specify when you create or update a distribution — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html)

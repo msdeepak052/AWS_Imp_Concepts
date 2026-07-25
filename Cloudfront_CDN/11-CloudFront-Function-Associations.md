@@ -24,7 +24,7 @@ sequenceDiagram
 | **Viewer Request** | Every request, before checking the cache | URL rewrites/redirects, header inspection/normalization, simple auth checks |
 | **Origin Request** | Only on a cache miss, before forwarding to the origin | Adding/modifying headers sent to the origin, origin selection logic |
 | **Origin Response** | Only on a cache miss, after the origin responds, before caching | Modifying/enriching the response before it's cached (e.g. adding a header based on origin status) |
-| **Viewer Response** | Every request, right before returning to the viewer | Adding response headers, final response tweaks (overlaps with Note 10's Response Headers Policy, but as arbitrary code instead of a fixed rule set) |
+| **Viewer Response** | Every request, right before returning to the viewer | Adding response headers, final response tweaks (overlaps with the [Response Headers Policy](10-Default-Cache-Behavior-Response-Header-Policy.md) note's Response Headers Policy, but as arbitrary code instead of a fixed rule set) |
 
 ---
 
@@ -79,7 +79,7 @@ sequenceDiagram
 - Four lifecycle triggers exist: **Viewer Request**, **Origin Request**, **Origin Response**, **Viewer Response** — CloudFront Functions only support the two **viewer**-side triggers; Lambda@Edge supports all four.
 - **CloudFront Functions**: JavaScript, sub-millisecond, 400+ locations, no network/file access, cheapest — for simple, high-volume viewer-side logic.
 - **Lambda@Edge**: Node.js/Python, up to 30s execution, 13 regional locations, full compute capability — for anything needing real logic, network calls, or origin-side triggers.
-- Next: Note 12 — AWS CloudFront Setting Options: Supported HTTP Versions & Default Root Object, covering distribution-wide (not cache-behavior-specific) settings.
+- Next: the [Supported HTTP Versions and Default Root Object](12-CloudFront-Settings-Supported-HTTP-Versions-and-Default-Root-Object.md) note, covering distribution-wide (not cache-behavior-specific) settings.
 
 ### Sources
 - [Differences between CloudFront Functions and Lambda@Edge — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/edge-functions-choosing.html)

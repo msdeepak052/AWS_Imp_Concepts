@@ -1,12 +1,12 @@
 # 16 - AWS CloudFront Origin Group Lab 2: Geographical Failover with Load Balancer
 
-> Goal: extend Note 15's Origin Group pattern to **two full, independently-running application deployments** behind load balancers in **different Regions** — real multi-Region disaster recovery, not just a static fallback page.
+> Goal: extend the [Origin Group Failover Lab, EC2/S3](15-CloudFront-Origin-Group-Lab1-EC2-S3-Failover-HandsOn.md) note's Origin Group pattern to **two full, independently-running application deployments** behind load balancers in **different Regions** — real multi-Region disaster recovery, not just a static fallback page.
 
 ---
 
 ## 1. How this differs from Lab 1
 
-Note 15's secondary origin was a **static S3 fallback** — good for graceful degradation, but not a substitute for the real application. This lab's secondary origin is a **second, fully-functional ALB**, fronting its **own EC2/ASG fleet in a different AWS Region** — so failover here means genuinely continuing to serve the **live application**, not a degraded static page.
+The [Origin Group Failover Lab, EC2/S3](15-CloudFront-Origin-Group-Lab1-EC2-S3-Failover-HandsOn.md) note's secondary origin was a **static S3 fallback** — good for graceful degradation, but not a substitute for the real application. This lab's secondary origin is a **second, fully-functional ALB**, fronting its **own EC2/ASG fleet in a different AWS Region** — so failover here means genuinely continuing to serve the **live application**, not a degraded static page.
 
 > 🧠 **Mental model:** this is the CloudFront-edge equivalent of Route 53 failover routing (covered in this repo's `Route53` folder) — both solve "keep serving traffic if an entire Region goes down" — but this pattern operates at the **CDN/edge layer**, evaluated per-request against real-time origin responses, rather than at the **DNS layer** with its own health-check cadence and TTL-bound propagation delay.
 
@@ -22,14 +22,14 @@ flowchart TB
     OG -.Failover.-> ALB2["ALB — ap-southeast-1<br/>fronting its own ASG"]
 ```
 
-Both Regions run a **complete, independent copy** of the application stack — this is meaningfully more expensive and operationally heavier than Note 15's pattern (two full environments to deploy, patch, and keep in sync), which is exactly why it's reserved for workloads where a true multi-Region active/standby posture is actually justified.
+Both Regions run a **complete, independent copy** of the application stack — this is meaningfully more expensive and operationally heavier than the [Origin Group Failover Lab, EC2/S3](15-CloudFront-Origin-Group-Lab1-EC2-S3-Failover-HandsOn.md) note's pattern (two full environments to deploy, patch, and keep in sync), which is exactly why it's reserved for workloads where a true multi-Region active/standby posture is actually justified.
 
 ---
 
 ## 3. Configure it
 
 1. Deploy (or assume already deployed) two independent ALB + ASG stacks, one in each Region — e.g. `ap-south-1` (primary) and `ap-southeast-1` (secondary/DR).
-2. **CloudFront console** → distribution → **Origins** → add both ALBs as **custom origins** (Note 03).
+2. **CloudFront console** → distribution → **Origins** → add both ALBs as **custom origins** (the [CloudFront Origin Settings](03-CloudFront-Origin-Settings.md) note).
 3. **Origin groups** → **Create origin group** → **Primary**: `ap-south-1` ALB. **Secondary**: `ap-southeast-1` ALB. **Failover criteria**: `500`, `502`, `503`, `504`.
 4. Cache behavior → **Origin or origin group** → select the origin group → **Save changes**.
 
@@ -40,7 +40,7 @@ Both Regions run a **complete, independent copy** of the application stack — t
 1. Confirm normal traffic serves from the `ap-south-1` primary.
 2. Simulate a full Regional outage of the primary (e.g. scale the primary ASG to 0, or detach the ALB's target group) so requests to it fail with a matching status code.
 3. Request the distribution again — traffic now serves from the **`ap-southeast-1`** ALB's live application, fully functional, not a static page.
-4. Restore the primary and confirm traffic naturally returns to it on the next request (same per-request evaluation behavior as Note 15 — no persistent "stuck on secondary" state).
+4. Restore the primary and confirm traffic naturally returns to it on the next request (same per-request evaluation behavior as the [Origin Group Failover Lab, EC2/S3](15-CloudFront-Origin-Group-Lab1-EC2-S3-Failover-HandsOn.md) note — no persistent "stuck on secondary" state).
 
 ---
 
@@ -58,9 +58,9 @@ Both Regions run a **complete, independent copy** of the application stack — t
 
 ## 6. Recap
 
-- This lab's Origin Group uses **two full, independently-running ALB-backed environments** in different Regions — genuine multi-Region DR, not a static fallback (Note 15's simpler pattern).
+- This lab's Origin Group uses **two full, independently-running ALB-backed environments** in different Regions — genuine multi-Region DR, not a static fallback (the [Origin Group Failover Lab, EC2/S3](15-CloudFront-Origin-Group-Lab1-EC2-S3-Failover-HandsOn.md) note's simpler pattern).
 - CloudFront's per-request, immediate failover (bound to actual response status codes) contrasts with Route 53 failover routing's DNS-TTL-bound cadence — the two operate at different layers and are often combined.
-- This closes the two-lab Origin Group series (Notes 15-16). Next: Note 17 — AWS CloudFront Tutorial: AWS CloudFront Error Pages, customizing what viewers actually see when even failover doesn't resolve an error.
+- This closes the two-lab Origin Group series (the [Origin Group Failover Lab, EC2/S3](15-CloudFront-Origin-Group-Lab1-EC2-S3-Failover-HandsOn.md) note and this note). Next: the [CloudFront Error Pages](17-CloudFront-Error-Pages.md) note, customizing what viewers actually see when even failover doesn't resolve an error.
 
 ### Sources
 - [Optimizing high availability with CloudFront origin failover — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/high_availability_origin_failover.html)

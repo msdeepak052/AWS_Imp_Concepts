@@ -58,7 +58,7 @@ A signed URL/cookie can use a **canned policy** (a fixed expiration time, one re
 - **Restrict Viewer Access** requires a valid signed URL or signed cookie for every request on that cache behavior — CloudFront's own presigned-access mechanism, conceptually parallel to S3 presigned URLs but built for CDN-scale, multi-file distribution.
 - **Signed URLs** suit single/few files; **signed cookies** suit many files under one grant.
 - A **custom policy** unlocks date ranges, IP restrictions, and wildcard resource paths — capabilities a simple canned/expiring link can't express.
-- Next: Note 09 — AWS CloudFront Default Cache Behavior: Cache Key And Origin Requests, covering what actually varies a cached copy.
+- Next: the [Cache Key and Origin Requests](09-Default-Cache-Behavior-Cache-Key-and-Origin-Requests.md) note, covering what actually varies a cached copy.
 
 ### Sources
 - [Serving private content with signed URLs and signed cookies — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/PrivateContent.html)

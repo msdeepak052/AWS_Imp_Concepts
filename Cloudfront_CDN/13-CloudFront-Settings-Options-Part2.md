@@ -1,6 +1,6 @@
 # 13 - AWS CloudFront Setting Options, Part 2
 
-> Goal: cover the remaining distribution-wide settings that don't fit into a specific cache behavior — **Price Class**, **WAF association**, **standard logging**, and **IPv6** — closing out the general-settings tour started in Note 12.
+> Goal: cover the remaining distribution-wide settings that don't fit into a specific cache behavior — **Price Class**, **WAF association**, **standard logging**, and **IPv6** — closing out the general-settings tour started in the [Supported HTTP Versions and Default Root Object](12-CloudFront-Settings-Supported-HTTP-Versions-and-Default-Root-Object.md) note.
 
 ---
 
@@ -20,7 +20,7 @@ CloudFront's edge network spans **every region of the world**, but you can restr
 
 ## 2. AWS WAF association
 
-A distribution can have an **AWS WAF Web ACL** attached, filtering malicious requests (SQL injection, XSS, rate-based rules, IP reputation lists) **before** they ever reach the cache-behavior logic or origin — configured via **AWS WAF console** → **Web ACLs** → associate with the specific CloudFront distribution. This is the standard way to add application-layer (L7) protection to content served through CloudFront, complementing CloudFront's built-in AWS Shield Standard DDoS protection (Note 01) with more granular, rule-based filtering.
+A distribution can have an **AWS WAF Web ACL** attached, filtering malicious requests (SQL injection, XSS, rate-based rules, IP reputation lists) **before** they ever reach the cache-behavior logic or origin — configured via **AWS WAF console** → **Web ACLs** → associate with the specific CloudFront distribution. This is the standard way to add application-layer (L7) protection to content served through CloudFront, complementing CloudFront's built-in AWS Shield Standard DDoS protection (the [Introduction to CloudFront](01-Introduction-to-CloudFront.md) note) with more granular, rule-based filtering.
 
 ---
 
@@ -31,7 +31,7 @@ CloudFront can deliver **detailed per-request access logs** to an S3 bucket — 
 1. **Distribution** → **General** tab → **Edit** → **Standard logging** → **On** → select a destination S3 bucket and prefix.
 2. Logs are delivered on a **best-effort basis** (same caveat as S3 server access logs) — not real-time, and not a hard delivery guarantee.
 
-> 🧠 A common real use case: analyzing these logs (often via Athena) to compute actual **cache hit ratio** across a distribution, informing whether the cache-key tuning from Note 09 is working as intended.
+> 🧠 A common real use case: analyzing these logs (often via Athena) to compute actual **cache hit ratio** across a distribution, informing whether the cache-key tuning from the [Cache Key and Origin Requests](09-Default-Cache-Behavior-Cache-Key-and-Origin-Requests.md) note is working as intended.
 
 ---
 
@@ -46,7 +46,7 @@ Distributions support IPv6 by default for viewer connections (dual-stack, alongs
 - **Price Class** trades edge-location coverage for cost — pick based on where your actual audience is concentrated.
 - **AWS WAF** attaches application-layer filtering (SQLi, XSS, rate limiting, IP reputation) directly to a distribution, ahead of cache behaviors and the origin.
 - **Standard logging** delivers detailed, best-effort access logs to S3 — the CloudFront-level parallel to S3's own server access logging.
-- This closes the distribution-wide settings tour (Notes 12-13). Next: Note 14 — AWS CloudFront Geographic Restrictions, controlling access by the viewer's country.
+- This closes the distribution-wide settings tour (the [Supported HTTP Versions and Default Root Object](12-CloudFront-Settings-Supported-HTTP-Versions-and-Default-Root-Object.md) note and this note). Next: the [Geographic Restrictions](14-CloudFront-Geographic-Restrictions.md) note, controlling access by the viewer's country.
 
 ### Sources
 - [Choosing the price class for a CloudFront distribution — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/PriceClass.html)

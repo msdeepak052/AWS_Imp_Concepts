@@ -6,7 +6,7 @@
 
 ## 1. The problem: a "private-looking" bucket that's actually still directly reachable
 
-Note 02's lab used an S3 **website endpoint**, which only works when the bucket is fully public — anyone with the bucket's direct URL bypasses CloudFront entirely, skipping any edge-level protections, custom domains, or access logging you set up at the CloudFront layer. For an **S3 REST-endpoint origin** (Note 03), you can do better: keep the bucket **entirely private**, and grant access **only to CloudFront itself**.
+The [CloudFront Hands-On Lab 1 (S3 static site + CDN)](02-CloudFront-HandsOn-Lab1.md) note's lab used an S3 **website endpoint**, which only works when the bucket is fully public — anyone with the bucket's direct URL bypasses CloudFront entirely, skipping any edge-level protections, custom domains, or access logging you set up at the CloudFront layer. For an **S3 REST-endpoint origin** (the [CloudFront Origin Settings](03-CloudFront-Origin-Settings.md) note), you can do better: keep the bucket **entirely private**, and grant access **only to CloudFront itself**.
 
 > 🧠 **Mental model:** this is the same goal as the CloudMart capstone's ALB-node-vs-target pattern (`Capstone-Project/Project-1/02`) — the public-facing thing (CloudFront, or the ALB) is the only allowed path in; the actual data store (S3, or the private EC2 targets) is unreachable directly, no matter how permissive its own settings might otherwise look.
 
@@ -64,16 +64,16 @@ Note 02's lab used an S3 **website endpoint**, which only works when the bucket 
 
 ## 5. OAC/OAI only work with the S3 REST endpoint, never the website endpoint
 
-Both mechanisms depend on **SigV4-signed requests**, a capability the S3 **website endpoint** doesn't support at all (it's designed for pure public HTTP access, `S3-Simple_Storage_Services/26`). This is exactly why Note 03 flagged that a website-endpoint origin can never be paired with OAC/OAI — if you need S3's index/error-document routing **and** a fully private bucket, the common workaround is handling routing/error pages at the CloudFront layer itself instead (Notes 12, 17) with a REST-endpoint + OAC origin.
+Both mechanisms depend on **SigV4-signed requests**, a capability the S3 **website endpoint** doesn't support at all (it's designed for pure public HTTP access, `S3-Simple_Storage_Services/26`). This is exactly why the [CloudFront Origin Settings](03-CloudFront-Origin-Settings.md) note flagged that a website-endpoint origin can never be paired with OAC/OAI — if you need S3's index/error-document routing **and** a fully private bucket, the common workaround is handling routing/error pages at the CloudFront layer itself instead (the [Supported HTTP Versions and Default Root Object](12-CloudFront-Settings-Supported-HTTP-Versions-and-Default-Root-Object.md) and [CloudFront Error Pages](17-CloudFront-Error-Pages.md) notes) with a REST-endpoint + OAC origin.
 
 ---
 
 ## 6. Recap
 
 - **Origin Access Control (OAC)** is the modern, recommended way to keep an S3 origin **fully private**, reachable only by the specific CloudFront distribution — supporting all Regions, SSE-KMS, and more HTTP methods than the legacy **Origin Access Identity (OAI)**.
-- Both depend on SigV4 signing, which only the S3 **REST endpoint** supports — never the **website endpoint** (Note 03's distinction).
+- Both depend on SigV4 signing, which only the S3 **REST endpoint** supports — never the **website endpoint** (the [CloudFront Origin Settings](03-CloudFront-Origin-Settings.md) note's distinction).
 - With OAC/OAI configured correctly, Block Public Access can (and should) remain fully enabled on the bucket — no public grant is needed at all.
-- Next: Note 07 — CloudFront Allowed HTTP Method, covering which verbs a cache behavior actually forwards to the origin.
+- Next: the [CloudFront Allowed HTTP Methods](07-CloudFront-Allowed-HTTP-Methods.md) note, covering which verbs a cache behavior actually forwards to the origin.
 
 ### Sources
 - [Restricting access to an Amazon S3 origin — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)

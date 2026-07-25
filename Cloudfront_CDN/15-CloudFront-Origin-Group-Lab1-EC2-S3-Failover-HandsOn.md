@@ -20,7 +20,7 @@ A common real pattern: the **primary origin** is a dynamic backend (an ALB in fr
 
 ## 3. Configure the Origin Group
 
-1. **CloudFront console** → distribution → **Origins** tab → confirm both origins already exist: the ALB (primary) and the S3 bucket (secondary, with OAC configured per Note 06 if it should stay private, or public if serving as a plain static fallback).
+1. **CloudFront console** → distribution → **Origins** tab → confirm both origins already exist: the ALB (primary) and the S3 bucket (secondary, with OAC configured per the [CloudFront Origin Access](06-CloudFront-Origin-Access.md) note if it should stay private, or public if serving as a plain static fallback).
 2. **Origin groups** tab → **Create origin group**.
 3. **Primary origin**: the ALB. **Secondary origin**: the S3 bucket.
 4. **Failover criteria**: select the HTTP status codes that should trigger failover — typically `500`, `502`, `503`, `504` (server-side error codes indicating the primary is unhealthy or unreachable).
@@ -53,7 +53,7 @@ A common real pattern: the **primary origin** is a dynamic backend (an ALB in fr
 - An **Origin Group** pairs a primary and secondary origin under one cache behavior, with CloudFront automatically retrying a failed request (matching configured status codes) against the secondary.
 - A common pattern: dynamic ALB/EC2 primary + static S3 fallback, giving visitors a graceful degraded experience instead of a raw error during an outage.
 - Failover is evaluated **per-request**, based on response status codes — not a continuous background health check like an ALB target group's.
-- Next: Note 16 — AWS CloudFront Origin Group Lab 2: Geographical Failover with Load Balancer, extending this pattern to two full ALB-backed origins in different Regions.
+- Next: the [Origin Group Geographical Failover Lab, Load Balancer](16-CloudFront-Origin-Group-Lab2-Geographical-Failover-LB-HandsOn.md) note, extending this pattern to two full ALB-backed origins in different Regions.
 
 ### Sources
 - [Optimizing high availability with CloudFront origin failover — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/high_availability_origin_failover.html)

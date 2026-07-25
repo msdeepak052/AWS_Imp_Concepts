@@ -1,6 +1,6 @@
 # 02 - AWS CloudFront Hands-On Lab 1 (End-to-End: S3 Static Website + CloudFront CDN)
 
-> Goal: build a real, complete demo from scratch — entirely through the **AWS Console**, click by click — a small static site in S3, a CloudFront distribution in front of it, then directly observe the cache-hit/cache-miss behavior Note 01 described, and **prove** CloudFront is actually helping using a real multi-region testing tool (GeoPeeker), not just take it on faith.
+> Goal: build a real, complete demo from scratch — entirely through the **AWS Console**, click by click — a small static site in S3, a CloudFront distribution in front of it, then directly observe the cache-hit/cache-miss behavior the [Introduction to CloudFront](01-Introduction-to-CloudFront.md) note described, and **prove** CloudFront is actually helping using a real multi-region testing tool (GeoPeeker), not just take it on faith.
 
 > 🧠 Everything below is done via the Console on purpose, no CLI, no scripts. At this learning stage the goal is to *see* every setting and understand what it does — automation (CLI/Terraform) is worth reaching for later, once the console flow is second nature.
 
@@ -24,7 +24,7 @@ flowchart LR
 - **Distribution**: one CloudFront distribution pointed at that bucket's **website endpoint**.
 - **Demo site**: `index.html`, `style.css`, `script.js`, `error.html`, `assets/logo.svg` — deliberately a few small files of different types (HTML/CSS/JS/SVG), so caching behavior is visible across a realistic mix of assets, not just one file.
 
-> 🧠 Why the website endpoint (and not Origin Access Control) for this first lab: it's the simplest possible path to a working end-to-end demo. Note 03 (origin types) and Note 06 (Origin Access Control) come back and do this the **production-recommended** way — private bucket, CloudFront-only access via OAC — once you understand the baseline.
+> 🧠 Why the website endpoint (and not Origin Access Control) for this first lab: it's the simplest possible path to a working end-to-end demo. the [CloudFront Origin Settings](03-CloudFront-Origin-Settings.md) note (origin types) and the [CloudFront Origin Access](06-CloudFront-Origin-Access.md) note (Origin Access Control) come back and do this the **production-recommended** way — private bucket, CloudFront-only access via OAC — once you understand the baseline.
 
 ---
 
@@ -219,7 +219,7 @@ if (tzEl) {
 
 Get the baseline working before adding CloudFront on top — isolates which layer is responsible if something breaks later.
 
-1. Open the **Bucket website endpoint** URL from Section 3, Step 3 in a browser. You should see the demo page, with the live clock ticking, served over **plain HTTP** (Note 26: website endpoints are HTTP-only).
+1. Open the **Bucket website endpoint** URL from Section 3, Step 3 in a browser. You should see the demo page, with the live clock ticking, served over **plain HTTP** (S3-Simple_Storage_Services/26 (S3 Static Web Hosting): website endpoints are HTTP-only).
 2. Try a path that doesn't exist, e.g. append `/does-not-exist` to the URL — you should see the styled `error.html` page with a `404` status (check via browser dev tools **Network** tab, **Status** column).
 
 ---
@@ -229,7 +229,7 @@ Get the baseline working before adding CloudFront on top — isolates which laye
 1. Open the **CloudFront console** → **Distributions** → **Create distribution**.
 2. **Origin domain**: start typing your bucket name — the console will suggest entries for it. Pick the one that matches the **website endpoint** format, `<bucket>.s3-website-<region>.amazonaws.com` (**not** the plain `<bucket>.s3.amazonaws.com` REST endpoint). If the console only auto-fills the REST endpoint, manually type/paste the website endpoint URL from Section 3, Step 3 instead (dropping the `http://` prefix).
 
-   > This distinction matters a lot and is covered fully in Note 03 (origin types) and Note 06 (Origin Access Control): the REST endpoint supports private buckets via OAC; the website endpoint is what gives you index/error-document routing, but only works with a public bucket.
+   > This distinction matters a lot and is covered fully in the [CloudFront Origin Settings](03-CloudFront-Origin-Settings.md) note (origin types) and the [CloudFront Origin Access](06-CloudFront-Origin-Access.md) note (Origin Access Control): the REST endpoint supports private buckets via OAC; the website endpoint is what gives you index/error-document routing, but only works with a public bucket.
 3. **Origin protocol policy**: since the website endpoint only speaks HTTP, this is fixed to **HTTP only** — CloudFront will still serve HTTPS to your visitors regardless (more on this in Section 6).
 4. **Default cache behavior**:
    - **Viewer protocol policy**: **Redirect HTTP to HTTPS**.
@@ -266,12 +266,12 @@ Using the same **Network** tab in dev tools:
 
 ## 8. Prove the CDN is actually helping — real-world verification with GeoPeeker
 
-Headers confirm caching is *happening*; they don't show the **user-experienced latency win** a CDN is actually for. [GeoPeeker](https://geopeeker.com) is a free tool that loads a URL simultaneously from several real-world regions (its free tier covers Singapore, Brazil, Virginia, California, Ireland, and Australia) and reports back screenshots and load times from each — exactly the "users far from the origin" problem Note 01 opened with.
+Headers confirm caching is *happening*; they don't show the **user-experienced latency win** a CDN is actually for. [GeoPeeker](https://geopeeker.com) is a free tool that loads a URL simultaneously from several real-world regions (its free tier covers Singapore, Brazil, Virginia, California, Ireland, and Australia) and reports back screenshots and load times from each — exactly the "users far from the origin" problem the [Introduction to CloudFront](01-Introduction-to-CloudFront.md) note opened with.
 
 1. Go to **https://geopeeker.com**.
 2. Paste in your **raw S3 website endpoint** (from Section 3, Step 3) first, and run the check. Note the load times per region — regions far from your bucket's AWS Region (e.g. Sydney or São Paulo, if your bucket is in `ap-south-1`) will visibly lag, since every single region has to fetch directly from that one physical bucket location.
 3. Now paste in your **CloudFront domain** (from Section 6) and run the check again. After the first pass warms the cache at each region's nearest edge location, re-run it — load times across *all* regions should tighten up and even out, because each is now being served from a nearby CloudFront edge location instead of the single distant origin.
-4. Compare the two result sets side by side — this is the actual, observable effect Note 01 described in theory: CloudFront collapsing "far from origin = slow" down to roughly the same fast experience everywhere.
+4. Compare the two result sets side by side — this is the actual, observable effect the [Introduction to CloudFront](01-Introduction-to-CloudFront.md) note described in theory: CloudFront collapsing "far from origin = slow" down to roughly the same fast experience everywhere.
 
 > ⚠️ GeoPeeker is a free community tool and its uptime isn't guaranteed. If it's unavailable, equivalent alternatives for the same before/after, multi-region comparison are [KeyCDN Performance Test](https://tools.keycdn.com/performance) and [dotcom-tools Website Speed Test](https://www.dotcom-tools.com/website-speed-test) — both run the same "load this URL from many regions" check.
 
@@ -284,7 +284,7 @@ Headers confirm caching is *happening*; they don't show the **user-experienced l
 | `403 Forbidden` on the S3 website endpoint | Block Public Access still blocking the bucket policy, or the bucket policy wasn't attached/scoped correctly (Section 3, Steps 1 & 4) |
 | CloudFront returns `504` or times out | Origin domain in Section 5 points at the REST endpoint (`<bucket>.s3.amazonaws.com`) instead of the **website endpoint** (`<bucket>.s3-website-<region>.amazonaws.com`) |
 | CSS/JS/logo don't load, only raw HTML | Relative paths broken during upload — confirm `style.css`, `script.js`, and `assets/logo.svg` actually landed in the bucket in the right locations (check the bucket's **Objects** list) |
-| Browser shows old content after re-uploading a file | Expected — CloudFront is still serving the cached copy until its TTL expires; force a refresh with an invalidation (Note 18) or bump the filename/query string (cache-busting) |
+| Browser shows old content after re-uploading a file | Expected — CloudFront is still serving the cached copy until its TTL expires; force a refresh with an invalidation (the [Cache Invalidation](18-CloudFront-Cache-Invalidation.md) note) or bump the filename/query string (cache-busting) |
 | `X-Cache` header missing entirely | You opened the raw S3 endpoint by mistake, not the `.cloudfront.net` domain |
 
 ---
@@ -302,7 +302,7 @@ Headers confirm caching is *happening*; they don't show the **user-experienced l
 - CloudFront terminates HTTPS at the edge regardless of the origin's own protocol support.
 - `X-Cache` and `X-Amz-Cf-Pop` response headers (visible in browser dev tools' Network tab) directly show hit/miss and which physical edge location answered — the fastest hands-on way to confirm caching behavior.
 - Tools like **GeoPeeker** make the latency benefit *observable*, not just theoretical — comparing the same page via the raw origin vs. via CloudFront from multiple real-world regions is the clearest demonstration of what a CDN is actually for.
-- Next: Note 03 — AWS CloudFront Origin Setting, covering every origin configuration option in depth.
+- Next: the [CloudFront Origin Settings](03-CloudFront-Origin-Settings.md) note, covering every origin configuration option in depth.
 
 ### Sources
 - [Getting started with a standard distribution — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/GettingStarted.SimpleDistribution.html)

@@ -1,12 +1,12 @@
 # 04 - Default Cache Behavior Option
 
-> Goal: understand the **cache behavior** — the rule set governing how requests matching a given path pattern are handled — and specifically the **default** cache behavior every distribution must have. Notes 07-10 each go deep on one specific cache-behavior setting; this note is the map of the whole object.
+> Goal: understand the **cache behavior** — the rule set governing how requests matching a given path pattern are handled — and specifically the **default** cache behavior every distribution must have. The [Allowed HTTP Methods](07-CloudFront-Allowed-HTTP-Methods.md), [Restrict Viewer Access](08-Default-Cache-Behavior-Restrict-Viewer-Access.md), [Cache Key and Origin Requests](09-Default-Cache-Behavior-Cache-Key-and-Origin-Requests.md), and [Response Headers Policy](10-Default-Cache-Behavior-Response-Header-Policy.md) notes each go deep on one specific cache-behavior setting; this note is the map of the whole object.
 
 ---
 
 ## 1. What a cache behavior actually is
 
-A **cache behavior** binds a **path pattern** (e.g. `/images/*`, or `*` for "everything else") to a specific set of rules: which **origin** to use, which **HTTP methods** to allow (Note 07), how to handle **viewer access restrictions** (Note 08), what governs the **cache key** (Note 09), and which **response headers policy** applies (Note 10).
+A **cache behavior** binds a **path pattern** (e.g. `/images/*`, or `*` for "everything else") to a specific set of rules: which **origin** to use, which **HTTP methods** to allow (the [Allowed HTTP Methods](07-CloudFront-Allowed-HTTP-Methods.md) note), how to handle **viewer access restrictions** (the [Restrict Viewer Access](08-Default-Cache-Behavior-Restrict-Viewer-Access.md) note), what governs the **cache key** (the [Cache Key and Origin Requests](09-Default-Cache-Behavior-Cache-Key-and-Origin-Requests.md) note), and which **response headers policy** applies (the [Response Headers Policy](10-Default-Cache-Behavior-Response-Header-Policy.md) note).
 
 - Every distribution has exactly **one default cache behavior**, matching path pattern `*` — the catch-all applied to any request that doesn't match a more specific behavior.
 - Additional cache behaviors can be added for specific path patterns (e.g. `/api/*` routed to a different origin with no caching, while `/*` serves cached static assets) — evaluated in **priority order**, with the **first matching pattern** (most specific first) winning.
@@ -19,12 +19,12 @@ A **cache behavior** binds a **path pattern** (e.g. `/images/*`, or `*` for "eve
 
 | Setting | What it controls |
 |---|---|
-| **Viewer protocol policy** | Whether HTTP requests are allowed, redirected to HTTPS, or rejected entirely (covered fully with certificates in Note 05) |
-| **Allowed HTTP methods** | Which HTTP verbs CloudFront forwards to the origin (Note 07) |
-| **Cache key and origin requests** | What varies the cached copy (query strings, headers, cookies) — either via a legacy TTL-based model or the modern **Cache Policy** / **Origin Request Policy** objects (Note 09) |
+| **Viewer protocol policy** | Whether HTTP requests are allowed, redirected to HTTPS, or rejected entirely (covered fully with certificates in the [CloudFront Custom HTTPS](05-CloudFront-Custom-HTTPS.md) note) |
+| **Allowed HTTP methods** | Which HTTP verbs CloudFront forwards to the origin (the [Allowed HTTP Methods](07-CloudFront-Allowed-HTTP-Methods.md) note) |
+| **Cache key and origin requests** | What varies the cached copy (query strings, headers, cookies) — either via a legacy TTL-based model or the modern **Cache Policy** / **Origin Request Policy** objects (the [Cache Key and Origin Requests](09-Default-Cache-Behavior-Cache-Key-and-Origin-Requests.md) note) |
 | **Compress objects automatically** | Whether CloudFront automatically gzip/brotli-compresses eligible text-based responses at the edge, reducing transfer size |
-| **Response headers policy** | Add/override/remove specific HTTP response headers, e.g. security headers (Note 10) |
-| **Function associations** | CloudFront Functions / Lambda@Edge triggers at specific request/response lifecycle points (Note 11) |
+| **Response headers policy** | Add/override/remove specific HTTP response headers, e.g. security headers (the [Response Headers Policy](10-Default-Cache-Behavior-Response-Header-Policy.md) note) |
+| **Function associations** | CloudFront Functions / Lambda@Edge triggers at specific request/response lifecycle points (the [CloudFront Function Associations](11-CloudFront-Function-Associations.md) note) |
 
 ---
 
@@ -61,8 +61,8 @@ A request for `/images/logo.png` matches pattern 2 (more specific, evaluated bef
 
 - A **cache behavior** maps a path pattern to origin, HTTP method, cache-key, and response-header rules; every distribution has one mandatory **default** (`*`) behavior, plus optional path-specific ones evaluated in priority order.
 - **TTL settings** (Min/Max/Default) bound how long content is cached — Default TTL only applies when the origin sends no caching headers of its own.
-- Notes 07-11 each expand one specific setting living inside this cache-behavior object in depth.
-- Next: Note 05 — CloudFront Custom HTTPS, covering the **Viewer protocol policy** setting and custom domain certificates in full.
+- The [Allowed HTTP Methods](07-CloudFront-Allowed-HTTP-Methods.md), [Restrict Viewer Access](08-Default-Cache-Behavior-Restrict-Viewer-Access.md), [Cache Key and Origin Requests](09-Default-Cache-Behavior-Cache-Key-and-Origin-Requests.md), [Response Headers Policy](10-Default-Cache-Behavior-Response-Header-Policy.md), and [CloudFront Function Associations](11-CloudFront-Function-Associations.md) notes each expand one specific setting living inside this cache-behavior object in depth.
+- Next: the [CloudFront Custom HTTPS](05-CloudFront-Custom-HTTPS.md) note, covering the **Viewer protocol policy** setting and custom domain certificates in full.
 
 ### Sources
 - [Cache behavior settings — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/distribution-web-values-specify.html#DownloadDistValuesCacheBehavior)

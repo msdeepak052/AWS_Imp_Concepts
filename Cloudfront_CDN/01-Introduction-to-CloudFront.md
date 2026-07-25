@@ -23,7 +23,7 @@ A **Content Delivery Network (CDN)** solves this by **caching copies of your con
 | **Origin** | Where the real, authoritative content lives — an S3 bucket, an ALB, an EC2 instance, or any custom HTTP(S) endpoint |
 | **Edge location** | A physical CloudFront point of presence, geographically distributed, that caches content and serves it to nearby users |
 | **Distribution** | The CloudFront configuration object tying together one or more origins, cache behaviors, and settings — this is "a CloudFront" in practical, console terms |
-| **Cache behavior** | A rule set (path pattern → origin + caching/access settings) — every distribution has a **default** cache behavior, and can have additional path-pattern-specific ones (Notes 04, 08-10) |
+| **Cache behavior** | A rule set (path pattern → origin + caching/access settings) — every distribution has a **default** cache behavior, and can have additional path-pattern-specific ones (the [Default Cache Behavior Options](04-Default-Cache-Behavior-Options.md), [Restrict Viewer Access](08-Default-Cache-Behavior-Restrict-Viewer-Access.md), [Cache Key and Origin Requests](09-Default-Cache-Behavior-Cache-Key-and-Origin-Requests.md), and [Response Headers Policy](10-Default-Cache-Behavior-Response-Header-Policy.md) notes) |
 
 ---
 
@@ -51,10 +51,10 @@ The **first** request for a given piece of content from a given edge location is
 
 ## 4. Beyond just caching — what else CloudFront gives you
 
-- **HTTPS termination close to the user**, with lower TLS handshake latency than terminating directly at a distant origin (Note 05).
+- **HTTPS termination close to the user**, with lower TLS handshake latency than terminating directly at a distant origin (the [CloudFront Custom HTTPS](05-CloudFront-Custom-HTTPS.md) note).
 - **DDoS protection** — CloudFront (integrated with AWS Shield) absorbs a large amount of attack traffic at the edge, before it ever reaches your origin.
 - **Reduced origin load** — since most requests are served from cache, the origin (and its associated cost — e.g. S3 request charges, or ALB/EC2 compute) sees dramatically less traffic.
-- **Programmable edge logic** — CloudFront Functions and Lambda@Edge (Note 11) let you run custom code at the edge itself, before a request even reaches your origin.
+- **Programmable edge logic** — CloudFront Functions and Lambda@Edge (the [CloudFront Function Associations](11-CloudFront-Function-Associations.md) note) let you run custom code at the edge itself, before a request even reaches your origin.
 
 > 🎯 **Exam tip:** "reduce latency for users geographically distant from our origin" and "reduce load on our origin (S3/ALB/EC2)" are the two most common CloudFront-signaling phrases on SAA-C03 — almost any scenario combining "global users" + "static or semi-static content" points at CloudFront.
 
@@ -65,7 +65,7 @@ The **first** request for a given piece of content from a given edge location is
 - CloudFront caches content at globally distributed **edge locations**, serving most requests without ever reaching the **origin** — dramatically cutting latency and origin load for geographically distant users.
 - A **distribution** ties together one or more **origins** and **cache behaviors** — the core configuration unit covered throughout this folder.
 - Beyond caching, CloudFront also provides edge HTTPS termination, DDoS absorption, and programmable edge logic.
-- Next: Note 02 — AWS CloudFront Hands-On Lab 1, creating a real distribution in front of an S3 bucket.
+- Next: the [CloudFront Hands-On Lab 1 (S3 static site + CDN)](02-CloudFront-HandsOn-Lab1.md) note, creating a real distribution in front of an S3 bucket.
 
 ### Sources
 - [What is Amazon CloudFront? — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html)

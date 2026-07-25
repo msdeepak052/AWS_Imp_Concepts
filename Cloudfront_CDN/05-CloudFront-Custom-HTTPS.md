@@ -37,7 +37,7 @@ Every distribution gets a working `https://d1234abcdefgh.cloudfront.net` domain 
 
 ## 5. Viewer protocol policy — what happens to plain HTTP requests
 
-Back in the cache behavior (Note 04), **Viewer protocol policy** decides what CloudFront does with a request that arrives over plain HTTP:
+Back in the cache behavior (the [Default Cache Behavior Options](04-Default-Cache-Behavior-Options.md) note), **Viewer protocol policy** decides what CloudFront does with a request that arrives over plain HTTP:
 
 | Option | Behavior |
 |---|---|
@@ -51,7 +51,7 @@ Back in the cache behavior (Note 04), **Viewer protocol policy** decides what Cl
 
 ## 6. Origin-side HTTPS is a separate, independent setting
 
-Note 05's focus so far is the **viewer-to-CloudFront** leg. CloudFront **also** has an independent setting for the **CloudFront-to-origin** leg — **Origin Protocol Policy** (HTTP only / HTTPS only / Match viewer) — meaning a distribution can terminate HTTPS at the edge for viewers while still talking plain HTTP to an origin that doesn't support TLS at all (or vice versa) — the two legs of the connection are configured completely independently.
+This note's focus so far is the **viewer-to-CloudFront** leg. CloudFront **also** has an independent setting for the **CloudFront-to-origin** leg — **Origin Protocol Policy** (HTTP only / HTTPS only / Match viewer) — meaning a distribution can terminate HTTPS at the edge for viewers while still talking plain HTTP to an origin that doesn't support TLS at all (or vice versa) — the two legs of the connection are configured completely independently.
 
 ---
 
@@ -59,7 +59,7 @@ Note 05's focus so far is the **viewer-to-CloudFront** leg. CloudFront **also** 
 
 - Custom domain HTTPS needs **three pieces**: an ACM certificate **in `us-east-1`**, the domain added as an **Alternate Domain Name** on the distribution, and a DNS record (typically a Route 53 Alias) pointing at the distribution.
 - **Viewer protocol policy** controls how plain-HTTP viewer requests are handled; **Origin protocol policy** independently controls the CloudFront-to-origin leg — the two are decoupled.
-- Next: Note 06 — CloudFront Origin Access, securing the S3-origin path from Note 03 so the bucket is only reachable through CloudFront, not directly.
+- Next: the [CloudFront Origin Access](06-CloudFront-Origin-Access.md) note, securing the S3-origin path from the [CloudFront Origin Settings](03-CloudFront-Origin-Settings.md) note so the bucket is only reachable through CloudFront, not directly.
 
 ### Sources
 - [Using HTTPS with CloudFront — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cnames-https-dedicated-ip-or-sni.html)

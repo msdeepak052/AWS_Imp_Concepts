@@ -95,6 +95,12 @@ If you'd rather go straight to CloudWatch: **Configuration** tab → **Monitorin
 
 > 🧠 Every Lambda function automatically gets its own CloudWatch log group (named `/aws/lambda/<function-name>`) — this is possible because of the basic execution role from Section 2, which specifically grants permission to write there. No extra setup needed for basic logging.
 
+<img width="2557" height="1319" alt="image" src="https://github.com/user-attachments/assets/5fc172de-c16d-4758-9b15-929e5834203c" />
+
+<img width="2548" height="1352" alt="image" src="https://github.com/user-attachments/assets/24495bb8-7ef0-4c08-92be-c2e9c20b0eea" />
+
+<img width="2559" height="1347" alt="image" src="https://github.com/user-attachments/assets/ca80c5c6-4e25-4a0c-8212-a13cd568f602" />
+
 <img width="2548" height="1352" alt="image" src="https://github.com/user-attachments/assets/0c0d6b99-909e-45c9-9df6-530288558a74" />
 
 <img width="2548" height="1352" alt="image" src="https://github.com/user-attachments/assets/8292cc5f-63b6-4697-b4cb-8d51547683a9" />

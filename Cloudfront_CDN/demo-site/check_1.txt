@@ -1,0 +1,5 @@
+CF_URL="https://d3nqc6koi7yfhe.cloudfront.net"
+
+curl -s -D - "$CF_URL/get?id=1" -H "X-Demo-User: alice" | grep -iE "x-cache:|\"id\"|\"x-demo-user\""
+
+curl -s -D - "$CF_URL/get?id=2" -H "X-Demo-User: bob"   | grep -iE "x-cache:|\"id\"|\"x-demo-user\""

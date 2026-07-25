@@ -63,7 +63,7 @@ Lambda requires a **specific folder structure** inside a Python layer's zip: you
 1. **Lambda console** → **Create function** → **Author from scratch**.
 2. **Function name**: `layers-lab-demo`.
 3. **Runtime**: the **same** Python version selected in Section 4, Step 5 — a layer only attaches to functions using a compatible runtime.
-4. **Permissions**: **Create a new role with basic Lambda permissions**.
+4. **Permissions**: leave at the default (auto-creates a basic CloudWatch Logs execution role — the [Create Your First Lambda Function](05-Create-First-Lambda-Function-HandsOn.md) note's Section 2).
 5. **Create function**.
 6. Scroll down to the **Layers** section (below the code editor) → **Add a layer**.
 7. **Layer source**: **Custom layers** → select `greetings-layer` → **Version**: `1` → **Add**.

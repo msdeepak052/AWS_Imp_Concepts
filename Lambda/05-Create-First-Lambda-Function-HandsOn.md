@@ -28,10 +28,13 @@ flowchart LR
 2. **Author from scratch** (the default; the other two options, **Use a blueprint** and **Container image**, are covered in the [Lambda Blueprints](06-Lambda-Blueprints.md) and [Lambda Container Images](07-Lambda-Container-Images.md) notes).
 3. **Basic information**:
    - **Function name**: `hello-lambda-demo`.
-   - **Runtime**: pick the newest **Python 3.x** version in the dropdown (AWS periodically adds newer versions and marks old ones deprecated — always prefer the newest non-deprecated one offered, rather than memorizing a specific version number).
-   - **Architecture**: leave at **x86_64** (the default; **arm64** uses AWS Graviton processors and is usually cheaper/faster for compatible workloads, but not needed for this demo).
-4. **Permissions** → **Change default execution role** (expand it): leave at **Create a new role with basic Lambda permissions** — this auto-creates an IAM role that only allows writing logs to CloudWatch. The [Lambda Execution Role](08-Lambda-Execution-Role.md) note covers exactly what this role is and how to extend it.
-5. Leave **Advanced settings** collapsed (VPC, tags, etc. — not needed here).
+   - **Runtime**: pick the newest **Python 3.x** version in the dropdown — at the time of writing this is **Python 3.14** (AWS periodically adds newer versions and marks old ones deprecated, so always prefer the newest non-deprecated one offered, rather than memorizing a specific version number).
+   - **Permissions**: this section is now just informational text — *"By default, Lambda will create an execution role with permissions to upload logs to Amazon CloudWatch Logs."* There's no separate expandable control here anymore; picking a **different** role is done under **Additional settings** → **Custom execution role** (Step 5 below) if you ever need it. For this demo, leave it at the default.
+4. **Custom settings** — two toggles the console now shows directly on this page, both **off** by default:
+   - **Durable execution**: adds automatic failure recovery for stateful applications — a more advanced capability, not needed here.
+   - **EC2 capacity provider**: runs the function on your own chosen EC2 instance types instead of Lambda's default serverless compute.
+   - Leave both **off** — note the console's own warning here: **"Cannot add or remove after creation"**, so this is a real, one-time decision if you ever do need either later.
+5. **Additional settings** (collapsed by default) — this is where **function architecture** (x86_64 vs. arm64), a **custom execution role**, VPC, code signing, KMS key, and tags all now live. Leave this collapsed entirely for this demo — the defaults (x86_64 architecture, the auto-created basic execution role) are exactly what you want.
 6. **Create function**.
 
 ---

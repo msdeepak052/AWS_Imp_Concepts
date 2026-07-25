@@ -43,7 +43,7 @@ flowchart LR
 1. **Lambda console** → **Create function** → **Author from scratch**.
 2. **Function name**: `ec2-start-stop-automation`.
 3. **Runtime**: newest Python 3.x available.
-4. **Permissions**: **Create a new role with basic Lambda permissions** (same as the [Create Your First Lambda Function](05-Create-First-Lambda-Function-HandsOn.md) note — this alone isn't enough for EC2 access, which Section 5 adds next).
+4. **Permissions**: leave at the default (the console auto-creates a basic CloudWatch Logs execution role, exactly like the [Create Your First Lambda Function](05-Create-First-Lambda-Function-HandsOn.md) note's Section 2 — this alone isn't enough for EC2 access, which Section 5 adds next).
 5. **Create function**.
 6. Replace the code in `lambda_function.py` with:
    ```python

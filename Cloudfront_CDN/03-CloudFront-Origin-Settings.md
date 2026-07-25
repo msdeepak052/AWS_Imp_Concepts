@@ -57,6 +57,8 @@ Tuning these matters most for **slow-responding origins** (e.g. a backend doing 
 A single distribution isn't limited to one origin — you can configure **multiple origins** (e.g. one S3 bucket for static assets, one ALB for a dynamic API), then use **cache behaviors** (Note 04) with different **path patterns** to route different URL paths to different origins within the same distribution — e.g. `/api/*` → the ALB, everything else → the S3 bucket.
 
 ---
+<img width="2557" height="1328" alt="image" src="https://github.com/user-attachments/assets/ed60fe83-7165-48a0-bf4d-511193257e16" />
+
 
 ## 7. Recap
 

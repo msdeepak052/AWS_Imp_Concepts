@@ -47,6 +47,8 @@ A Blueprint doesn't create anything different from what "Author from scratch" pr
 7. **Create function**.
 8. The function opens with the blueprint's sample code already in the editor — read through it, adapt it to your actual requirement, then **Deploy** exactly like in note 05.
 
+<img width="2548" height="1352" alt="image" src="https://github.com/user-attachments/assets/d6f6726d-2704-484c-be1f-0fdadf912bac" />
+
 ---
 
 ## 5. When to use a Blueprint vs. Author from scratch

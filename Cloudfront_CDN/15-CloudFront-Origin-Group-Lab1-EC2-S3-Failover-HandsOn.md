@@ -98,7 +98,7 @@ Picking the same India-based Netflix-style session from the [Cache Key and Origi
 - The failover decision happens **entirely at the edge**, only on a Cache Miss, as a continuation of the [Cache Key and Origin Requests](09-Default-Cache-Behavior-Cache-Key-and-Origin-Requests.md) note's Leg 2 — the viewer only ever sees the final response, never an intermediate error (Section 3).
 - A common pattern: dynamic ALB/EC2 primary + static S3 fallback, giving visitors a graceful degraded experience instead of a raw error during an outage — best suited to manifest/HTML-shaped responses, not raw media bytes (Section 6).
 - Failover is evaluated **per-request**, based on response status codes — not a continuous background health check like an ALB target group's.
-- Next: the [Origin Group Geographical Failover Lab, Load Balancer](16-CloudFront-Origin-Group-Lab2-Geographical-Failover-LB-HandsOn.md) note, extending this pattern to two full ALB-backed origins in different Regions.
+- Next: the [Origin Group Failover hands-on demo](15.01-Origin-Group-Failover_Demo.md) — a hands-on demo proving this exact failover behavior live, with a single EC2 instance and the S3 static site from the [CloudFront Hands-On Lab 1 (S3 static site + CDN)](02-CloudFront-HandsOn-Lab1.md) note. Then the [Origin Group Geographical Failover Lab, Load Balancer](16-CloudFront-Origin-Group-Lab2-Geographical-Failover-LB-HandsOn.md) note, extending this pattern to two full ALB-backed origins in different Regions.
 
 ### Sources
 - [Optimizing high availability with CloudFront origin failover — AWS docs](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/high_availability_origin_failover.html)

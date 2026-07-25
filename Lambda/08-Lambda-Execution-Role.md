@@ -54,6 +54,8 @@ That's it — no S3 access, no DynamoDB access, no EC2 access. Any function that
 
 > ⚠️ **Least privilege matters here.** `AmazonS3ReadOnlyAccess` above grants read access to **every** S3 bucket in the account — fine for a quick demo, risky in production. A real function should get a **custom policy** scoped to only the specific bucket(s) and actions it actually needs (e.g. `s3:GetObject` on `arn:aws:s3:::my-specific-bucket/*` only) — the same least-privilege principle covered for other services elsewhere in this repo's `IAM` folder.
 
+<img width="2561" height="1345" alt="image" src="https://github.com/user-attachments/assets/f9eb752d-77e8-4d0e-9b57-6c3f4cc7b347" />
+
 ---
 
 ## 5. Execution role vs. resource-based policy — a commonly confused pair

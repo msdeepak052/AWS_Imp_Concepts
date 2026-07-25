@@ -28,11 +28,11 @@ Note 09 Section 2 introduced the **two-leg model**: Leg 1 (Viewer → Edge, the 
 
 ```mermaid
 flowchart LR
-    R["Incoming request"] --> L1{"Leg 1 - Cache Key check"}
+    V(("Viewer")) -->|"sends request"| L1{"Leg 1 - Cache Key check"}
     L1 -->|"Hit"| RHP["Response Headers Policy applied"]
     L1 -->|"Miss"| L2["Leg 2 - Origin Request Policy, fetch from origin"]
     L2 --> RHP
-    RHP --> V["Sent to viewer"]
+    RHP -->|"response returned"| V
 ```
 
 The important consequence: **the Response Headers Policy step runs on every single response, Hit or Miss alike** — it isn't part of what gets cached, it's applied fresh each time a response actually leaves the edge. That has a very practical effect: editing a Response Headers Policy's header value takes effect on the **very next request**, no invalidation (Note 18) required — unlike a change to the cached body itself, which only updates on a Miss or an explicit invalidation. [Note 10.01](10.01-Response-Header-Policy_Demo.md) Section 7 verifies this directly: a cached object still reports `X-Cache: Hit` after a policy edit, while its headers have already changed.

@@ -74,13 +74,15 @@ flowchart LR
 
 ## 3. Cache Policy — controlling the cache key
 
-A **Cache Policy** (attached to a cache behavior) explicitly declares which of three categories of request data should be included in the cache key:
+A **Cache Policy** (attached to a cache behavior) explicitly declares which of three categories of request data should be included in the cache key. These are the exact dropdown options CloudFront's **Create cache policy** console page (**CloudFront → Policies → Cache → Create cache policy**) gives you for each, under **Cache key settings**:
 
-| Category | Example |
-|---|---|
-| **Query strings** | None / all / an allow-list of specific parameter names / a deny-list — e.g. `res` and `lang` in the streaming example above |
-| **Headers** | None / an allow-list of specific header names (e.g. `Accept-Language`, or a custom `X-Resolution` header, to cache a different version per locale or quality level) |
-| **Cookies** | None / all / an allow-list of specific cookie names |
+| Category | Console options (exact dropdown values) | Example |
+|---|---|---|
+| **Headers** | `None` / `Include the following headers` | e.g. `Accept-Language`, or a custom `X-Resolution` header, to cache a different version per locale or quality level |
+| **Query strings** | `None` / `All` / `All query strings except` / `Include the following query strings` | e.g. `Include the following query strings` → `res`, `lang` in the streaming example above |
+| **Cookies** | `None` / `All` / `All cookies except` / `Include the following cookies` | e.g. a session/personalization cookie needing its own distinct cache entry per value |
+
+> 🧠 **Note the asymmetry:** Headers only ever get `None` or an explicit allow-list (`Include the following headers`) — there's no `All` option for headers in a cache policy, unlike query strings and cookies. This is a deliberate CloudFront limit: blindly keying on *every* header (many of which vary per-request for reasons that have nothing to do with content, like `User-Agent` or `Referer`) would fragment the cache into near-uselessness. If you genuinely need broad header-based forwarding, that's what the Origin Request Policy (Section 4) is for — it *can* forward `All` headers to the origin, independent of the cache key.
 
 Including `res` and `lang` in the cache key is exactly what makes Section 2's diagram correct — without it, Edge Location 1 and Edge Location 2 would both cache under the same key (`/watch/inception`) and could hand out mismatched quality/language to the next visitor who happens to hit that edge.
 

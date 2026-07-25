@@ -28,14 +28,31 @@ Note 09 Section 2 introduced the **two-leg model**: Leg 1 (Viewer → Edge, the 
 
 ```mermaid
 flowchart LR
-    V(("Viewer")) -->|"sends request"| L1{"Leg 1 - Cache Key check"}
-    L1 -->|"Hit"| RHP["Response Headers Policy applied"]
-    L1 -->|"Miss"| L2["Leg 2 - Origin Request Policy, fetch from origin"]
-    L2 --> RHP
+    V(("Viewer<br/>e.g. India - outside CloudFront entirely"))
+
+    subgraph EDGE["CloudFront Edge Location - e.g. Mumbai"]
+        L1{"Leg 1: Cache Key check"}
+        RHP["Response Headers Policy applied"]
+    end
+
+    subgraph ORIGIN["Origin - e.g. US, possibly far away"]
+        O["S3 / ALB / custom origin"]
+    end
+
+    V -->|"sends request"| L1
+    L1 -->|"Hit"| RHP
+    L1 -->|"Miss - Leg 2: Origin Request Policy"| O
+    O -->|"origin response returns to the edge"| RHP
     RHP -->|"response returned"| V
 ```
 
-The important consequence: **the Response Headers Policy step runs on every single response, Hit or Miss alike** — it isn't part of what gets cached, it's applied fresh each time a response actually leaves the edge. That has a very practical effect: editing a Response Headers Policy's header value takes effect on the **very next request**, no invalidation (Note 18) required — unlike a change to the cached body itself, which only updates on a Miss or an explicit invalidation. [Note 10.01](10.01-Response-Header-Policy_Demo.md) Section 7 verifies this directly: a cached object still reports `X-Cache: Hit` after a policy edit, while its headers have already changed.
+Three separate physical locations, three separate roles:
+
+- **Viewer** — outside CloudFront entirely, wherever the user actually is (India, in Note 09's running example).
+- **CloudFront Edge Location** — the nearby CloudFront point of presence (Mumbai). **Both** Leg 1's Cache Key check *and* the Response Headers Policy step happen here, right next to the viewer — which is exactly why a policy edit is fast to take effect: nothing has to travel back to a distant origin for it.
+- **Origin** — potentially on the other side of the world (US). Only reached on a Miss, via Leg 2's Origin Request Policy — and even then, the response still routes back through the *same* edge location for the Response Headers Policy step before reaching the viewer, it doesn't go straight from origin to viewer.
+
+The important consequence: **the Response Headers Policy step runs on every single response, Hit or Miss alike, entirely at the edge** — it isn't part of what gets cached, it's applied fresh each time a response actually leaves that edge location. That has a very practical effect: editing a Response Headers Policy's header value takes effect on the **very next request**, no invalidation (Note 18) required, and no round trip to the origin either — unlike a change to the cached body itself, which only updates on a Miss or an explicit invalidation. [Note 10.01](10.01-Response-Header-Policy_Demo.md) Section 7 verifies this directly: a cached object still reports `X-Cache: Hit` after a policy edit, while its headers have already changed.
 
 > ⚠️ Don't over-generalize that instant-update behavior to headers the **origin itself** sets. Those travel *with* the cached body — if S3 (or any origin) already sent a CORS or other header as part of a response CloudFront then cached, that header is frozen into that cached object until it expires or is invalidated, same as the body. Only headers added/overridden by CloudFront's *own* Response Headers Policy get the fresh-every-time treatment above. Section 5 below covers exactly this ambiguity for CORS specifically.
 

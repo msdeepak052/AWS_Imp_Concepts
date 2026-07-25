@@ -42,6 +42,9 @@ flowchart LR
 
 ---
 
+<img width="2551" height="1315" alt="image" src="https://github.com/user-attachments/assets/8a4ec145-1fbb-4619-ab28-17265fd7b081" />
+
+
 ## 3. The two modes
 
 | Mode | Behavior |

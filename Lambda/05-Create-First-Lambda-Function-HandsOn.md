@@ -71,7 +71,7 @@ flowchart LR
    }
    ```
 4. **Save**, then click **Test** again.
-5. The console shows an **Execution results** panel with: the returned value (`"message": "Hello, Deepak! ..."`), the **Duration**, **Billed Duration**, **Memory Used**, and a link to the invocation's logs.
+5. The console shows an **Execution results** panel with the returned value (`"message": "Hello, Deepak! ..."`) and the invocation's **Duration**, **Billed Duration**, and **Memory Used** — Section 5 below covers where the full logs for this invocation actually live now (the **Monitor** tab, not this panel).
 
 <img width="2548" height="1352" alt="image" src="https://github.com/user-attachments/assets/28013883-b6b3-4555-80ea-9e82ac2c0591" />
 
@@ -81,10 +81,19 @@ flowchart LR
 
 ## 5. View the logs
 
-1. In the Execution results panel, expand **Details** or click the **CloudWatch Logs** link.
-2. This opens the function's **log group** in CloudWatch — you'll see your `print("Received a request for: Deepak")` line, plus Lambda's own `START`/`END`/`REPORT` lines for that invocation (duration, memory used, whether it was a cold start).
+The function page's top-level tabs are **Code**, **Test**, **Monitor**, **Configuration**, **Aliases**, **Versions** — logs live under **Monitor**, not tucked inside the Test tab's result panel:
 
-> 🧠 Every Lambda function automatically gets its own CloudWatch log group (named `/aws/lambda/<function-name>`) — this is possible because of the basic execution role from Section 2, Step 4, which specifically grants permission to write there. No extra setup needed for basic logging.
+1. Click the **Monitor** tab.
+2. At the top, **CloudWatch metrics** shows graphs for **Invocations**, **Duration**, **Error count and success rate**, **Throttles**, **Total concurrent executions**, and **Recursive invocations** — a quick visual health check across all recent activity, with a **View CloudWatch logs** button in the top-right if you want the full CloudWatch console.
+3. Scroll down on the same **Monitor** tab to **CloudWatch Logs** — this is the fastest way to see an individual invocation's output without leaving the Lambda console at all:
+   - **Recent invocations**: a table listing each recent request's **Timestamp**, **RequestId**, **LogStream**, **DurationInMS**, **BilledDurationInMS**, **MemorySetInMB**, and **MemoryUsedInMB**. Click the ▶ next to any row to expand it and see that invocation's actual `print()` output inline.
+   - **Most expensive invocations in GB-seconds**: the same kind of table, sorted by cost (memory assigned × billed duration) — useful once you're optimizing rather than just debugging.
+   - **Failed invocations**: populated only when something actually errors.
+   - Click a row's **LogStream** link to jump straight into that specific stream in the full CloudWatch console if you need more context than the inline table shows.
+
+If you'd rather go straight to CloudWatch: **Configuration** tab → **Monitoring and operations tools** (in the left-hand list) → **Logging configuration** shows the exact **CloudWatch log group** name (`/aws/lambda/hello-lambda-demo`) as a clickable link.
+
+> 🧠 Every Lambda function automatically gets its own CloudWatch log group (named `/aws/lambda/<function-name>`) — this is possible because of the basic execution role from Section 2, which specifically grants permission to write there. No extra setup needed for basic logging.
 
 <img width="2548" height="1352" alt="image" src="https://github.com/user-attachments/assets/0c0d6b99-909e-45c9-9df6-530288558a74" />
 

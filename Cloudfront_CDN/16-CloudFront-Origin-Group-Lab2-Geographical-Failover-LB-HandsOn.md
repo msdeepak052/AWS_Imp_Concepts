@@ -16,10 +16,28 @@ The [Origin Group Failover Lab, EC2/S3](15-CloudFront-Origin-Group-Lab1-EC2-S3-F
 
 ```mermaid
 flowchart TB
-    U((Viewer)) --> CF["CloudFront Distribution"]
-    CF --> OG["Origin Group"]
-    OG -->|Primary| ALB1["ALB — ap-south-1<br/>fronting its own ASG"]
-    OG -.Failover.-> ALB2["ALB — ap-southeast-1<br/>fronting its own ASG"]
+    U((Viewer — e.g. India))
+
+    subgraph EDGE["CloudFront Edge Location — e.g. Mumbai"]
+        CK["Cache Key check — Cache Key and Origin Requests note, Leg 1"]
+        OG{"Origin Group — try Primary first"}
+    end
+
+    subgraph PRIMARY["Primary Region — ap-south-1"]
+        ALB1["ALB fronting its own ASG"]
+    end
+
+    subgraph SECONDARY["Secondary Region — ap-southeast-1 (DR)"]
+        ALB2["ALB fronting its own ASG"]
+    end
+
+    U --> CK
+    CK -->|"Miss"| OG
+    OG -->|"Primary request"| ALB1
+    ALB1 -->|"5xx, matches failover criteria"| OG
+    OG -.->|"Failover retry, same request"| ALB2
+    ALB1 -->|"Healthy — served directly"| U
+    ALB2 -->|"200 — live application, full functionality"| U
 ```
 
 Both Regions run a **complete, independent copy** of the application stack — this is meaningfully more expensive and operationally heavier than the [Origin Group Failover Lab, EC2/S3](15-CloudFront-Origin-Group-Lab1-EC2-S3-Failover-HandsOn.md) note's pattern (two full environments to deploy, patch, and keep in sync), which is exactly why it's reserved for workloads where a true multi-Region active/standby posture is actually justified.
@@ -44,7 +62,38 @@ Both Regions run a **complete, independent copy** of the application stack — t
 
 ---
 
-## 5. When this pattern is worth the cost, vs. Route 53 failover
+## 5. Real-world walkthrough: applying this to the Cache Key and Origin Requests Netflix-style session
+
+The India-based Netflix-style session from the [Cache Key and Origin Requests](09-Default-Cache-Behavior-Cache-Key-and-Origin-Requests.md) note's Section 3 assumed a single US backend — this lab makes that backend properly redundant. Picture the same session continuing during a full `ap-south-1` outage:
+
+```mermaid
+sequenceDiagram
+    participant U as Viewer (India)
+    participant E as CloudFront Edge — Mumbai
+    participant P as Primary ALB — ap-south-1
+    participant S as Secondary ALB — ap-southeast-1 (DR)
+
+    Note over U,S: Stage 2 — Login, mid-session, ap-south-1 suffers a full Regional outage
+    U->>E: POST /api/login
+    E->>P: Origin Group tries primary first
+    P--xE: Timeout / 503 — entire Region unreachable
+    E->>S: Automatic failover retry, same request
+    S-->>E: 200 OK — auth token issued from the DR Region
+    E-->>U: Login succeeds, viewer never sees the outage
+
+    Note over U,S: Stage 3 — Search, next request, same failed-over path
+    U->>E: GET /api/search?q=Inception&lang=hi
+    E->>S: Origin Group already knows ap-south-1 failed this specific request type — but retries primary first again, per-request, not sticky
+    Note over E,P: If ap-south-1 is still down, this fails again and falls through to ap-southeast-1 as before
+    S-->>E: 200 OK — personalized results from the DR Region
+    E-->>U: Search results served normally
+```
+
+The viewer experiences **zero visible disruption** beyond, at most, a slightly slower individual request during the failover retry itself — a meaningfully stronger guarantee than the [Origin Group Failover Lab, EC2/S3](15-CloudFront-Origin-Group-Lab1-EC2-S3-Failover-HandsOn.md) note's static fallback, which could only ever hand back a generic "try again later" page for genuinely dynamic stages like login and search.
+
+---
+
+## 6. When this pattern is worth the cost, vs. Route 53 failover
 
 | | CloudFront Origin Group failover (this note) | Route 53 failover routing (`Route53` folder) |
 |---|---|---|
@@ -56,9 +105,10 @@ Both Regions run a **complete, independent copy** of the application stack — t
 
 ---
 
-## 6. Recap
+## 7. Recap
 
 - This lab's Origin Group uses **two full, independently-running ALB-backed environments** in different Regions — genuine multi-Region DR, not a static fallback (the [Origin Group Failover Lab, EC2/S3](15-CloudFront-Origin-Group-Lab1-EC2-S3-Failover-HandsOn.md) note's simpler pattern).
+- The failover retry happens **within the same edge-location request**, per-request, with no sticky state — the primary is tried again first on the very next request regardless of the last outcome (Section 5).
 - CloudFront's per-request, immediate failover (bound to actual response status codes) contrasts with Route 53 failover routing's DNS-TTL-bound cadence — the two operate at different layers and are often combined.
 - This closes the two-lab Origin Group series (the [Origin Group Failover Lab, EC2/S3](15-CloudFront-Origin-Group-Lab1-EC2-S3-Failover-HandsOn.md) note and this note). Next: the [CloudFront Error Pages](17-CloudFront-Error-Pages.md) note, customizing what viewers actually see when even failover doesn't resolve an error.
 

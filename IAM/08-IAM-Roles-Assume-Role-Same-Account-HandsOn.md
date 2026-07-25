@@ -82,6 +82,471 @@ sequenceDiagram
 ```
 
 ---
+This is one of the most common enterprise IAM patterns. Let's implement it from scratch exactly as a company would.
+
+---
+
+# Scenario
+
+**Developer (Deepak)**
+
+Daily work:
+
+* View EC2
+* View S3
+* View CloudWatch
+
+Monthly work:
+
+* Deploy infrastructure
+* Modify IAM
+* Delete resources
+
+Instead of giving permanent admin access, we'll implement:
+
+```text
+                    AWS Account
++-----------------------------------------------------------+
+
+      IAM User (Deepak)
+              │
+              │ Permanent Credentials
+              ▼
+      ReadOnly Permissions
+              │
+              │ sts:AssumeRole
+              ▼
+      Admin Role (1-hour temporary credentials)
+              │
+              ▼
+        Full AWS Access
+
++-----------------------------------------------------------+
+```
+
+---
+
+# Step 1: Create IAM User
+
+IAM → Users
+
+Create user
+
+```
+deepak
+```
+
+Do **NOT** attach AdministratorAccess.
+
+---
+
+# Step 2: Give Daily Permissions
+
+Attach
+
+```
+ReadOnlyAccess
+```
+
+or a custom policy like
+
+```json
+{
+  "Version":"2012-10-17",
+  "Statement":[
+    {
+      "Effect":"Allow",
+      "Action":[
+        "ec2:Describe*",
+        "s3:Get*",
+        "cloudwatch:Get*",
+        "cloudwatch:List*"
+      ],
+      "Resource":"*"
+    }
+  ]
+}
+```
+
+Now Deepak can
+
+✅ View EC2
+
+✅ View S3
+
+❌ Cannot delete
+
+❌ Cannot create
+
+---
+
+# Step 3: Create Admin Role
+
+IAM
+
+Roles
+
+Create Role
+
+Choose
+
+```
+AWS Account
+```
+
+Current Account
+
+Exactly like your screenshot.
+
+---
+
+# Step 4: Trust Policy
+
+AWS creates something similar to
+
+```json
+{
+    "Version":"2012-10-17",
+    "Statement":[
+        {
+            "Effect":"Allow",
+            "Principal":{
+                "AWS":"arn:aws:iam::<ACCOUNT_ID>:root"
+            },
+            "Action":"sts:AssumeRole"
+        }
+    ]
+}
+```
+
+Better practice is to trust only the specific IAM user (or a group/role), not the whole account:
+
+```json
+{
+  "Version":"2012-10-17",
+  "Statement":[
+    {
+      "Effect":"Allow",
+      "Principal":{
+        "AWS":"arn:aws:iam::<ACCOUNT_ID>:user/deepak"
+      },
+      "Action":"sts:AssumeRole"
+    }
+  ]
+}
+```
+
+Even better in production is to trust a developer role rather than an individual user.
+
+---
+
+# Step 5: Attach Administrator Policy
+
+Attach
+
+```
+AdministratorAccess
+```
+
+Now the role looks like
+
+```text
+AdminRole
+
+Trust Policy
+----------------
+Deepak can assume me
+
+Permission Policy
+----------------
+AdministratorAccess
+```
+
+---
+
+# Step 6: Allow Deepak to Assume the Role
+
+This is the step many people forget.
+
+Deepak still cannot assume the role.
+
+Why?
+
+Because his IAM user needs permission to call
+
+```
+sts:AssumeRole
+```
+
+Attach this policy to the IAM user:
+
+```json
+{
+    "Version":"2012-10-17",
+    "Statement":[
+        {
+            "Effect":"Allow",
+            "Action":"sts:AssumeRole",
+            "Resource":"arn:aws:iam::<ACCOUNT_ID>:role/AdminRole"
+        }
+    ]
+}
+```
+
+Now we have both sides configured:
+
+```
+User -------------can call------------> AssumeRole
+
+Role -------------trusts--------------> User
+```
+
+Both are required.
+
+---
+
+# Step 7: Login Normally
+
+Deepak logs into AWS Console.
+
+He sees
+
+```
+EC2
+S3
+CloudWatch
+```
+
+Only ReadOnly access.
+
+Trying
+
+```
+Delete EC2
+```
+
+fails.
+
+---
+
+# Step 8: Need Admin Access
+
+Click
+
+```
+Account Name
+↓
+
+Switch Role
+```
+
+Enter
+
+```
+Account ID
+
+339712902352
+
+Role Name
+
+AdminRole
+```
+
+Click
+
+```
+Switch Role
+```
+
+AWS performs
+
+```text
+STS AssumeRole
+```
+
+---
+
+# What Happens Internally?
+
+```
+Deepak Logs In
+
+        │
+        ▼
+
+Long-Term Credentials
+
+        │
+        │ STS AssumeRole
+        ▼
+
+AWS STS
+
+        │
+
+Creates
+
+Temporary Credentials
+
+Access Key
+
+Secret Key
+
+Session Token
+
+Expires in 1 hour
+
+        │
+
+        ▼
+
+Admin Role
+```
+
+Deepak is now Admin.
+
+---
+
+# Step 9: Verify
+
+Now he can
+
+```
+Delete EC2
+
+Create IAM
+
+Modify VPC
+
+Delete S3
+
+Everything
+```
+
+because the active identity is now
+
+```
+AdminRole
+```
+
+not the IAM user.
+
+---
+
+# Step 10: Session Expires
+
+After 1 hour
+
+AWS deletes the temporary credentials.
+
+Deepak automatically goes back to
+
+```
+ReadOnly User
+```
+
+No administrator access remains.
+
+---
+
+# CLI Version
+
+Login as the IAM user
+
+```bash
+aws configure
+```
+
+Then
+
+```bash
+aws sts assume-role \
+--role-arn arn:aws:iam::339712902352:role/AdminRole \
+--role-session-name DeepakAdmin
+```
+
+AWS returns
+
+```json
+{
+  "Credentials": {
+    "AccessKeyId": "...",
+    "SecretAccessKey": "...",
+    "SessionToken": "...",
+    "Expiration": "2026-07-26T12:30:00Z"
+  }
+}
+```
+
+Use those temporary credentials:
+
+```bash
+export AWS_ACCESS_KEY_ID=...
+export AWS_SECRET_ACCESS_KEY=...
+export AWS_SESSION_TOKEN=...
+```
+
+Now every AWS CLI command runs as **AdminRole**.
+
+Verify with:
+
+```bash
+aws sts get-caller-identity
+```
+
+Before assuming:
+
+```
+arn:aws:iam::339712902352:user/deepak
+```
+
+After assuming:
+
+```
+arn:aws:sts::339712902352:assumed-role/AdminRole/DeepakAdmin
+```
+
+Notice the identity changes from an IAM user to an assumed role.
+
+---
+
+# End-to-End Permission Flow
+
+```text
+                +----------------------------------+
+                |          IAM User                |
+                |            Deepak                |
+                |----------------------------------|
+                | ReadOnlyAccess                   |
+                | sts:AssumeRole(AdminRole)        |
+                +---------------+------------------+
+                                |
+                                | 1. Calls STS AssumeRole
+                                |
+                                ▼
+                    +-----------------------------+
+                    |        AWS STS              |
+                    |-----------------------------|
+                    | Validates:                  |
+                    | ✓ User has sts:AssumeRole   |
+                    | ✓ Role trusts the user      |
+                    +---------------+-------------+
+                                    |
+                                    | 2. Issues temporary credentials
+                                    ▼
+                    +-----------------------------+
+                    |         AdminRole           |
+                    |-----------------------------|
+                    | AdministratorAccess         |
+                    +---------------+-------------+
+                                    |
+                                    ▼
+                             All AWS Resources
+```
+
+This pattern—**a low-privilege identity that temporarily assumes a high-privilege role via AWS STS**—is the standard approach used in enterprises because it enforces least privilege, provides temporary credentials, and improves auditability through CloudTrail.
+
+---
 
 ## 6. Recap
 

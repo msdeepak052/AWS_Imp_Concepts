@@ -73,6 +73,10 @@ flowchart LR
 4. **Save**, then click **Test** again.
 5. The console shows an **Execution results** panel with: the returned value (`"message": "Hello, Deepak! ..."`), the **Duration**, **Billed Duration**, **Memory Used**, and a link to the invocation's logs.
 
+<img width="2548" height="1352" alt="image" src="https://github.com/user-attachments/assets/28013883-b6b3-4555-80ea-9e82ac2c0591" />
+
+<img width="2548" height="1352" alt="image" src="https://github.com/user-attachments/assets/accc49b7-f638-46bb-aaa8-b10ff2054608" />
+
 ---
 
 ## 5. View the logs
@@ -81,6 +85,10 @@ flowchart LR
 2. This opens the function's **log group** in CloudWatch — you'll see your `print("Received a request for: Deepak")` line, plus Lambda's own `START`/`END`/`REPORT` lines for that invocation (duration, memory used, whether it was a cold start).
 
 > 🧠 Every Lambda function automatically gets its own CloudWatch log group (named `/aws/lambda/<function-name>`) — this is possible because of the basic execution role from Section 2, Step 4, which specifically grants permission to write there. No extra setup needed for basic logging.
+
+<img width="2548" height="1352" alt="image" src="https://github.com/user-attachments/assets/0c0d6b99-909e-45c9-9df6-530288558a74" />
+
+<img width="2548" height="1352" alt="image" src="https://github.com/user-attachments/assets/8292cc5f-63b6-4697-b4cb-8d51547683a9" />
 
 ---
 

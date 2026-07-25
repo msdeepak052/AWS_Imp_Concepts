@@ -48,7 +48,7 @@ Both Regions run a **complete, independent copy** of the application stack — t
 
 1. Deploy (or assume already deployed) two independent ALB + ASG stacks, one in each Region — e.g. `ap-south-1` (primary) and `ap-southeast-1` (secondary/DR).
 2. **CloudFront console** → distribution → **Origins** → add both ALBs as **custom origins** (the [CloudFront Origin Settings](03-CloudFront-Origin-Settings.md) note).
-3. **Origin groups** → **Create origin group** → **Primary**: `ap-south-1` ALB. **Secondary**: `ap-southeast-1` ALB. **Failover criteria**: `500`, `502`, `503`, `504`.
+3. **Origin groups** → **Create origin group** → add both ALBs via the **Choose origins to add to group** dropdown + **Add**. Role is determined by **list position**, not a separate field — use the **▲/▼** arrows so the `ap-south-1` ALB is listed at position **1** (the console labels it **"(primary)"**) and the `ap-southeast-1` ALB is at position **2**. **Failover criteria**: `500`, `502`, `503`, `504`. **Origin selection criteria**: leave at **Default**.
 4. Cache behavior → **Origin or origin group** → select the origin group → **Save changes**.
 
 ---

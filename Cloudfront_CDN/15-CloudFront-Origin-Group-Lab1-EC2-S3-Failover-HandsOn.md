@@ -58,10 +58,11 @@ flowchart TB
 
 1. **CloudFront console** → distribution → **Origins** tab → confirm both origins already exist: the ALB (primary) and the S3 bucket (secondary, with OAC configured per the [CloudFront Origin Access](06-CloudFront-Origin-Access.md) note if it should stay private, or public if serving as a plain static fallback).
 2. **Origin groups** tab → **Create origin group**.
-3. **Primary origin**: the ALB. **Secondary origin**: the S3 bucket.
+3. **Origins**: add the ALB and the S3 bucket via the **Choose origins to add to group** dropdown + **Add**. There's no separate "Primary"/"Secondary" field — role is determined purely by **list position**: whichever origin ends up listed as **1** (labeled **"(primary)"** by the console) is the primary, and **2** is the secondary. Use the **▲/▼** arrows next to each entry to reorder them until the ALB is at position **1** and the S3 bucket is at **2**.
 4. **Failover criteria**: select the HTTP status codes that should trigger failover — typically `500`, `502`, `503`, `504` (server-side error codes indicating the primary is unhealthy or unreachable).
-5. **Create origin group**.
-6. Go to the relevant **cache behavior** → **Origin or origin group** → select the newly-created origin group instead of a single origin → **Save changes**.
+5. **Origin selection criteria**: leave at **Default**.
+6. **Create origin group**.
+7. Go to the relevant **cache behavior** → **Origin or origin group** → select the newly-created origin group instead of a single origin → **Save changes**.
 
 ---
 

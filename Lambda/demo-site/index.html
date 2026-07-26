@@ -42,10 +42,10 @@
     margin-bottom: 28px;
     font-variant-numeric: tabular-nums;
   }
-  .field { background:#0F1111; border:1px solid #2b3542; border-radius:8px; padding:14px 16px; margin-bottom: 20px; }
+  .field { background:#0F1111; border:1px solid #2b3542; border-radius:8px; padding:14px 16px; margin-bottom: 14px; }
   .field .label { color:#9AA5B1; font-size:11px; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
-  .field .value { color:#fff; font-size:14px; font-family:Consolas,Monaco,monospace; word-break:break-all; }
-  .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom: 20px; }
+  .field .value { color:#fff; font-size:13px; font-family:Consolas,Monaco,monospace; word-break:break-all; }
+  .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin: 20px 0; }
   button {
     border: none; border-radius: 8px; padding: 16px 0;
     font-size: 16px; font-weight: 700; letter-spacing: 1px;
@@ -69,12 +69,16 @@
   <div class="card">
     <span class="badge">Lambda + API Gateway Control Panel</span>
     <h1>DevopsWith<span>Deepak</span> - Lambda</h1>
-    <div class="subtitle">Static S3 website &rarr; API Gateway &rarr; Lambda &rarr; EC2 start/stop automation</div>
+    <div class="subtitle">Static S3 website &rarr; two separate API Gateway HTTP APIs &rarr; two Lambda functions &rarr; EC2 start/stop</div>
     <div class="clock" id="clock">--:--:--</div>
 
     <div class="field">
-      <div class="label">API Gateway Invoke URL</div>
-      <div class="value" id="apiUrlDisplay">EDIT_ME: paste your invoke URL into the API_BASE_URL constant below</div>
+      <div class="label">Start API Endpoint</div>
+      <div class="value" id="startUrlDisplay"></div>
+    </div>
+    <div class="field">
+      <div class="label">Stop API Endpoint</div>
+      <div class="value" id="stopUrlDisplay"></div>
     </div>
 
     <div class="btn-row">
@@ -82,17 +86,19 @@
       <button id="stopBtn">Stop Instance</button>
     </div>
 
-    <div id="status">Ready. Click a button to call the API Gateway endpoint.</div>
+    <div id="status">Ready. Click a button to call its API Gateway endpoint.</div>
 
-    <footer>Every click here fires a real GET request to API Gateway, which invokes a real Lambda function, which calls real EC2 start_instances/stop_instances.</footer>
+    <footer>Every click here fires a real GET request to a dedicated API Gateway HTTP API, which invokes a real Lambda function, which calls real EC2 start_instances/stop_instances.</footer>
   </div>
 
   <script>
-    // Replace with your own HTTP API invoke URL from Section 8, e.g.
-    // "https://abc123xyz.execute-api.ap-south-1.amazonaws.com"
-    const API_BASE_URL = "https://REPLACE_WITH_YOUR_INVOKE_URL";
+    // Replace with your own two invoke URLs, e.g.
+    // "https://abc123.execute-api.ap-south-1.amazonaws.com/default/lambda-start-ec2-instance"
+    const START_URL = "https://REPLACE_WITH_YOUR_START_INVOKE_URL";
+    const STOP_URL = "https://REPLACE_WITH_YOUR_STOP_INVOKE_URL";
 
-    document.getElementById('apiUrlDisplay').textContent = API_BASE_URL;
+    document.getElementById('startUrlDisplay').textContent = START_URL;
+    document.getElementById('stopUrlDisplay').textContent = STOP_URL;
 
     function tick() {
       const d = new Date();
@@ -102,27 +108,27 @@
     tick();
     setInterval(tick, 1000);
 
-    async function callApi(action, buttonEl) {
+    async function callApi(url) {
       const statusEl = document.getElementById('status');
       const startBtn = document.getElementById('startBtn');
       const stopBtn = document.getElementById('stopBtn');
       startBtn.disabled = true;
       stopBtn.disabled = true;
-      statusEl.textContent = `Calling ${API_BASE_URL}/${action} ...`;
+      statusEl.textContent = `Calling ${url} ...`;
       try {
-        const response = await fetch(`${API_BASE_URL}/${action}`, { method: 'GET' });
+        const response = await fetch(url, { method: 'GET' });
         const text = await response.text();
         statusEl.textContent = `[${response.status}] ${text}`;
       } catch (err) {
-        statusEl.textContent = `Request failed: ${err.message} (check CORS config and invoke URL)`;
+        statusEl.textContent = `Request failed: ${err.message} (check the CORS checkbox and the invoke URL)`;
       } finally {
         startBtn.disabled = false;
         stopBtn.disabled = false;
       }
     }
 
-    document.getElementById('startBtn').addEventListener('click', () => callApi('start'));
-    document.getElementById('stopBtn').addEventListener('click', () => callApi('stop'));
+    document.getElementById('startBtn').addEventListener('click', () => callApi(START_URL));
+    document.getElementById('stopBtn').addEventListener('click', () => callApi(STOP_URL));
   </script>
 </body>
 </html>

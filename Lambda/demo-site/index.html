@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevopsWithDeepak - Lambda EC2 Control Panel</title>
+<style>
+  :root { --aws-orange:#FF9900; --aws-dark:#131A22; --aws-darker:#0F1111; --aws-text:#E9ECEF; --green:#2ECC71; --red:#E74C3C; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    background: radial-gradient(circle at top, #1B2430, var(--aws-darker));
+    color: var(--aws-text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: var(--aws-dark);
+    border: 1px solid #2b3542;
+    border-top: 4px solid var(--aws-orange);
+    border-radius: 12px;
+    max-width: 640px; width: 100%;
+    padding: 36px 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .badge {
+    display: inline-block;
+    background: var(--aws-orange);
+    color: #131A22;
+    font-weight: 700; font-size: 12px; letter-spacing: 1px;
+    padding: 6px 14px; border-radius: 999px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  h1 { font-size: 28px; margin-bottom: 4px; }
+  h1 span { color: var(--aws-orange); }
+  .subtitle { color:#9AA5B1; margin-bottom:28px; font-size:14px; }
+  .clock {
+    font-size: 34px; font-weight: 700;
+    color: var(--aws-orange); letter-spacing: 2px;
+    margin-bottom: 28px;
+    font-variant-numeric: tabular-nums;
+  }
+  .field { background:#0F1111; border:1px solid #2b3542; border-radius:8px; padding:14px 16px; margin-bottom: 20px; }
+  .field .label { color:#9AA5B1; font-size:11px; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; }
+  .field .value { color:#fff; font-size:14px; font-family:Consolas,Monaco,monospace; word-break:break-all; }
+  .btn-row { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom: 20px; }
+  button {
+    border: none; border-radius: 8px; padding: 16px 0;
+    font-size: 16px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer;
+    color: #0F1111; transition: transform 0.1s ease, opacity 0.2s ease;
+  }
+  button:hover { opacity: 0.9; }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #startBtn { background: var(--green); }
+  #stopBtn { background: var(--red); color: #fff; }
+  #status {
+    background:#0F1111; border:1px solid #2b3542; border-radius:8px;
+    padding:14px 16px; font-size:13px; font-family:Consolas,Monaco,monospace;
+    min-height: 20px; color: #9AA5B1;
+  }
+  footer { margin-top:24px; text-align:center; color:#5C6773; font-size:12px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">Lambda + API Gateway Control Panel</span>
+    <h1>DevopsWith<span>Deepak</span> - Lambda</h1>
+    <div class="subtitle">Static S3 website &rarr; API Gateway &rarr; Lambda &rarr; EC2 start/stop automation</div>
+    <div class="clock" id="clock">--:--:--</div>
+
+    <div class="field">
+      <div class="label">API Gateway Invoke URL</div>
+      <div class="value" id="apiUrlDisplay">EDIT_ME: paste your invoke URL into the API_BASE_URL constant below</div>
+    </div>
+
+    <div class="btn-row">
+      <button id="startBtn">Start Instance</button>
+      <button id="stopBtn">Stop Instance</button>
+    </div>
+
+    <div id="status">Ready. Click a button to call the API Gateway endpoint.</div>
+
+    <footer>Every click here fires a real GET request to API Gateway, which invokes a real Lambda function, which calls real EC2 start_instances/stop_instances.</footer>
+  </div>
+
+  <script>
+    // Replace with your own HTTP API invoke URL from Section 8, e.g.
+    // "https://abc123xyz.execute-api.ap-south-1.amazonaws.com"
+    const API_BASE_URL = "https://REPLACE_WITH_YOUR_INVOKE_URL";
+
+    document.getElementById('apiUrlDisplay').textContent = API_BASE_URL;
+
+    function tick() {
+      const d = new Date();
+      const pad = (n) => (n < 10 ? '0' + n : n);
+      document.getElementById('clock').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+    }
+    tick();
+    setInterval(tick, 1000);
+
+    async function callApi(action, buttonEl) {
+      const statusEl = document.getElementById('status');
+      const startBtn = document.getElementById('startBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      startBtn.disabled = true;
+      stopBtn.disabled = true;
+      statusEl.textContent = `Calling ${API_BASE_URL}/${action} ...`;
+      try {
+        const response = await fetch(`${API_BASE_URL}/${action}`, { method: 'GET' });
+        const text = await response.text();
+        statusEl.textContent = `[${response.status}] ${text}`;
+      } catch (err) {
+        statusEl.textContent = `Request failed: ${err.message} (check CORS config and invoke URL)`;
+      } finally {
+        startBtn.disabled = false;
+        stopBtn.disabled = false;
+      }
+    }
+
+    document.getElementById('startBtn').addEventListener('click', () => callApi('start'));
+    document.getElementById('stopBtn').addEventListener('click', () => callApi('stop'));
+  </script>
+</body>
+</html>

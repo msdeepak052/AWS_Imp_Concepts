@@ -133,7 +133,7 @@ This "trigger it, then independently verify the actual AWS resource changed" hab
 
 ## 8. Where this goes next
 
-Right now, this function only runs when you manually click **Test** — not useful as *automation* yet. The [Lambda Triggers](10-Lambda-Triggers.md) note covers how to make this run automatically on a **schedule** (e.g. stop every day at 8 PM, start every day at 8 AM) using an EventBridge Scheduler rule as the trigger, with zero code changes needed to this function.
+Right now, this function only runs when you manually click **Test** — not useful as *automation* yet. The [Lambda Triggers](10-Lambda-Triggers.md) note covers how to make this run automatically on a **schedule** (e.g. stop every day at 8 PM, start every day at 8 AM) using an EventBridge Scheduler rule as the trigger, with zero code changes needed to this function. The [EC2 Start/Stop Automation demo](09-10.01-EC2-Start-Stop-Automation_Demo.md) takes this further still — a themed EC2 status page, two separate start/stop functions, an API Gateway HTTP API in front of them, and a real S3-hosted web page with clickable buttons.
 
 ---
 

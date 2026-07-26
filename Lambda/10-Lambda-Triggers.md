@@ -77,7 +77,7 @@ The [Lambda EC2 Automation hands-on demo](09-Lambda-EC2-Automation-HandsOn.md) e
 - **Push-model** sources (S3, API Gateway, SNS, EventBridge) call Lambda directly and need a resource-based policy allowing it.
 - **Poll-based** sources (SQS, DynamoDB Streams, Kinesis) don't call Lambda at all — Lambda's own **event source mapping** continuously polls them instead.
 - Always check the actual **shape** of the event a given trigger delivers — it isn't automatically the same JSON you used for manual testing.
-- Next: the [Introduction to Amazon Q](11-Introduction-to-Amazon-Q.md) note, covering AWS's AI assistant — including where it shows up while you're writing Lambda code.
+- Next: the [EC2 Start/Stop Automation demo](09-10.01-EC2-Start-Stop-Automation_Demo.md), putting a **push-model** trigger (API Gateway) to real use — two Lambda functions wired to HTTP routes, called from a real S3-hosted web page. Then the [Introduction to Amazon Q](11-Introduction-to-Amazon-Q.md) note, covering AWS's AI assistant — including where it shows up while you're writing Lambda code.
 
 ### Sources
 - [Using AWS Lambda with other services — AWS docs](https://docs.aws.amazon.com/lambda/latest/dg/lambda-services.html)

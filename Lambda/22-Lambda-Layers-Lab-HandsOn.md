@@ -43,6 +43,31 @@ Lambda requires the same **`python/`** top-level folder structure inside a Pytho
 
 > 🧠 `requests` and its dependencies happen to be **pure Python** — no compiled C extensions — so installing them on any OS produces files that work on Lambda's Amazon Linux runtime without any extra flags. This is *not* true of every package: something like `pandas` or `numpy` includes compiled binaries specific to an operating system and CPU architecture, and would need `pip install --platform manylinux2014_x86_64 --only-binary=:all:`-style flags to cross-compile correctly for Lambda from, say, a Windows or macOS machine. Worth remembering for the exam: a Layer works for **any** dependency, but binary/compiled ones need extra care that pure-Python ones like this ones don't.
 
+```bash
+deepakrk@dkrullzzz:/run/media/deepakrk/Local Drive/Study/AWS-SAA-C03/AWS_Imp_Concepts
+➜ pip install requests -t python/
+Collecting requests
+  Using cached requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+Collecting charset_normalizer<4,>=2 (from requests)
+  Using cached charset_normalizer-3.4.9-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (41 kB)
+Collecting idna<4,>=2.5 (from requests)
+  Using cached idna-3.18-py3-none-any.whl.metadata (6.1 kB)
+Collecting urllib3<3,>=1.26 (from requests)
+  Using cached urllib3-2.7.0-py3-none-any.whl.metadata (6.9 kB)
+Collecting certifi>=2023.5.7 (from requests)
+  Using cached certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+Using cached charset_normalizer-3.4.9-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (223 kB)
+Using cached idna-3.18-py3-none-any.whl (65 kB)
+Using cached urllib3-2.7.0-py3-none-any.whl (131 kB)
+Using cached certifi-2026.7.22-py3-none-any.whl (136 kB)
+Installing collected packages: urllib3, idna, charset_normalizer, certifi, requests
+Successfully installed certifi-2026.7.22 charset_normalizer-3.4.9 idna-3.18 requests-2.34.2 urllib3-2.7.0
+deepakrk@dkrullzzz:/run/media/deepakrk/Local Drive/Study/AWS-SAA-C03/AWS_Imp_Concepts
+➜ ls python/
+ada92cb5d92a588d1b93__mypyc.cpython-314-x86_64-linux-gnu.so  certifi                      charset_normalizer                  idna                 requests                   urllib3
+bin                                                          certifi-2026.7.22.dist-info  charset_normalizer-3.4.9.dist-info  idna-3.18.dist-info  requests-2.34.2.dist-info  urllib3-2.7.0.dist-info
+```
 ---
 
 ## 3. Step 2 — Package it as a zip (OS file manager, not AWS)

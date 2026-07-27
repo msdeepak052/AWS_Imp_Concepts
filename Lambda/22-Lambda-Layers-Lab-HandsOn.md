@@ -72,10 +72,40 @@ bin                                                          certifi-2026.7.22.d
 
 ## 3. Step 2 — Package it as a zip (OS file manager, not AWS)
 
-1. Open your file manager and navigate into `lambda-requests-layer/`.
-2. Right-click the **`python`** folder itself → **Compress** (exact wording varies by OS).
-3. Confirm the resulting `.zip` contains `python/requests/...` at its root — **not** `lambda-requests-layer/python/requests/...`. This is the single most common Lambda Layers mistake (Section 8's troubleshooting table covers the exact symptom).
-4. Rename the file to `requests-layer.zip` if it isn't already named clearly.
+### Create the Lambda Layer ZIP (Ubuntu)
+
+1. Open a terminal and navigate to the `lambda-requests-layer` directory:
+
+   ```bash
+   cd lambda-requests-layer
+   ```
+
+2. Create the ZIP file:
+
+   ```bash
+   zip -r requests-layer.zip python
+   ```
+
+3. Verify the ZIP structure:
+
+   ```bash
+   unzip -l requests-layer.zip
+   ```
+
+4. Ensure the ZIP contains `python/` at the root, like this:
+
+   ```text
+   requests-layer.zip
+   └── python/
+       ├── requests/
+       ├── urllib3/
+       ├── certifi/
+       ├── idna/
+       └── charset_normalizer/
+   ```
+
+> **Note:** Do **not** zip the `lambda-requests-layer` folder itself. The `python/` directory must be at the root of the ZIP file, otherwise the Lambda Layer will not work.
+
 
 ---
 

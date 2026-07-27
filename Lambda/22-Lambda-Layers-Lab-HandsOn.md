@@ -157,6 +157,12 @@ This is the step that makes the whole point of a Layer undeniable — see the re
 8. Back on `layer-requests-demo` → scroll to the **Layers** section (below the code editor) → **Add a layer**.
 9. **Layer source**: **Custom layers** → select `requests-layer` → **Version**: `1` → **Add**. Notice the function's code is untouched — the fix was purely a Layer attachment, nothing in `lambda_function.py` changed.
 
+<img width="2568" height="1351" alt="image" src="https://github.com/user-attachments/assets/0a55a842-3d77-4840-9cfc-1bd53ea3568d" />
+
+<img width="2568" height="1351" alt="image" src="https://github.com/user-attachments/assets/71be22a2-5934-4d6a-9305-75d0b8d037ef" />
+
+<img width="2560" height="1348" alt="image" src="https://github.com/user-attachments/assets/05296353-4211-43f2-983d-b00e7c7f544a" />
+
 ---
 
 ## 6. Step 5 — Test again, and see it actually work
@@ -164,6 +170,8 @@ This is the step that makes the whole point of a Layer undeniable — see the re
 1. **Test** (same saved event as Section 4) → **Test**.
 2. Expected result now: a real joke fetched live from a public API over the internet, e.g. `"Why don't scientists trust atoms? — Because they make up everything"` — proof the function is genuinely calling out over HTTPS using a library that exists **only** because the Layer put it there.
 3. Run **Test** a couple more times — since it's a random-joke API, you should see different jokes on different invocations, confirming this is a real live call, not a cached/fake response.
+
+<img width="2568" height="1351" alt="image" src="https://github.com/user-attachments/assets/955126aa-69c4-4326-b6d8-0e4bc97cbaa5" />
 
 ---
 

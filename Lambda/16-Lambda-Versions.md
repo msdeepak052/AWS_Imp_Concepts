@@ -43,12 +43,12 @@ Notice that publishing Version 2 or 3 doesn't remove or affect Version 1 at all 
 
 ## 4. Publish a version (Console)
 
-1. Open the `hello-lambda-demo` function from the [Create Your First Lambda Function](05-Create-First-Lambda-Function-HandsOn.md) note.
-2. **Actions** (top-right dropdown) → **Publish new version**.
+1. Open the `hello-lambda-demo` function from the [Create Your First Lambda Function](05-Create-First-Lambda-Function-HandsOn.md) note. This main function page is always showing `$LATEST` — there's no "Qualifiers" selector on it.
+2. **Versions** tab (next to Code/Test/Monitor/Configuration/Aliases) → **Publish new version**.
 3. **Version description** (optional): `Initial working version`.
 4. **Publish**.
-5. You're now looking at **Version 1** specifically — notice the function's ARN in the top of the page now ends in `:1`, and the code editor is now **read-only** (you can't edit a published version's code — that's the whole point).
-6. To get back to editable `$LATEST`, use the **Qualifiers** dropdown near the top of the page and switch back to `$LATEST`.
+5. The **Versions** tab now lists **Version 1** — click its **name** to open that version's own dedicated page, with its own Code/Test/Monitor tabs scoped specifically to this frozen snapshot. Its ARN ends in `:1`, and the code editor there is now **read-only** (you can't edit a published version's code — that's the whole point).
+6. To get back to editable `$LATEST`, use the breadcrumb at the top of the version's page (or reopen the function from **Functions** in the left nav) — the base function page always lands on `$LATEST`.
 
 ---
 

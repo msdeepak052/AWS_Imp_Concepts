@@ -140,6 +140,8 @@ This is the step that makes the whole point of a Layer undeniable — see the re
    }
    ```
    This is the real, concrete proof of Section 1's claim — `requests` genuinely is not part of the Lambda Python runtime, and no amount of correct code fixes that on its own.
+   
+<img width="2568" height="1351" alt="image" src="https://github.com/user-attachments/assets/66b2650c-cde4-45c2-8676-750434dd2060" />
 
 ---
 

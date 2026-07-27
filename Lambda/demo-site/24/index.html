@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevopsWithDeepak - Order Processing Workflow</title>
+<style>
+  :root { --aws-orange:#FF9900; --aws-dark:#131A22; --aws-darker:#0F1111; --aws-text:#E9ECEF; --green:#2ECC71; --blue:#3498DB; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    background: radial-gradient(circle at top, #1B2430, var(--aws-darker));
+    color: var(--aws-text);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: var(--aws-dark);
+    border: 1px solid #2b3542;
+    border-top: 4px solid var(--aws-orange);
+    border-radius: 12px;
+    max-width: 560px; width: 100%;
+    padding: 36px 40px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .badge {
+    display: inline-block;
+    background: var(--aws-orange);
+    color: #131A22;
+    font-weight: 700; font-size: 12px; letter-spacing: 1px;
+    padding: 6px 14px; border-radius: 999px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  h1 { font-size: 26px; margin-bottom: 4px; }
+  h1 span { color: var(--aws-orange); }
+  .subtitle { color:#9AA5B1; margin-bottom:24px; font-size:14px; }
+  label { display:block; font-size:12px; color:#9AA5B1; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; margin-top:16px; }
+  input {
+    width:100%; background:#0F1111; border:1px solid #2b3542; border-radius:8px;
+    padding:12px 14px; color:#fff; font-size:14px;
+  }
+  button {
+    border: none; border-radius: 8px; padding: 14px 0; width: 100%;
+    font-size: 15px; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; margin-top: 20px;
+    color: #0F1111; transition: opacity 0.2s ease;
+  }
+  button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #placeBtn { background: var(--green); }
+  #checkBtn { background: var(--blue); color: #fff; }
+  #result {
+    background:#0F1111; border:1px solid #2b3542; border-radius:8px;
+    padding:14px 16px; font-size:13px; font-family:Consolas,Monaco,monospace;
+    min-height: 20px; color: #9AA5B1; margin-top: 20px; word-break: break-all;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <span class="badge">Step Functions Order Workflow</span>
+    <h1>DevopsWith<span>Deepak</span> - Orders</h1>
+    <div class="subtitle">Submits straight into a real Step Functions state machine — Validate, Charge (with retry), Confirm via SNS</div>
+
+    <label>Customer Email</label>
+    <input type="email" id="email" placeholder="you@example.com">
+
+    <label>Order Amount ($)</label>
+    <input type="number" id="amount" placeholder="500">
+
+    <button id="placeBtn">Place Order</button>
+    <button id="checkBtn" disabled>Check Status</button>
+
+    <div id="result">Ready.</div>
+  </div>
+
+  <script>
+    // Replace with your own two invoke URLs, e.g.
+    // "https://abc123.execute-api.ap-south-1.amazonaws.com/default/sf-start-order-workflow"
+    const START_URL = "https://REPLACE_WITH_YOUR_START_INVOKE_URL";
+    const CHECK_URL = "https://REPLACE_WITH_YOUR_CHECK_INVOKE_URL";
+
+    let lastExecutionArn = null;
+    const resultEl = document.getElementById('result');
+    const placeBtn = document.getElementById('placeBtn');
+    const checkBtn = document.getElementById('checkBtn');
+
+    placeBtn.addEventListener('click', async () => {
+      const email = document.getElementById('email').value;
+      const amount = parseFloat(document.getElementById('amount').value);
+      placeBtn.disabled = true;
+      resultEl.textContent = 'Starting the workflow...';
+      try {
+        const response = await fetch(START_URL, {
+          method: 'POST',
+          body: JSON.stringify({ email, amount })
+        });
+        const data = await response.json();
+        lastExecutionArn = data.executionArn;
+        resultEl.textContent = `Started! executionArn: ${lastExecutionArn}`;
+        checkBtn.disabled = false;
+      } catch (err) {
+        resultEl.textContent = `Failed to start: ${err.message}`;
+      } finally {
+        placeBtn.disabled = false;
+      }
+    });
+
+    checkBtn.addEventListener('click', async () => {
+      if (!lastExecutionArn) return;
+      resultEl.textContent = 'Checking status...';
+      try {
+        const url = `${CHECK_URL}?executionArn=${encodeURIComponent(lastExecutionArn)}`;
+        const response = await fetch(url, { method: 'GET' });
+        const data = await response.json();
+        resultEl.textContent = `Status: ${data.status}${data.output ? ' — Output: ' + data.output : ''}`;
+      } catch (err) {
+        resultEl.textContent = `Failed to check: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,138 +1,143 @@
 # 22 - Hands-On: Lambda Layers Lab
 
-> Goal: build a genuinely reusable Layer from scratch, attach it to a function, and then publish a second layer version to see how a function must be **deliberately** updated to pick up a new version — nothing happens automatically. Every AWS-side action is via the **AWS Console**; the one unavoidable exception is packaging the layer's `.zip` file itself, done with your OS's native file-manager "Compress" feature (plain local file packaging — not AWS CLI, not automation).
+> Goal: build a Layer for the **actual, real-world reason Layers exist** — a genuine third-party Python package (`requests`) that **isn't part of the Lambda Python runtime**, not a small custom module you could just as easily have pasted directly into the function's own code. First prove the function genuinely can't `import requests` on its own, then fix that with a Layer, with no code change to the function itself. Every AWS-side action is via the **AWS Console**; the one unavoidable exception is running `pip install` locally to actually obtain the library's files — nothing in the AWS Console can do that for you — followed by zipping the result with your OS's native file-manager "Compress" feature (the same kind of minimal, clearly-flagged local step already used for the [Container Images hands-on demo](07.01-Container-Images_Demo.md)'s Docker build).
 
 ---
 
-## 1. What you're building
+## 1. Why `requests`, not a custom module
 
-A tiny, dependency-free Python module — `greetings.py`, containing one function — packaged as a Lambda Layer, then imported and used from a separate Lambda function, exactly like a real shared internal utility library would be used across many functions.
+The Lambda Python runtime ships with the Python standard library (`json`, `os`, `datetime`, etc.) and AWS's own `boto3`/`botocore` — but **nothing else**. `requests` — the single most common third-party HTTP library in the Python ecosystem — is a genuinely realistic example of exactly what a Layer is for: code your function needs that Lambda doesn't provide, and that's substantial/reusable enough to not want copy-pasted into every function that needs it.
 
 ```mermaid
 flowchart LR
-    ZIP["greetings-layer.zip<br/>(built locally, zipped via OS file manager)"]
-    ZIP -->|"uploaded via console"| LAYER["Lambda Layer: greetings-layer, version 1"]
-    LAYER -->|"attached to"| FUNC["Function: layers-lab-demo"]
-    FUNC -->|"import greetings"| RUN["greetings.fancy_greet('Deepak') runs successfully"]
+    subgraph LOCAL["Your machine — the one local step"]
+        PIP["pip install requests -t python/"]
+        ZIP["Compress the python/ folder<br/>(OS file manager)"]
+        PIP --> ZIP
+    end
+
+    subgraph CONSOLE["AWS Console"]
+        LAYER["Lambda Layer: requests-layer"]
+        F1["Function WITHOUT the layer<br/>import requests fails"]
+        F2["Same function WITH the layer attached<br/>import requests succeeds"]
+    end
+
+    ZIP -->|"uploaded via console"| LAYER
+    LAYER -->|"attached to"| F2
+    F2 -->|"requests.get(...)"| API(("A real public API"))
 ```
 
 ---
 
-## 2. Step 1 — Build the layer's folder structure locally
+## 2. Step 1 — Install the real package locally (the one local step)
 
-Lambda requires a **specific folder structure** inside a Python layer's zip: your code must sit inside a top-level folder literally named `python`, so it ends up on Python's import path automatically.
+Lambda requires the same **`python/`** top-level folder structure inside a Python layer's zip as before, but this time its contents come from `pip`, not a file you hand-wrote:
 
-1. On your computer, create a folder: `lambda-layer-demo/python/`.
-2. Inside `python/`, create a file named `greetings.py` with:
-   ```python
-   def fancy_greet(name):
-       return f"✨ Hello, {name}! This greeting came from a Lambda Layer ✨"
+1. On your computer, create a folder: `lambda-requests-layer/python/`.
+2. Open a terminal in `lambda-requests-layer/` and run:
+   ```bash
+   pip install requests -t python/
    ```
-3. Your folder structure should now look like:
-   ```
-   lambda-layer-demo/
-     └── python/
-           └── greetings.py
-   ```
+   This installs `requests` and its own small set of dependencies (`urllib3`, `certifi`, `charset_normalizer`, `idna`) directly into the `python/` folder — exactly where Lambda expects to find importable code inside a layer.
+3. Confirm `python/` now contains a `requests/` folder (plus the dependency folders above) — this is genuinely the library's real source code, not something you could reasonably hand-write yourself.
+
+> 🧠 `requests` and its dependencies happen to be **pure Python** — no compiled C extensions — so installing them on any OS produces files that work on Lambda's Amazon Linux runtime without any extra flags. This is *not* true of every package: something like `pandas` or `numpy` includes compiled binaries specific to an operating system and CPU architecture, and would need `pip install --platform manylinux2014_x86_64 --only-binary=:all:`-style flags to cross-compile correctly for Lambda from, say, a Windows or macOS machine. Worth remembering for the exam: a Layer works for **any** dependency, but binary/compiled ones need extra care that pure-Python ones like this ones don't.
 
 ---
 
 ## 3. Step 2 — Package it as a zip (OS file manager, not AWS)
 
-1. Open your file manager (Files/Finder/Explorer) and navigate into `lambda-layer-demo/`.
-2. Right-click the **`python`** folder itself (not its parent, and not the individual `.py` file) → **Compress** (exact wording varies by OS: "Compress," "Send to → Compressed folder," "Create archive").
-3. Confirm the resulting `.zip` file contains `python/greetings.py` when you peek inside it — **not** `lambda-layer-demo/python/greetings.py`. This distinction is the single most common mistake with Lambda layers (Section 8's troubleshooting table covers the exact symptom).
-4. Rename the resulting file to `greetings-layer.zip` if it isn't already named clearly.
+1. Open your file manager and navigate into `lambda-requests-layer/`.
+2. Right-click the **`python`** folder itself → **Compress** (exact wording varies by OS).
+3. Confirm the resulting `.zip` contains `python/requests/...` at its root — **not** `lambda-requests-layer/python/requests/...`. This is the single most common Lambda Layers mistake (Section 8's troubleshooting table covers the exact symptom).
+4. Rename the file to `requests-layer.zip` if it isn't already named clearly.
 
 ---
 
-## 4. Step 3 — Create the Layer (Console)
+## 4. Step 3 — Create a function WITHOUT the layer, and watch it fail
 
-1. **Lambda console** → **Layers** (left nav) → **Create layer**.
-2. **Name**: `greetings-layer`.
-3. **Description** (optional): `Shared greeting helper`.
-4. **Upload a .zip file** → select `greetings-layer.zip` from Step 2.
-5. **Compatible runtimes**: select the same Python version you'll use for the function in Section 5 (e.g. **Python 3.13**).
-6. **Compatible architectures**: **x86_64**.
-7. **Create**.
-
----
-
-## 5. Step 4 — Create a function and attach the layer
+This is the step that makes the whole point of a Layer undeniable — see the real error before fixing it:
 
 1. **Lambda console** → **Create function** → **Author from scratch**.
-2. **Function name**: `layers-lab-demo`.
-3. **Runtime**: the **same** Python version selected in Section 4, Step 5 — a layer only attaches to functions using a compatible runtime.
-4. **Permissions**: leave at the default (auto-creates a basic CloudWatch Logs execution role — the [Create Your First Lambda Function](05-Create-First-Lambda-Function-HandsOn.md) note's Section 2).
+2. **Function name**: `layer-requests-demo`.
+3. **Runtime**: newest Python 3.x available.
+4. **Permissions**: leave at the default (the [Create Your First Lambda Function](05-Create-First-Lambda-Function-HandsOn.md) note's Section 2).
 5. **Create function**.
-6. Scroll down to the **Layers** section (below the code editor) → **Add a layer**.
-7. **Layer source**: **Custom layers** → select `greetings-layer` → **Version**: `1` → **Add**.
-8. Replace the function's code with:
+6. Replace the code in `lambda_function.py` with:
    ```python
-   import greetings
+   import requests
 
    def lambda_handler(event, context):
-       name = event.get("name", "World")
-       return greetings.fancy_greet(name)
+       response = requests.get("https://official-joke-api.appspot.com/random_joke", timeout=5)
+       joke = response.json()
+       return {
+           "statusCode": 200,
+           "body": f"{joke['setup']} — {joke['punchline']}"
+       }
    ```
-9. **Deploy**.
+7. **Deploy**.
+8. **Test** → **Configure test event** → any name, JSON `{}` → **Save** → **Test**.
+9. **Expected result: it fails.** The **Execution results** panel shows something like:
+   ```
+   {
+     "errorMessage": "Unable to import module 'lambda_function': No module named 'requests'",
+     "errorType": "Runtime.ImportModuleError"
+   }
+   ```
+   This is the real, concrete proof of Section 1's claim — `requests` genuinely is not part of the Lambda Python runtime, and no amount of correct code fixes that on its own.
 
 ---
 
-## 6. Step 5 — Test it
+## 5. Step 4 — Create the Layer, and attach it
 
-1. **Test** → **Configure test event** → JSON:
-   ```json
-   { "name": "Deepak" }
-   ```
-2. **Save** → **Test**.
-3. Expected result: `"✨ Hello, Deepak! This greeting came from a Lambda Layer ✨"` — proof the function successfully imported code that lives entirely **outside** its own deployment package, purely via the attached layer.
-
----
-
-## 7. Step 6 — Publish a new layer version, and see it does NOT auto-update
-
-This is the most important lesson of the lab, directly following the [Lambda Layers](21-Lambda-Layers.md) note's Section 5:
-
-1. Locally, edit `python/greetings.py` to change the message, e.g.:
-   ```python
-   def fancy_greet(name):
-       return f"🎉 Hey {name}, this is an UPDATED greeting from Layer version 2! 🎉"
-   ```
-2. Re-compress the `python` folder into a new zip (Section 3's method again).
-3. **Lambda console** → **Layers** → `greetings-layer` → **Create version**.
-4. Upload the new zip → set the same **Compatible runtimes** as before → **Create**. This is now **Layer version 2** — version 1 still exists, completely unchanged.
-5. Go back to the `layers-lab-demo` function → **Test** again (without changing anything else) → the result is **still the old message**. The function is still explicitly attached to **version 1** — publishing version 2 didn't touch it at all, exactly like a function's `$LATEST` isn't affected by anything happening to a different published version.
-6. To actually pick up the update: scroll to the **Layers** section → select `greetings-layer` → **Edit** → change **Version** to `2` → **Save**.
-7. **Test** again — now you get the updated message.
+1. **Lambda console** → **Layers** (left nav) → **Create layer**.
+2. **Name**: `requests-layer`.
+3. **Description** (optional): `Third-party requests HTTP library`.
+4. **Upload a .zip file** → select `requests-layer.zip` from Section 3.
+5. **Compatible runtimes**: the **same** Python version used in Section 4, Step 3.
+6. **Compatible architectures**: **x86_64**.
+7. **Create**.
+8. Back on `layer-requests-demo` → scroll to the **Layers** section (below the code editor) → **Add a layer**.
+9. **Layer source**: **Custom layers** → select `requests-layer` → **Version**: `1` → **Add**. Notice the function's code is untouched — the fix was purely a Layer attachment, nothing in `lambda_function.py` changed.
 
 ---
 
-## 8. Troubleshooting
+## 6. Step 5 — Test again, and see it actually work
+
+1. **Test** (same saved event as Section 4) → **Test**.
+2. Expected result now: a real joke fetched live from a public API over the internet, e.g. `"Why don't scientists trust atoms? — Because they make up everything"` — proof the function is genuinely calling out over HTTPS using a library that exists **only** because the Layer put it there.
+3. Run **Test** a couple more times — since it's a random-joke API, you should see different jokes on different invocations, confirming this is a real live call, not a cached/fake response.
+
+---
+
+## 7. Troubleshooting
 
 | Symptom | Likely cause |
 |---|---|
-| `Unable to import module 'lambda_function': No module named 'greetings'` | The zip's folder structure is wrong — it likely contains `lambda-layer-demo/python/greetings.py` instead of `python/greetings.py` at the zip's root (Section 3, Step 3) |
-| Layer doesn't appear in the "Custom layers" list when adding it to a function | The function's selected **runtime** doesn't match any of the layer's **Compatible runtimes** |
-| Function still shows the old greeting after publishing version 2 | Expected — Section 7, Step 6 wasn't done yet; layer versions never auto-update attached functions |
-| "Failed to create layer version: Unzipped size must be smaller than..." | Combined function code + all layers exceeds 250MB — not a real risk for this tiny demo, but worth remembering for real layers (the [Lambda Layers](21-Lambda-Layers.md) note's Section 4) |
+| `Unable to import module 'lambda_function': No module named 'requests'` **even after** attaching the layer | The zip's folder structure is wrong — check it contains `python/requests/...` at the zip's root, not nested inside `lambda-requests-layer/` (Section 3, Step 3) |
+| Layer doesn't appear in the "Custom layers" list when adding it | The function's selected **runtime** doesn't match any of the layer's **Compatible runtimes** (Section 5, Step 5) |
+| `requests.exceptions.ConnectTimeout` or similar | The public joke API is temporarily unreachable, or the function's timeout (default 3 seconds) is too short for a cold start plus an external HTTP call — **Configuration** → **General configuration** → **Timeout** → increase to 10 seconds |
+| Import error mentions a completely different missing module, e.g. `charset_normalizer` | `pip install` didn't pull in `requests`'s own dependencies — rerun Section 2, Step 2 exactly as written (`pip` resolves and installs dependencies automatically; don't add `--no-deps`) |
+| "Failed to create layer version: Unzipped size must be smaller than..." | Combined function code + all layers exceeds 250MB — not a real risk for `requests` alone, but worth remembering for larger real dependencies (the [Lambda Layers](21-Lambda-Layers.md) note's Section 4) |
 
 ---
 
-## 9. Cleanup
+## 8. Cleanup
 
-1. **Lambda console** → delete the `layers-lab-demo` function.
-2. **Layers** → `greetings-layer` → delete **both** versions (1 and 2) individually — layer versions are deleted one at a time, not as a whole layer in one action.
+1. **Lambda console** → delete the `layer-requests-demo` function.
+2. **Layers** → `requests-layer` → delete version 1.
 
 ---
 
-## 10. Recap
+## 9. Recap
 
-- A Python layer's zip must contain a top-level **`python/`** folder — this is what makes its contents importable inside the execution environment.
-- Packaging the zip is the one genuine exception to console-only in this whole folder — done via the OS's own file-manager compress feature, never AWS CLI.
-- Attaching a layer, and picking **which version** it's pinned to, are both explicit, deliberate steps — nothing updates automatically when a new layer version is published, mirroring the [Version Control In AWS Lambda](16-Lambda-Versions.md) note's immutability idea.
+- A Layer's real, exam-relevant purpose is exactly what this lab proved directly: bundling a genuine **third-party dependency** (`requests`) that Lambda's runtime doesn't ship with — not just any reusable code, specifically code that wouldn't otherwise be importable at all.
+- Seeing the `No module named 'requests'` failure **first**, with the exact same code that worked moments later after attaching the layer, is the clearest possible demonstration that a Layer changes what's importable, without touching the function's own code.
+- Pure-Python packages (like `requests`) install cleanly for Lambda from any local OS; compiled/binary packages need platform-specific `pip install` flags to cross-compile correctly — a real, exam-worthy distinction (Section 2).
+- A Python layer's zip must still contain a top-level **`python/`** folder — this is what makes its contents importable inside the execution environment, unchanged from the [Lambda Layers](21-Lambda-Layers.md) note's own explanation.
 - Next: the [Lambda VPC Connectivity](23-Lambda-VPC-Connectivity-HandsOn.md) note, covering how to let a function reach private, VPC-only resources.
 
 ### Sources
 - [Creating and sharing Lambda layers — AWS docs](https://docs.aws.amazon.com/lambda/latest/dg/creating-deleting-layers.html)
 - [Including library dependencies in a layer — AWS docs](https://docs.aws.amazon.com/lambda/latest/dg/python-layers.html)
+- [Requests: HTTP for Humans — official documentation](https://requests.readthedocs.io/)

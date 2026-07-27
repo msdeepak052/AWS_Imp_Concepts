@@ -71,7 +71,7 @@ flowchart LR
 - An **alias** is a stable, named pointer (e.g. `prod`) to a specific published version — callers use the alias's unchanging ARN, so repointing it never requires a caller-side change.
 - A **weighted alias** splits traffic between two versions by percentage — the mechanism behind safe, gradual **canary deployments**.
 - A bad canary rollout is cheaply and instantly reversible by editing the alias's weights back, since only a fraction of traffic was ever exposed.
-- Next: the [Understanding AWS Lambda Concurrency](18-Lambda-Concurrency.md) note, moving from deployment safety into how many requests a function can actually handle at once.
+- Next: the [Weighted Alias hands-on demo](17.01-Lambda-Aliases_Demo.md), actually watching a 90/10 split happen across real invocations. Then the [Understanding AWS Lambda Concurrency](18-Lambda-Concurrency.md) note, moving from deployment safety into how many requests a function can actually handle at once.
 
 ### Sources
 - [Lambda function aliases — AWS docs](https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html)

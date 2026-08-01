@@ -44,6 +44,8 @@ flowchart TB
 | **Alarms** | Watch one metric (or a math expression across metrics) and change state — `OK`, `ALARM`, `INSUFFICIENT_DATA` — when a defined threshold is breached, optionally triggering a notification or automated action. Covered in the [CloudWatch Alarms](03-CloudWatch-Alarms.md) note. |
 | **Dashboards** | Customizable visual pages combining multiple metrics/logs widgets into one view — the thing you'd actually leave open on a monitor during an incident. |
 
+<img width="1149" height="1369" alt="Cloudwatch" src="https://github.com/user-attachments/assets/aa4f32ee-979b-42cb-87d2-1564833ec2b0" />
+
 ---
 
 ## 4. What's collected automatically vs. what needs the Agent

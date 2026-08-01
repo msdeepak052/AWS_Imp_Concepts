@@ -31,6 +31,9 @@ flowchart LR
 
 WAF is **not a standalone resource that traffic flows through on its own** — it's attached directly to one of a specific list of AWS services (CloudFront, Application Load Balancer, API Gateway, AppSync, Cognito user pools, App Runner, Verified Access). There's no "WAF endpoint" you point DNS at; the protection is layered onto a resource you already have.
 
+<img width="1024" height="1536" alt="WAF" src="https://github.com/user-attachments/assets/67c7db7a-6908-4176-a511-2db1f86fe150" />
+
+
 ---
 
 ## 3. Core building blocks
@@ -60,6 +63,8 @@ WAF is **not a standalone resource that traffic flows through on its own** — i
 
 ---
 
+
+
 ## 5. WAF vs. Shield vs. Security Groups vs. NACLs
 
 | | Layer | What it protects against |
@@ -69,6 +74,12 @@ WAF is **not a standalone resource that traffic flows through on its own** — i
 | **AWS Shield** | Network/transport (with Shield Advanced adding some application-layer help) | Large-scale DDoS attacks — volume-based flooding, not content inspection |
 
 These are **complementary, layered defenses**, not competing choices — a well-protected public endpoint typically has security groups, WAF, and (for anything business-critical) Shield all active at once, each catching a different category of problem.
+
+<img width="1024" height="1536" alt="Shield" src="https://github.com/user-attachments/assets/959c580b-f87b-4dea-a2e1-7a2674a640e8" />
+
+
+<img width="907" height="1098" alt="image" src="https://github.com/user-attachments/assets/164bbf3d-c1fd-483e-9ad5-8c6b89944922" />
+
 
 ---
 

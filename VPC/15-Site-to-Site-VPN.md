@@ -20,6 +20,10 @@ routed over the **public internet**, but encrypted end-to-end so the traffic ins
 
 ## 2. The four building blocks
 
+<img width="1536" height="1024" alt="VPN1" src="https://github.com/user-attachments/assets/38db736d-3274-488a-ba8a-9f8fdd513f5f" />
+
+<img width="1024" height="1536" alt="VPN2" src="https://github.com/user-attachments/assets/ba5881a5-ace1-4ca2-a651-1e772b082fa1" />
+
 | Component | What it represents | Lives where |
 |---|---|---|
 | **Customer Gateway (CGW)** | An AWS *resource* that just describes **your** on-prem device: its public IP, the routing type (static/BGP), and BGP ASN if used | AWS side, but represents your hardware |

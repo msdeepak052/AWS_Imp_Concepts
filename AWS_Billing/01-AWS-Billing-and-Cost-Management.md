@@ -39,6 +39,8 @@ flowchart TB
 
 Notice **Budgets** and **Billing Alarms** both notify you about spend crossing a line — they are genuinely two different, overlapping tools, not the same feature under two names. Section 5 below is dedicated entirely to telling them apart, since this exact confusion is a common exam trap.
 
+<img width="1024" height="1536" alt="Billing" src="https://github.com/user-attachments/assets/e963405f-d4cf-4f97-89a5-2288dd12af8e" />
+
 ---
 
 ## 3. Cost Explorer

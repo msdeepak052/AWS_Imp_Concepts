@@ -104,6 +104,13 @@ flowchart TB
 
 ---
 
+<img width="1122" height="1402" alt="DT1" src="https://github.com/user-attachments/assets/d1e0fc64-a777-471d-a9f6-51ad7546ce7d" />
+
+<img width="1024" height="1536" alt="DT2" src="https://github.com/user-attachments/assets/122ad147-1418-4e38-8166-69c9ae6bbe53" />
+
+
+
+
 ## 7. General cost-reduction tips (the exam's favorite "best practice" answers)
 
 1. **Use VPC endpoints** (Gateway or Interface/PrivateLink) to avoid routing traffic over the public internet when connecting to AWS services from within AWS.

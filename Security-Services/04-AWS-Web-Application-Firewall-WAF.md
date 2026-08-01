@@ -75,7 +75,7 @@ WAF is **not a standalone resource that traffic flows through on its own** — i
 
 These are **complementary, layered defenses**, not competing choices — a well-protected public endpoint typically has security groups, WAF, and (for anything business-critical) Shield all active at once, each catching a different category of problem.
 
-<img width="1024" height="1536" alt="Shield" src="https://github.com/user-attachments/assets/959c580b-f87b-4dea-a2e1-7a2674a640e8" />
+<img width="1024" height="1536" alt="Shield" src="https://github.com/user-attachments/assets/d2f2c1be-f13b-4ace-ae0a-e2bf1f2bda2b" />
 
 
 <img width="907" height="1098" alt="image" src="https://github.com/user-attachments/assets/164bbf3d-c1fd-483e-9ad5-8c6b89944922" />

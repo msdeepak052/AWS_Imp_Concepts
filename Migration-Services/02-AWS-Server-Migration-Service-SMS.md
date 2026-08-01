@@ -43,6 +43,9 @@ flowchart TB
 
 The key technical improvement over the old SMS approach: **SMS used periodic incremental snapshots** (meaning some data lag between snapshots, and longer cutover windows to catch up), while **MGN uses continuous, block-level replication** — closer to real-time, with cutover windows typically measured in **minutes**, not hours.
 
+<img width="1181" height="1332" alt="Migration" src="https://github.com/user-attachments/assets/1a949668-11b2-42e1-afdd-6ab448c1c417" />
+
+
 ---
 
 ## 4. The core MGN workflow

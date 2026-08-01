@@ -30,6 +30,9 @@ flowchart LR
 
 The device itself was also **tamper-evident and encrypted with a customer-managed KMS key** the whole time — the [Key Management Service](../Security-Services/02-AWS-Key-Management-Service-KMS.md) note's Section 2 envelope-encryption idea applied physically here too: even a lost or stolen device in transit wouldn't expose readable data.
 
+<img width="1195" height="1316" alt="Snowball" src="https://github.com/user-attachments/assets/6b6cec68-819a-4039-9af5-d013036e7fc3" />
+
+
 ---
 
 ## 3. The device lineup, and the exam-relevant "when does this make sense" math

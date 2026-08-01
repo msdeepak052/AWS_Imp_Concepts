@@ -25,6 +25,11 @@ sequenceDiagram
     Note over B,S: 5. Everything from here on is encrypted with that shared secret
 ```
 
+<img width="1019" height="1098" alt="image" src="https://github.com/user-attachments/assets/c288182c-2134-49d8-addc-3a3a7e13b158" />
+
+<img width="1024" height="1536" alt="https_digram" src="https://github.com/user-attachments/assets/37e7def8-984c-4647-92cb-79ef7436fff7" />
+
+
 - **Step 3 is the "identity" part**: your browser ships with a built-in list of trusted **Certificate Authorities** (CAs) — organizations whose entire job is to verify "does this requester actually control this domain?" before signing a certificate for it. If the certificate presented in Step 2 was signed by one of those trusted CAs (or a CA that chains up to one), the browser trusts it. If not — say, a self-signed certificate, or one for the wrong domain — you get the "Your connection is not private" warning.
 - **Step 4-5 is the "encryption" part**: the certificate's public key is only used briefly, to safely agree on a **symmetric** session key (the same key encrypts and decrypts). Asymmetric crypto (the public/private key pair in the certificate) is computationally expensive; symmetric crypto is fast. TLS uses the slow-but-secure method just long enough to bootstrap the fast method — this is why HTTPS doesn't meaningfully slow down a modern website.
 

@@ -30,6 +30,9 @@ flowchart LR
     INALARM --> ACTION
 ```
 
+<img width="1021" height="1107" alt="image" src="https://github.com/user-attachments/assets/424be3de-54cc-426d-b948-83b7acc66b5e" />
+
+
 ---
 
 ## 3. The three alarm states — genuinely three, not two

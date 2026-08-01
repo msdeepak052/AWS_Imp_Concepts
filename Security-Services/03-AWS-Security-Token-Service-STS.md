@@ -41,6 +41,8 @@ flowchart TB
 
     ACTIONS --> RESULT["Temporary credentials:<br/>AccessKeyId + SecretAccessKey + SessionToken + Expiration"]
 ```
+<img width="1156" height="1361" alt="STS" src="https://github.com/user-attachments/assets/e1158fd6-b0a8-4f52-91ec-3c7cf73de243" />
+
 
 This is the exact same table the [Lambda Triggers](../Lambda/10-Lambda-Triggers.md) note's push/pull distinction echoed for a different topic — a handful of named API actions cover essentially every real-world "who is this request actually coming from" scenario:
 

@@ -100,6 +100,8 @@ Two ways to grant KMS permission:
 This is a genuinely common exam pattern: almost any "at rest" encryption question across completely different AWS services ultimately traces back to KMS underneath.
 
 ---
+<img width="1181" height="1331" alt="KMS" src="https://github.com/user-attachments/assets/2f0d9aaf-eb8a-4a7e-a785-070d07bc2105" />
+
 
 ## 7. Recap
 

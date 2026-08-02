@@ -13,6 +13,9 @@ A **VPC peering connection** is a **private, 1:1 networking connection between e
 - Traffic between peered VPCs **never leaves the AWS network** (never traverses the public internet).
 - It is **free to create**; data transfer within the same AZ over a peering connection is free, cross-AZ/cross-Region transfer is billed at normal data transfer rates.
 
+<img width="998" height="1099" alt="image" src="https://github.com/user-attachments/assets/8023b62a-1e01-4d92-ac7f-6fb12112e867" />
+
+
 > 🧠 **Mental model:** peering is like laying a **private cable directly between two houses** — no shared junction box, no ISP in the middle. But it only connects **two** houses; it does not automatically extend to a third house down the street.
 
 ---

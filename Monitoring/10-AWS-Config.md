@@ -26,6 +26,7 @@ flowchart TB
     RULES --> COMPLIANT
     RULES --> NONCOMPLIANT
 ```
+<img width="1527" height="1020" alt="image" src="https://github.com/user-attachments/assets/28f277fe-afcc-4320-8ce0-1a63f0ace80a" />
 
 ---
 

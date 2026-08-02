@@ -67,6 +67,9 @@ A **Direct Connect Gateway** is a globally-available resource that lets **one Di
 
 This mirrors the way Transit Gateway — a central hub that lets many VPCs connect through one place instead of a full mesh of connections — solves the "many VPCs" scaling problem for VPN/peering: DX Gateway solves the equivalent problem for physical Direct Connect.
 
+<img width="1402" height="1122" alt="DX2" src="https://github.com/user-attachments/assets/1edf86e7-eb0c-4d6e-8f9a-64d5c1ba23b5" />
+
+
 ---
 
 ## 5. Setup timeline: the classic exam trap

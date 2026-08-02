@@ -8,7 +8,8 @@
 
 **AWS Direct Connect** is a **dedicated, private, physical network connection** between your on-premises data center (or a colocation/network provider facility) and an AWS **Direct Connect location**. Once established, your traffic to AWS travels over this dedicated link instead of the public internet.
 
-<img width="1024" height="1536" alt="DX" src="https://github.com/user-attachments/assets/54f848e0-09a0-403b-8639-a8266c32fdb1" />
+<img width="1536" height="1024" alt="DX4" src="https://github.com/user-attachments/assets/721e6b46-095d-405f-8b36-2ce664759a66" />
+
 
 
 

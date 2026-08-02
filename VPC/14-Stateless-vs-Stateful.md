@@ -12,7 +12,7 @@ A **stateless** firewall has **no memory** of past packets. Every single packet 
 
 > 🧠 **Analogy:** a **stateful** guard remembers "I let this exact visitor in five minutes ago, so I'll wave them back out without re-checking the list." A **stateless** guard has amnesia — every person, coming or going, gets checked against the list from scratch, every single time, even if it's the "same" conversation.
 
-<img width="998" height="1103" alt="image" src="https://github.com/user-attachments/assets/fa6addb3-1e69-4d8d-9276-7dff7a4c7e42" />
+<img width="1024" height="1536" alt="StatefulsvsStateless" src="https://github.com/user-attachments/assets/df3c17fa-7c5d-4303-b935-13e5d27f9b08" />
 
 ---
 

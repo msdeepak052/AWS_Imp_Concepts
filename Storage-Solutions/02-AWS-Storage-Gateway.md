@@ -10,6 +10,9 @@ Plenty of real-world applications — backup software, file servers, databases �
 
 **AWS Storage Gateway** solves this by running a small **gateway appliance** (a VM in your data center, or an EC2 instance, or a physical hardware appliance AWS ships you) that presents a completely ordinary-looking **local interface** — an NFS/SMB file share, an iSCSI block volume, or a virtual tape library — while transparently storing the actual data in AWS behind the scenes. The application never has to change; it just keeps doing what it always did, pointed at the gateway instead of a physical disk.
 
+<img width="1527" height="1020" alt="image" src="https://github.com/user-attachments/assets/49a0b603-61e8-493d-9176-a5df8976be43" />
+
+
 ---
 
 ## 2. Architecture & workflow — the shared pattern across all three gateway types

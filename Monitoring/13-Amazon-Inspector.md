@@ -28,6 +28,7 @@ flowchart TB
     INSPECTOR --> PKG
     INSPECTOR --> NET
 ```
+<img width="1527" height="1020" alt="image" src="https://github.com/user-attachments/assets/2385f333-c5da-45cd-b2e2-61b3f60b1f02" />
 
 ---
 

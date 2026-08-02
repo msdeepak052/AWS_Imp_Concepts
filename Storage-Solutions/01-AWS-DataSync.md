@@ -17,6 +17,9 @@ Say a company has a few hundred thousand files on an on-premises NFS file share 
 
 **AWS DataSync** is a managed data-transfer service built to handle exactly this, entirely through automation you configure once — no custom scripts, no cron jobs you maintain yourself.
 
+<img width="1527" height="1020" alt="image" src="https://github.com/user-attachments/assets/cf493591-6df1-4f48-b637-bf298c3ac2e4" />
+
+
 ---
 
 ## 2. Architecture & workflow

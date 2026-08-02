@@ -8,7 +8,8 @@
 
 **AWS Direct Connect** is a **dedicated, private, physical network connection** between your on-premises data center (or a colocation/network provider facility) and an AWS **Direct Connect location**. Once established, your traffic to AWS travels over this dedicated link instead of the public internet.
 
-<img width="740" height="1103" alt="image" src="https://github.com/user-attachments/assets/20b1ff0d-8c4d-4f98-a9dd-aba634ed6c1f" />
+<img width="1024" height="1536" alt="DX" src="https://github.com/user-attachments/assets/54f848e0-09a0-403b-8639-a8266c32fdb1" />
+
 
 
 > 🧠 **Mental model:** if Site-to-Site VPN — an encrypted tunnel that still travels over the shared public internet — is an armored van driving on public roads, Direct Connect is your own **private road** that only your traffic ever uses — no other cars (internet traffic), no traffic lights (internet congestion/jitter), and by default, no armor (not encrypted) because you own the whole road.

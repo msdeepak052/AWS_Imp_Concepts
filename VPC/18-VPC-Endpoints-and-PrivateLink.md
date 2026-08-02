@@ -12,10 +12,14 @@ In the `myapp-vpc` build so far, `myapp-app-1` sits in `myapp-private-subnet-1` 
 myapp-app-1 → myapp-private-rt (0.0.0.0/0) → myapp-nat-gw → myapp-igw → public internet → S3's public endpoint
 ```
 
+
 This works, but has two real downsides:
 
 1. **Cost** — every byte crosses the NAT Gateway, which bills **per GB processed**, even though the traffic never leaves AWS's own network geographically.
 2. **Security posture** — traffic technically transits the public internet path (via IGW), which some compliance/security teams want to avoid entirely for a "private" resource — they want traffic to **never leave the AWS backbone**.
+
+<img width="1024" height="1536" alt="PL" src="https://github.com/user-attachments/assets/c0544a2b-f406-4510-8629-04600fbe8de9" />
+
 
 A **VPC Endpoint** solves both: it lets resources inside your VPC reach an AWS service **privately**, over the AWS network, with **no NAT Gateway and no Internet Gateway involved at all** for that traffic.
 

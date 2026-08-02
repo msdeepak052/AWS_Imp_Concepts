@@ -24,6 +24,7 @@ flowchart LR
     SRC --> CT --> HISTORY
     CT --> TRAIL
 ```
+<img width="1527" height="1020" alt="image" src="https://github.com/user-attachments/assets/47a4cefa-d52a-4aff-a546-b014a2657b69" />
 
 ---
 

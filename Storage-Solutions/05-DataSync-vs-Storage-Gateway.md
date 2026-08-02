@@ -9,6 +9,9 @@
 - **DataSync** = **move** data from A to B (a copy job — one-time or scheduled).
 - **Storage Gateway** = **be** the storage, continuously, so an application can keep reading and writing to it as if it were local.
 
+<img width="1543" height="1023" alt="image" src="https://github.com/user-attachments/assets/86dd2e40-6cf3-49f4-86c3-83303a6b4da5" />
+
+
 If the scenario is about *transferring* or *migrating* data, it's DataSync. If it's about an application that needs to keep *actively using* AWS-backed storage as if it were a local disk/share/tape drive, it's Storage Gateway.
 
 ---

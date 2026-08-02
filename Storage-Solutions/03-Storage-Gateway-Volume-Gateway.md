@@ -8,7 +8,7 @@
 
 A database engine, or a hypervisor's datastore, doesn't want to write to files on a network share — it wants to talk to what looks like a **local block device**: something it can partition, format with its own filesystem, and read/write at the block level, exactly like a physical hard disk plugged into the machine. **Volume Gateway** presents exactly that, over the standard **iSCSI** protocol, while the actual data lives durably in AWS.
 
-<img width="1038" height="1102" alt="image" src="https://github.com/user-attachments/assets/cd693027-9261-402c-b980-e0cc48327fbb" />
+
 
 
 ---

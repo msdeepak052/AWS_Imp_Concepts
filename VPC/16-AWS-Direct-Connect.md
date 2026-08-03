@@ -11,6 +11,9 @@
 <img width="1536" height="1024" alt="DX4" src="https://github.com/user-attachments/assets/721e6b46-095d-405f-8b36-2ce664759a66" />
 
 
+<img width="1800" height="616" alt="IMG_20260803_230448" src="https://github.com/user-attachments/assets/4455f304-02f3-4c6f-81f3-5e0f9b4eac6b" />
+
+
 
 
 > 🧠 **Mental model:** if Site-to-Site VPN — an encrypted tunnel that still travels over the shared public internet — is an armored van driving on public roads, Direct Connect is your own **private road** that only your traffic ever uses — no other cars (internet traffic), no traffic lights (internet congestion/jitter), and by default, no armor (not encrypted) because you own the whole road.

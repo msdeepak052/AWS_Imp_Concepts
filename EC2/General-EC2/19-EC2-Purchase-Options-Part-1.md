@@ -16,6 +16,10 @@
 | **Capacity Reservations** | Reserve capacity in an AZ (no discount alone) | none (guarantees capacity) |
 
 > 🧠 Mental model: **On-Demand = flexibility (no commit)**, **Reserved/Savings Plans = commitment for discount**, **Spot = cheapest but interruptible**, **Dedicated/Capacity = control/guarantee**.
+---
+
+<img width="1536" height="1024" alt="PurchapeOptions" src="https://github.com/user-attachments/assets/bedc76c2-52d0-4aad-8265-a36b8e9514b5" />
+
 
 ---
 

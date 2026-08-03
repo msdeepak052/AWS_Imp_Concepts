@@ -11,6 +11,9 @@ By default AWS decides **where** (which physical hardware/rack) your instances l
 - Placement groups are **free**.
 - They apply within a single **Region** (and a strategy decides the AZ spread).
 
+<img width="1024" height="1536" alt="PG" src="https://github.com/user-attachments/assets/7c912419-2123-481f-b2c3-58b0c7a4c956" />
+
+
 There are **3 strategies**:
 
 ```

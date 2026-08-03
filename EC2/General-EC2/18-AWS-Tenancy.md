@@ -18,6 +18,12 @@ Three levels:
 
 ---
 
+<img width="1122" height="1402" alt="Tenancy" src="https://github.com/user-attachments/assets/859a4fda-1f23-4f9d-b322-bdb42df912dd" />
+
+
+---
+
+
 To clearly understand how instance placement changes across the three tenancy levels, visualize the underlying **physical racks/servers** inside an AWS data center.
 
 Here is exactly how instances are placed relative to physical hosts and different AWS accounts:

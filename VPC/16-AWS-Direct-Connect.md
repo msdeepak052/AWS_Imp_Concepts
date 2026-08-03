@@ -153,6 +153,9 @@ flowchart LR
 
 ---
 
+<img width="1800" height="1888" alt="IMG_20260803_225923" src="https://github.com/user-attachments/assets/2da9ff32-b14c-4077-9bf3-8cc9993b93be" />
+
+
 ## 9. Recap
 
 - Direct Connect = a **dedicated physical connection** from on-prem to AWS, bypassing the public internet entirely.

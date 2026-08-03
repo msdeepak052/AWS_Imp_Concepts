@@ -21,6 +21,12 @@
 <img width="1536" height="1024" alt="PurchapeOptions" src="https://github.com/user-attachments/assets/bedc76c2-52d0-4aad-8265-a36b8e9514b5" />
 
 
+<img width="1925" height="1076" alt="image" src="https://github.com/user-attachments/assets/7db11051-e629-4e7f-bb71-5d292df76053" />
+
+<img width="1925" height="1076" alt="image" src="https://github.com/user-attachments/assets/a04b77b0-d8f6-4ff0-b3e2-3617b54561ba" />
+
+
+
 ---
 
 ## 2. On-Demand Instances

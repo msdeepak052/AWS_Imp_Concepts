@@ -16,6 +16,9 @@ Before Auto Scaling, running a fleet of EC2 instances meant a human (or a script
 
 > 🧠 **Mental model:** Auto Scaling is a **thermostat for compute capacity**. You set the target (or the rules), and it keeps adjusting the number of running instances to match — the same way a thermostat cycles a heater on/off to hold a target temperature, instead of a person manually flipping the switch.
 
+<img width="1198" height="1313" alt="ASG1" src="https://github.com/user-attachments/assets/0c7597c2-8e36-48f8-8fab-4b5ccf1ed7e6" />
+
+
 ---
 
 ## 2. The core building blocks

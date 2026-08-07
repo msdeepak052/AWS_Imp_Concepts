@@ -16,6 +16,9 @@ This note does **not** teach VPC/subnet design — it assumes you already have:
 
 ---
 
+<img width="1024" height="1536" alt="ASG2" src="https://github.com/user-attachments/assets/adc5a746-b40b-4167-a661-621205128c4e" />
+
+
 ## 1. Why a Launch Template, not a Launch Configuration
 
 Older AWS material (and some exam questions) still mention **Launch Configurations** — treat these as **legacy**:

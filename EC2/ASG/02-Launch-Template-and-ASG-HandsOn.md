@@ -133,6 +133,63 @@ flowchart LR
 
 ---
 
+Note: 
+
+<img width="1536" height="1024" alt="ALB-ASG" src="https://github.com/user-attachments/assets/b8bb308b-4528-492d-809e-e3079a902057" />
+
+If you created the **Auto Scaling Group (ASG)** first **without** an Application Load Balancer (ALB) or Target Group, you can attach them later using these steps:
+
+### Steps to Attach an ALB to an Existing ASG
+
+1. **Create a Target Group**
+
+   * Go to **EC2 → Target Groups**.
+   * Click **Create Target Group**.
+   * Select the appropriate target type (typically **Instances**).
+   * Configure the protocol, port, VPC, and health check settings.
+   * **Do not register any instances manually.** Leave the target group empty and create it.
+
+2. **Create an Application Load Balancer (ALB)**
+
+   * Go to **EC2 → Load Balancers**.
+   * Click **Create Load Balancer** → **Application Load Balancer**.
+   * Configure:
+
+     * Scheme (Internet-facing/Internal)
+     * VPC and Subnets
+     * Security Group
+     * Listener (HTTP/HTTPS)
+   * Under **Default Action**, select the **Target Group** created in Step 1.
+   * Create the ALB.
+
+3. **Attach the ALB to the Existing ASG**
+
+   * Go to **EC2 → Auto Scaling Groups**.
+   * Select your ASG.
+   * Click **Edit**.
+   * Under **Load Balancing**, choose **Attach to an existing load balancer**.
+   * Select the **Target Group** associated with your ALB.
+   * Save the changes.
+
+4. **Wait for Automatic Registration**
+
+   * Within a few minutes, the ASG automatically registers its running EC2 instances with the Target Group.
+   * No manual instance registration is required.
+
+5. **Verify Target Health**
+
+   * Go to **EC2 → Target Groups → Targets**.
+   * Ensure the instances are registered and their status becomes **Healthy**.
+
+6. **Access the Application**
+
+   * Copy the **DNS name** of the ALB.
+   * Open it in a browser.
+   * The request should be forwarded to the healthy EC2 instances, and your application should be accessible through the ALB.
+
+> **Note:** As long as the Target Group is attached to the ASG, any new instances launched by the ASG will be **automatically registered**, and terminated instances will be **automatically deregistered**.
+
+
 ## 5. Troubleshooting
 
 | Symptom | Likely cause / fix |

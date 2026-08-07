@@ -47,6 +47,13 @@
 - **Applies to:** metric aggregation for dynamic scaling policies, and minimum-healthy-percentage counting during Instance Refresh / Instance Maintenance Policy operations.
 - **Configured:** per-ASG, under **Details → Advanced configurations → Edit** (console) or `--default-instance-warmup` (CLI), 0–3600 seconds.
 
+<img width="1850" height="465" alt="image" src="https://github.com/user-attachments/assets/d8466d22-ead9-431b-8d98-3bd9bdff3dfe" />
+<img width="1850" height="853" alt="image" src="https://github.com/user-attachments/assets/0319ff6e-bc96-45b7-8cb8-96a548dff722" />
+
+Default Warmup Period (ASG > Advanced Configuration)
+<img width="1330" height="853" alt="image" src="https://github.com/user-attachments/assets/58911eaf-efd2-4bb6-b5e4-8d1a0d9fc983" />
+
+
 ---
 
 ## 5. Comparison table

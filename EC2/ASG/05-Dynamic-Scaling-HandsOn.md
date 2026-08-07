@@ -35,6 +35,8 @@ Dynamic scaling always has the same three parts:
 
 🎯 **Exam tip:** if a question just says "keep CPU around X%" with no mention of graduated responses, **target tracking** is the right answer. Reach for **step scaling** only when the question explicitly wants different-sized responses for different-sized breaches (e.g. "small breach = add 1, large breach = add 3"). **Simple scaling** shows up mostly as a distractor / "this is the legacy one" trivia question.
 
+<img width="1536" height="1024" alt="ASG3" src="https://github.com/user-attachments/assets/283ecea9-10f9-4c00-bfd8-be4ac1ffa858" />
+
 ---
 
 ## 3. Why target tracking is the modern default

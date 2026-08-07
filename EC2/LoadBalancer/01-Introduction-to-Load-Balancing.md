@@ -25,7 +25,11 @@ A **load balancer** sits in front of a fleet of backend servers ("targets") and 
 2. **Continuously health-checks** those targets, and only sends traffic to the ones currently passing health checks — an unhealthy target is silently skipped.
 3. **Gives clients one single, stable entry point** (a DNS name) to connect to, regardless of how many targets exist behind it, in which AZs, or how often they change.
 
+<img width="1536" height="1024" alt="ALB1" src="https://github.com/user-attachments/assets/2f5c4d71-4b2e-496d-a0cc-2cc6ddaab088" />
+
+
 With a load balancer in place, a client never needs to know about individual backend instances (which can be launched/terminated constantly as a fleet scales) — it only ever needs to know the load balancer's DNS name. Everything behind that name can scale, heal, and change shape freely without the client noticing.
+
 
 ---
 

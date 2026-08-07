@@ -39,18 +39,25 @@ We build `demo-lt` as a Launch Template from the start — no legacy detour.
 
 ## 2. Create the Launch Template — `demo-lt`
 
-1. Search **Launch Templates** → **Create launch template**.
+1. **EC2 console** → left nav → **Launch Templates** → **Create launch template**.
 
 <img width="1850" height="711" alt="image" src="https://github.com/user-attachments/assets/bcf7fa78-487d-4715-ac19-a399a6571398" />
 
-2. **Launch template name**: `demo-lt`. Add a description (optional).
-3. **Application and OS Images (AMI)**: search **Amazon Linux 2023** → select the latest AMI (free-tier eligible).
-4. **Instance type**: `t3.micro`.
-5. **Key pair (login)**: select existing `demo-key`.
-6. **Network settings**: do **not** pick a subnet or "Auto-assign public IP" here — subnets are chosen later at the ASG level, not the template level, so the same template can be reused across AZs.
-7. **Firewall (security groups)**: select existing security group `demo-app-sg`.
-8. **Storage**: leave the default root volume (e.g. 8 GiB gp3) — enough for this demo.
-9. **Advanced details**:
+2. **Launch template name and description**:
+   - **Launch template name** (required): `demo-lt`.
+   - **Template version description** (optional): e.g. `Web server for demo-asg`.
+   - **Auto Scaling guidance**: check **"Provide guidance to help me set up a template that I can use with EC2 Auto Scaling"** — this template's whole purpose is to back `demo-asg`, and checking this steers the console toward ASG-compatible choices (in particular, it nudges you away from specifying a subnet in the next section).
+3. Under **Launch template contents**:
+   1. **Application and OS Images (Amazon Machine Image)**: search **Amazon Linux 2023** → select the latest AMI (free-tier eligible).
+   2. **Instance type**: `t3.micro`. (The **All generations** toggle and the **Compare instance types** / **Get advice** links next to it are just discovery aids — ignore them once you know the type you want.)
+   3. **Key pair (login)** → **Key pair name**: select existing `demo-key`.
+   4. **Network settings**:
+      - **Subnet**: leave **Don't include in launch template** — subnets are chosen later at the ASG level, not the template level, so the same template can be reused across AZs.
+      - **Availability Zone**: leave **Don't include in launch template**, for the same reason.
+      - **Firewall (security groups)**: choose **Select existing security group** → **Security groups**: `demo-app-sg`.
+   5. **Storage (volumes)**: leave untouched (no volume added). With nothing specified here, a launched instance simply falls back to the AMI's own default root volume (e.g. 8 GiB gp3 for Amazon Linux 2023) — enough for this demo. Only use **Add new volume** if you need to override the size or type.
+   6. **Resource tags**: optional — skip for this demo.
+4. Expand **Advanced details**:
    - **IAM instance profile**: `demo-app-role` (grants SSM Session Manager access so you can shell in without opening SSH inbound — IAM role details are out of scope here).
    - **User data**: paste a small script that installs and starts a web server, and shows the instance ID so scaling is visually obvious later:
 
@@ -66,7 +73,7 @@ systemctl start httpd
 
    (`/health` matches the health check path we'll configure on the target group if you attach one, or that a pre-existing target group already expects.)
 
-10. Click **Create launch template**.
+5. Review the **Summary** panel on the right, then click **Create launch template**.
 
 > 🧠 A launch template is just a **saved, versioned answer** to "if I launch an instance, what should it look like?" It doesn't launch anything by itself — the ASG is what actually calls "launch" using this template as the recipe.
 
@@ -88,15 +95,16 @@ systemctl start httpd
    - Next.
 4. **Integrate with other services** page (this is where load balancing + health checks live):
    - **Load balancing**: if you already have a target group set up (e.g. behind an Application Load Balancer), choose **Attach to an existing load balancer** → **Choose from your load balancer target groups** → select it (we'll call it `demo-tg` in later notes). If you don't have one yet, choose **No load balancer** — you can attach one later by editing the ASG.
-   - **Health checks**: if you attached a target group, turn on **ELB health checks** in addition to the default **EC2** health check (checkbox "Turn on Elastic Load Balancing health checks").
+   - **VPC Lattice integration options**: skip — unrelated, service-mesh-style traffic routing, out of scope for this demo.
+   - **Amazon Application Recovery Controller (ARC) zonal shift**: leave unchecked — this is an opt-in safety feature for shifting traffic away from an impaired AZ, not needed here.
+   - **Health checks**: if you attached a target group, turn on **ELB health checks** in addition to the default **EC2** health check (checkbox "Turn on Elastic Load Balancing health checks"). Under **Additional health check types**, leave **Turn on Amazon EBS health checks** off for this demo — it flags instances with impaired EBS volumes, not needed for a stateless `httpd` box.
    - **Health check grace period**: `90` seconds (default is 300s in the console; a small app like `httpd` starting from user data is ready well before that, but a short buffer avoids marking an instance unhealthy before it's finished booting).
    - Next.
 5. **Configure group size and scaling** page:
-   - **Desired capacity**: `2`.
-   - **Min desired capacity**: `2`.
-   - **Max desired capacity**: `6`.
-   - **Automatic scaling**: choose **No scaling policies** for now — later notes add scheduled/dynamic/predictive policies onto this same group afterward.
-   - Leave **Instance maintenance policy**, **Capacity Reservation preference**, **instance scale-in protection**, and **default instance warmup** at their defaults for this demo.
+   - **Group size** → **Desired capacity**: `2`.
+   - **Scaling** → **Scaling limits** → **Min desired capacity**: `2`, **Max desired capacity**: `6`.
+   - **Automatic scaling**: choose **No scaling policies** for now — later notes add scheduled/dynamic/predictive (target tracking) policies onto this same group afterward.
+   - Leave **Instance maintenance policy**, **Capacity Reservation preference** (under **Additional capacity settings**), **Instance scale-in protection** (under **Additional settings**), **Monitoring** (CloudWatch group metrics collection), and **Default instance warmup** at their defaults for this demo.
    - Next.
 6. **Add notifications** page: skip (optional, not needed for this demo). Next.
 7. **Add tags** page: add `Name = demo-asg-instance` (propagate to instances). Next.
@@ -155,7 +163,7 @@ Do **not** just terminate the two instances one at a time — `demo-asg` will no
 - Built **`demo-asg`** from `demo-lt`: two private subnets across two AZs, optionally attached to a target group (`demo-tg`), EC2 (+ ELB if attached) health checks, size min 2 / desired 2 / max 6, no scaling policy yet.
 - Verified instances launch, reach `InService`, and (if a target group was attached) register `healthy` in it.
 - Cleanup means zeroing/deleting the **ASG**, not terminating instances individually.
-- Next: Note 03 manually changes `demo-asg`'s desired capacity to see scale-out/scale-in mechanics before any automation is involved.
+- Next: [Manual Scaling](03-Manual-Scaling-HandsOn.md) manually changes `demo-asg`'s desired capacity to see scale-out/scale-in mechanics before any automation is involved.
 
 ---
 

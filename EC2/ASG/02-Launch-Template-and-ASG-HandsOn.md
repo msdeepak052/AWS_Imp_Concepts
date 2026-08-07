@@ -36,7 +36,10 @@ We build `demo-lt` as a Launch Template from the start — no legacy detour.
 
 ## 2. Create the Launch Template — `demo-lt`
 
-1. **EC2 console** → left nav → **Launch Templates** → **Create launch template**.
+1. Search **Launch Templates** → **Create launch template**.
+
+<img width="1854" height="582" alt="image" src="https://github.com/user-attachments/assets/b05af7c4-a536-42f2-a8f4-f7ca4a279843" />
+
 2. **Launch template name**: `demo-lt`. Add a description (optional).
 3. **Application and OS Images (AMI)**: search **Amazon Linux 2023** → select the latest AMI (free-tier eligible).
 4. **Instance type**: `t3.micro`.

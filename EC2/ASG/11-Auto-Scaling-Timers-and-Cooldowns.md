@@ -14,6 +14,9 @@
 
 ## 2. Default cooldown
 
+<img width="1620" height="218" alt="image" src="https://github.com/user-attachments/assets/d21b8af7-b83b-4890-9f37-546c90fcb724" />
+
+
 **What it is:** after a **Simple Scaling** policy's scaling activity (add or remove instances) *completes*, the ASG waits a **cooldown period** before it will let that same policy type start another scaling activity.
 
 **Why it exists:** a newly launched instance needs real time to boot, join the target group, and actually start absorbing load. If the ASG re-evaluated the alarm immediately, it might see CPU still elevated (because the new instance hasn't taken traffic yet) and launch *even more* instances than needed — an overshoot loop.
@@ -22,9 +25,21 @@
 - **Applies to:** primarily **Simple Scaling** policies. **Step Scaling** and **Target Tracking** policies mostly manage their own warm-up behavior via **Default Instance Warmup** (Section 4) — but if you haven't configured a default instance warmup, they fall back to using the group's default cooldown value as their warmup time.
 - **Configured:** per-ASG (`--default-cooldown`), and individual Simple Scaling policies can also override it per-policy.
 
+Default Cooldown Period (ASG > Advanced Configuration)
+
+<img width="1039" height="716" alt="image" src="https://github.com/user-attachments/assets/778f8167-3c15-4ecd-86af-03603b98f56e" />
+
+
 ---
 
 ## 3. Health check grace period
+
+<img width="1039" height="716" alt="image" src="https://github.com/user-attachments/assets/63ef21c5-7f21-4840-89fa-18ba3c557bfa" />
+
+<img width="1589" height="165" alt="image" src="https://github.com/user-attachments/assets/282229d9-3e11-4633-bf42-f784f0bc7f2a" />
+
+<img width="1409" height="165" alt="image" src="https://github.com/user-attachments/assets/33889971-6a7b-49c3-ae13-0ae785d96a50" />
+
 
 **What it is:** how long a **newly launched instance** is given before the ASG starts counting **failed EC2/ELB health checks** against it.
 

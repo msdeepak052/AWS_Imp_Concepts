@@ -96,7 +96,7 @@
 - Created one EFS file system with mount targets in two AZs, protected by a dedicated NFS security group following this repo's chained-SG convention.
 - Mounted the same file system from two instances in two different AZs and proved a write from one is instantly visible from the other — the defining EFS capability that no single EBS volume can offer.
 - Confirmed EFS grows automatically with no pre-provisioned capacity, unlike every EBS volume type in this folder.
-- Next: Note 15 — FSx Introduction, covering the managed, purpose-built file systems (Windows, Lustre, ONTAP, OpenZFS) that exist alongside EFS for workloads EFS doesn't fit (Windows/SMB, HPC, enterprise NAS features).
+- Next: [FSx Introduction](15-FSx-Introduction.md), covering the managed, purpose-built file systems (Windows, Lustre, ONTAP, OpenZFS) that exist alongside EFS for workloads EFS doesn't fit (Windows/SMB, HPC, enterprise NAS features).
 
 ### Sources
 - [Creating and configuring Amazon EFS file systems — AWS docs](https://docs.aws.amazon.com/efs/latest/ug/creating-using-create-fs.html)

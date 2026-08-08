@@ -1,6 +1,6 @@
 # 15 - FSx Introduction
 
-> Goal: understand where **Amazon FSx** fits next to EFS — the same "shared, managed file storage" idea from Notes 12-14, but for the workloads EFS deliberately doesn't try to serve: Windows/SMB shares, HPC/ML scratch space, and enterprise NAS feature sets. This closes out the EC2-Storage folder.
+> Goal: understand where **Amazon FSx** fits next to EFS — the same "shared, managed file storage" idea from Notes 12-14, but for the workloads EFS deliberately doesn't try to serve: Windows/SMB shares, HPC/ML scratch space, and enterprise NAS feature sets. The notes that follow (16-24) go deep on each of the four FSx types in turn.
 
 ---
 
@@ -53,7 +53,8 @@ EFS is excellent, but it made one deliberate choice that rules it out for a whol
 
 - **FSx** is a family of four fully-managed, purpose-built file systems — **Windows File Server** (SMB/AD), **Lustre** (HPC/ML, S3-linked), **NetApp ONTAP** (multi-protocol, NetApp features), **OpenZFS** (ZFS features) — filling exactly the gaps EFS's Linux-only NFS design leaves open.
 - For the exam, recognize each type by its protocol/keyword signature, and remember **Lustre is Single-AZ only** while the other three support Multi-AZ.
-- This closes the EC2-Storage folder: **Instance Store/EBS** (Notes 02-11) cover single-instance block storage and its backup lifecycle; **EFS/FSx** (Notes 12-15) cover shared, multi-instance file storage for Linux and beyond.
+- **Instance Store/EBS** (Notes 02-11) cover single-instance block storage and its backup lifecycle; **EFS/FSx** (Notes 12-15) cover shared, multi-instance file storage for Linux and beyond.
+- Next: [FSx for NetApp ONTAP](16-FSx-for-NetApp-ONTAP.md) — the first of the four FSx types covered in depth, starting with the one built for NetApp lift-and-shift and multi-protocol access.
 
 ### Sources
 - [What is Amazon FSx? — AWS docs](https://docs.aws.amazon.com/fsx/latest/WhatIsFSx/what-is-fsx.html)

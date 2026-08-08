@@ -6,6 +6,8 @@
 
 ## 1. The three Glacier-family classes
 
+<img width="837" height="1202" alt="image" src="https://github.com/user-attachments/assets/e37940e9-a3a2-4d61-a76e-1e46e2186cd3" />
+
 | Class | Retrieval time | Min. storage duration | Use case |
 |---|---|---|---|
 | **S3 Glacier Instant Retrieval** | **Milliseconds** (same as Standard) | 90 days | Archive data that's rarely accessed but must be available **instantly** when it is (e.g. medical images, media archives accessed a few times a year) |

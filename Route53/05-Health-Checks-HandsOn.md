@@ -1,66 +1,150 @@
 # 05 - Route 53 Health Checks 
 
-## 1. What is a Health Check?
+## What is a Route 53 Health Check?
 
-A **Route 53 Health Check** monitors whether an endpoint is healthy or unhealthy.
+A **Route 53 Health Check** is a mechanism that **periodically checks an endpoint**—such as a web server, load balancer, or application—to determine whether it is **healthy and reachable**.
 
-Example:
+In simple words:
 
-```text
-Route 53
-    |
-    v
-Health Check
-    |
-    v
-ALB / EC2 / Website
-    |
-    +--- Healthy   → Traffic allowed
-    |
-    +--- Unhealthy → Failover to backup
-```
+> **Route 53 Health Check answers: "Is this endpoint working and responding correctly?"**
 
 ### Example
 
-You have:
+Suppose you have two servers:
 
 ```text
-Primary   → ALB-1
-Secondary → ALB-2
+                Route 53
+                   |
+          Health Check
+                   |
+             EC2 Server
+                   |
+              HTTP :80
 ```
 
-If ALB-1 becomes unhealthy:
+Route 53 periodically sends a request to the configured endpoint.
+
+For example:
 
 ```text
-User
- ↓
-Route 53
- ↓
-ALB-1 ❌
- ↓
-ALB-2 ✅
+GET http://3.10.20.30/health
+```
+
+If the server responds successfully:
+
+```text
+HTTP 200 OK
+      ↓
+Healthy ✅
+```
+
+If the server stops responding, the port is unreachable, or the configured health-check conditions fail:
+
+```text
+No valid response
+      ↓
+Unhealthy ❌
 ```
 
 ---
 
-# 2. What is Required?
+## What exactly does it check?
 
-For a basic health check, you need:
-
-* **Endpoint** — IP address, domain name, or URL
-* **Protocol** — HTTP / HTTPS / TCP
-* **Port** — e.g. `80` or `443`
-* **Path** — e.g. `/health` or `/`
-* **Failure threshold** — how many failures before unhealthy
-
-Example:
+When creating a health check, you specify things such as:
 
 ```text
-Protocol : HTTP
-IP/Domain: myapp.example.com
-Port     : 80
+Protocol : HTTP / HTTPS / TCP
+Port     : 80 / 443 / etc.
 Path     : /health
 ```
+
+For example:
+
+```text
+https://app.example.com/health
+```
+
+Route 53 repeatedly checks that endpoint.
+
+A common application setup is:
+
+```text
+                 Route 53
+                     |
+              Health Check
+                     |
+                     v
+            /health endpoint
+                     |
+              +------+------+
+              |             |
+          HTTP 200       Failure
+              |             |
+          Healthy ✅     Unhealthy ❌
+```
+
+---
+
+## Why is this useful?
+
+The health check becomes particularly useful when combined with a **Route 53 routing policy**.
+
+For example, with **Weighted Routing**:
+
+```text
+                    Route 53
+                       |
+              Weighted Routing
+                 /          \
+             Weight 70     Weight 30
+                |             |
+             EC2-1          EC2-2
+                |             |
+              HC-1           HC-2
+                |             |
+             Healthy       Healthy
+                ✅             ✅
+```
+
+Normally:
+
+```text
+EC2-1 → ~70%
+EC2-2 → ~30%
+```
+
+If EC2-1 becomes unhealthy:
+
+```text
+EC2-1 ❌
+   ↓
+Route 53 excludes its unhealthy record
+   ↓
+EC2-2 ✅
+   ↓
+Traffic goes to EC2-2
+```
+
+### Key distinction
+
+**Health Check doesn't decide the routing strategy.**
+
+It only provides the health status:
+
+```text
+Health Check
+     ↓
+Healthy / Unhealthy
+```
+
+The **routing policy** decides what Route 53 does with that information.
+
+So remember:
+
+> **Health Check = "Is the endpoint healthy?"**
+
+> **Routing Policy = "Where should the DNS request go?"**
+
 
 ---
 

@@ -66,165 +66,327 @@ Path     : /health
 
 # 3. AWS Console — Create Health Check
 
-Go to:
+The best demo is to create **2 EC2 web servers**, give each a **Weighted Route 53 record**, and attach a **separate health check to each record**.
 
-**AWS Console → Route 53 → Health checks → Create health check**
-
-### Step 1 — Choose what to monitor
-
-Select:
-
-**Endpoint**
-
-Enter:
+## 1. What are we building?
 
 ```text
-Domain name: www.example.com
+                         User
+                           |
+                           v
+                     Route 53
+                  www.example.com
+                           |
+              +------------+------------+
+              |                         |
+        Weight = 70                Weight = 30
+              |                         |
+          Health Check 1            Health Check 2
+              |                         |
+              v                         v
+          EC2-Server-1             EC2-Server-2
+           70% traffic              30% traffic
 ```
 
-or an IP address.
+So normally:
 
-### Step 2 — Configure
+```text
+EC2-1 → ~70% traffic
+EC2-2 → ~30% traffic
+```
+
+If **EC2-1 becomes unhealthy**, Route 53 can stop returning its record and route traffic to the healthy endpoint.
+
+---
+
+# 2. Prerequisites
+
+You need:
+
+* 2 EC2 instances
+* Apache/Nginx running on both
+* Public connectivity for the health checks
+* A Route 53 hosted zone, e.g. `example.com`
+* Two public DNS endpoints/IPs
+
+For the demo, make the webpages different:
+
+### EC2-1
+
+```html
+<h1>SERVER 1</h1>
+```
+
+### EC2-2
+
+```html
+<h1>SERVER 2</h1>
+```
+
+This makes it easy to see which server received the request.
+
+---
+
+# 3. Create Health Check for Server 1
+
+Go to:
+
+**Route 53 → Health checks → Create health check**
+
+Choose:
+
+```text
+What to monitor: Endpoint
+Protocol: HTTP
+IP address: <EC2-1-PUBLIC-IP>
+Port: 80
+Path: /
+```
+
+Create it.
+
+You should eventually see:
+
+```text
+Health Check 1
+Status: Healthy ✅
+```
+
+---
+
+# 4. Create Health Check for Server 2
+
+Create another health check:
+
+```text
+What to monitor: Endpoint
+Protocol: HTTP
+IP address: <EC2-2-PUBLIC-IP>
+Port: 80
+Path: /
+```
+
+You should have:
+
+```text
+Health Check 1 → EC2-1 → Healthy ✅
+
+Health Check 2 → EC2-2 → Healthy ✅
+```
+
+---
+
+# 5. Create Weighted Record for Server 1
+
+Go to:
+
+**Route 53 → Hosted zones → your domain → Create record**
 
 Example:
 
 ```text
-Protocol : HTTPS
-Port     : 443
-Path     : /health
+Record name: app
+Record type: A
+Routing policy: Weighted
+Weight: 70
+Value: <EC2-1-PUBLIC-IP>
 ```
 
-You can leave most other settings as default for a hands-on exercise.
+Then enable:
 
-### Step 3 — Create
+**Evaluate Target Health**
 
-Click:
+But for a standalone endpoint, the important part for this demo is associating the record with the health check.
 
-**Create health check**
-
-You will see:
+Select:
 
 ```text
-Status: Healthy
+Health check → Health Check 1
 ```
 
-if the endpoint responds successfully.
+Create the record.
 
 ---
 
-# 4. Hands-On Example
+# 6. Create Weighted Record for Server 2
 
-Suppose your EC2 web server has:
+Create another record with the **same name**:
 
 ```text
-Public IP: 3.x.x.x
-Port: 80
+Record name: app
+Record type: A
+Routing policy: Weighted
+Weight: 30
+Value: <EC2-2-PUBLIC-IP>
+
+Health check → Health Check 2
 ```
 
-And accessing:
+Now Route 53 has:
 
 ```text
-http://3.x.x.x/
-```
+app.example.com
 
-returns your webpage.
-
-Create:
-
-```text
-Health Check
-----------------
-Type     : Endpoint
-Protocol : HTTP
-IP       : 3.x.x.x
-Port     : 80
-Path     : /
-```
-
-Route 53 will periodically check:
-
-```text
-Route 53 Health Check
         |
-        | HTTP GET /
-        ↓
-    EC2 :80
+        +---- Weight 70 ----> EC2-1
+        |                     Health Check 1
         |
-        ↓
-    HTTP 200
-        |
-        ↓
-     Healthy ✅
+        +---- Weight 30 ----> EC2-2
+                              Health Check 2
 ```
 
 ---
 
-# 5. Important Hands-On Test
+# 7. Test the Weighted Routing
 
-After creating the health check:
+Run:
 
-### Healthy
-
-```text
-EC2 running
-Web server running
-Port 80 open
-        ↓
-Health Check = Healthy ✅
+```bash
+for i in {1..20}; do
+    curl http://app.example.com
+done
 ```
 
-### Make it unhealthy
+You should see approximately:
 
-Stop the web server:
+```text
+SERVER 1
+SERVER 1
+SERVER 2
+SERVER 1
+SERVER 1
+SERVER 1
+SERVER 2
+...
+```
+
+Over a sufficiently large number of DNS responses, traffic should approximately follow:
+
+```text
+EC2-1 → 70%
+EC2-2 → 30%
+```
+
+**Important:** Don't expect exactly 14/6 requests out of 20. DNS caching/resolvers can make small samples look uneven.
+
+---
+
+# 8. Test Health Check Failure
+
+Now stop the web server on EC2-1:
 
 ```bash
 sudo systemctl stop nginx
 ```
 
-After some time:
+or Apache:
 
-```text
-Health Check = Unhealthy ❌
+```bash
+sudo systemctl stop apache2
 ```
 
-Start it again:
+Health Check 1 eventually becomes:
+
+```text
+EC2-1 → Unhealthy ❌
+```
+
+Now Route 53 will stop using the unhealthy weighted record when selecting an answer, leaving the healthy EC2-2 record.
+
+Conceptually:
+
+```text
+Before:
+
+Route 53
+   |
+   +--- 70% → EC2-1 ✅
+   |
+   +--- 30% → EC2-2 ✅
+
+
+After EC2-1 failure:
+
+Route 53
+   |
+   +--- EC2-1 ❌  (removed from eligible answers)
+   |
+   +--- EC2-2 ✅
+              |
+              v
+          Traffic
+```
+
+---
+
+# 9. Start Server 1 Again
 
 ```bash
 sudo systemctl start nginx
 ```
 
-It should eventually become:
+After the health check detects it as healthy:
 
 ```text
-Healthy ✅
+EC2-1 → Healthy ✅
+EC2-2 → Healthy ✅
+```
+
+The weighted distribution becomes approximately:
+
+```text
+70% → EC2-1
+30% → EC2-2
 ```
 
 ---
 
-## ⭐ Important for SAA
+## 🧠 Final Notes
 
-Health Check **alone does NOT automatically move DNS traffic somewhere else**.
+### Weighted Routing
 
-For actual traffic failover, typically use:
+> **Controls how traffic is distributed.**
 
 ```text
-Route 53
-   |
-   +-- Primary record
-   |      |
-   |   Health Check
-   |
-   +-- Secondary record
+70 + 30 = 100
 ```
 
-with **Failover Routing**.
+### Health Check
 
-**Remember:**
+> **Determines whether an endpoint is healthy enough to receive traffic.**
 
-> **Health Check = Is the endpoint healthy?**
+### Combined
 
-> **Failover Routing = Where should traffic go when the primary is unhealthy?**
+```text
+Weighted Routing
+       +
+Health Checks
+       ↓
+Traffic distribution
+with unhealthy endpoints excluded
+```
 
+### Your hands-on architecture
+
+```text
+                app.example.com
+                       |
+                    Route 53
+                       |
+             Weighted Routing
+                 /         \
+             Weight 70    Weight 30
+                |            |
+             HC-1           HC-2
+                |            |
+               EC2-1       EC2-2
+                |            |
+              :80           :80
+                |            |
+             Healthy       Healthy
+```
+
+**This is a very good SAA-C03 hands-on because it demonstrates two concepts together: *Weighted Routing* + *Route 53 Health Checks*.**
 
 ---
 

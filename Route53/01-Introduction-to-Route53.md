@@ -8,6 +8,9 @@
 
 Every device on the internet is really addressed by a **number** — an IP address like `203.0.113.10` — but humans remember **names**, not numbers. **DNS (Domain Name System)** is the internet's phonebook: it's a distributed lookup system that translates a human-friendly domain name (`example.com`) into the IP address a computer actually needs to open a network connection. Without DNS, you'd have to memorize an IP address for every website you visit; with it, you type a name, your computer silently resolves it to an IP behind the scenes, and then connects.
 
+<img width="1197" height="1315" alt="DNS" src="https://github.com/user-attachments/assets/2c65ab32-2bd9-45f7-aea4-5213f1eec6ee" />
+
+
 ---
 
 ## 2. What is Route 53, in one line?

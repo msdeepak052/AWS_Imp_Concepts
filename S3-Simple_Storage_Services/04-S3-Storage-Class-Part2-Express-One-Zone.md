@@ -37,6 +37,9 @@ Express One Zone doesn't live in a normal S3 bucket — it uses a new bucket typ
 
 ---
 
+<img width="837" height="1202" alt="image" src="https://github.com/user-attachments/assets/e37940e9-a3a2-4d61-a76e-1e46e2186cd3" />
+
+---
 ## 4. When to actually choose it
 
 | Situation | Express One Zone? |

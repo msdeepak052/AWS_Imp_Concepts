@@ -60,6 +60,8 @@ Every S3 storage class balances the same handful of dimensions against each othe
 | **One Zone-IA** | 1 | Milliseconds | Per-GB | 30 days | Infrequent, re-creatable/non-critical data |
 | **Intelligent-Tiering** | 3+ (or 1, if Archive tiers used) | Milliseconds (Frequent/Infrequent/Archive Instant); hours (opt-in Archive tiers) | None | None | Unknown/changing access patterns |
 
+<img width="837" height="1202" alt="image" src="https://github.com/user-attachments/assets/e37940e9-a3a2-4d61-a76e-1e46e2186cd3" />
+
 ---
 
 ## 7. Recap

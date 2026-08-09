@@ -4,6 +4,9 @@
 
 ---
 
+<img width="1024" height="1536" alt="S3LCR" src="https://github.com/user-attachments/assets/5278180c-1f0a-4da0-9473-69d958434a14" />
+
+
 ## 1. What a Lifecycle rule is
 
 A **Lifecycle rule** is a bucket-level configuration that automatically applies **actions** (Section 2) to objects matching a **scope** (a prefix and/or tag filter, or the whole bucket) once they reach a specified **age**. It runs continuously and automatically, in the background — exactly the same "set a rule, let AWS enforce it" philosophy as `EC2-Storage/11`'s Data Lifecycle Manager, just applied to S3 objects instead of EBS snapshots.

@@ -492,7 +492,7 @@ Don't memorize the JSON. Remember:
 
 </details>
 
-5. Optionally check **Replicate existing objects** to also backfill objects that existed **before** this rule was created (this uses **S3 Batch Replication** under the hood, a related but distinct one-time bulk operation).
+5. Save the replication rule. For a new replication configuration or when adding a new destination, S3 may then ask whether to replicate existing objects. Choosing "Yes, replicate existing objects" creates an S3 Batch Replication job to backfill objects that existed before live replication was configured
 6. **Save**.
 
 ---

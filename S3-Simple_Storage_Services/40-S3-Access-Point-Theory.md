@@ -31,6 +31,7 @@ flowchart LR
     AP2 --> BUCKET
     AP3 --> BUCKET
 ```
+<img width="1220" height="724" alt="image" src="https://github.com/user-attachments/assets/bab7a5d0-8ff7-4d9a-a46f-3bb2a17fea96" />
 
 ---
 

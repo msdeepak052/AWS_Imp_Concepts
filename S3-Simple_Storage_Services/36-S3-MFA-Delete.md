@@ -4,6 +4,9 @@
 
 ---
 
+<img width="1536" height="1024" alt="MFA" src="https://github.com/user-attachments/assets/18a3f206-8eb5-4a44-b794-d06f1cd073c8" />
+
+
 ## 1. What MFA Delete actually protects against
 
 **MFA Delete** requires the bucket owner's **root user** to provide a **current MFA code** (from a device registered per `IAM/12`) for exactly two specific operations:

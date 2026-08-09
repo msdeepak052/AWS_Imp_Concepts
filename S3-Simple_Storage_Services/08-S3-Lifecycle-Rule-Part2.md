@@ -19,8 +19,7 @@
 
 
 ---
-
-Absolutely. The easiest way to understand **S3 Lifecycle actions** is to imagine that your bucket contains real objects and, for some objects, multiple versions.
+> The easiest way to understand **S3 Lifecycle actions** is to imagine that your bucket contains real objects and, for some objects, multiple versions.
 
 > Assume bucket: `my-images`
 >

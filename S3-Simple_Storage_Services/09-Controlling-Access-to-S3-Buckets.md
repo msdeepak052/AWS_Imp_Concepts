@@ -30,7 +30,7 @@ Let's make this concrete.
 
 ---
 
-# 1. Same account: IAM policy can be enough
+## 1. Same account: IAM policy can be enough
 
 Suppose everything is in:
 
@@ -133,7 +133,7 @@ No bucket policy is required in this basic same-account case.
 
 ---
 
-# 2. Why does this work without a bucket policy?
+## 2. Why does this work without a bucket policy?
 
 Because the IAM role and S3 bucket belong to the **same AWS account**.
 
@@ -151,7 +151,7 @@ An identity-based policy attached to the role can grant the role access to the b
 
 ---
 
-# 3. Now cross-account EC2 → S3
+## 3. Now cross-account EC2 → S3
 
 Now let's change the architecture.
 
@@ -194,7 +194,7 @@ Here you need to think about **two authorization layers**.
 
 ---
 
-# 4. Layer 1 — IAM policy on EC2 role
+## 4. Layer 1 — IAM policy on EC2 role
 
 Account A gives its EC2 role permission to access the bucket.
 
@@ -222,7 +222,7 @@ But that's **not enough** for the cross-account case.
 
 ---
 
-# 5. Layer 2 — Bucket policy in Account B
+## 5. Layer 2 — Bucket policy in Account B
 
 The bucket owner must also trust the external principal.
 
@@ -274,7 +274,7 @@ EC2Role
 
 ---
 
-# 6. Think of it as two questions
+## 6. Think of it as two questions
 
 This mental model is extremely useful:
 
@@ -310,7 +310,7 @@ For cross-account access, you generally need **both sides to permit it**.
 
 ---
 
-# 7. What about Role Assumption?
+## 7. What about Role Assumption?
 
 This is where your question gets interesting.
 
@@ -322,7 +322,7 @@ There are actually **two different cross-account designs**.
 
 ---
 
-# Option A — Direct cross-account S3 access
+### Option A — Direct cross-account S3 access
 
 This is the simpler architecture.
 
@@ -382,7 +382,7 @@ That's enough.
 
 ---
 
-# Option B — Assume a role in Account B
+### Option B — Assume a role in Account B
 
 You can instead have Account A's EC2 role assume a role that lives in Account B.
 
@@ -410,7 +410,7 @@ Now you have **two IAM policies involved**, but they're doing different things.
 
 ---
 
-## Step 1 — Account B creates S3AccessRole
+### Step 1 — Account B creates S3AccessRole
 
 Account B:
 
@@ -441,7 +441,7 @@ This is the **trust policy**.
 
 ---
 
-# 8. S3AccessRole also needs permissions
+## 8. S3AccessRole also needs permissions
 
 The role in Account B gets an identity policy:
 
@@ -489,7 +489,7 @@ That's an important distinction.
 
 ---
 
-# 9. Compare the two approaches
+## 9. Compare the two approaches
 
 ## Direct access
 
@@ -557,7 +557,7 @@ Bucket policy may not be required.
 
 ---
 
-# 10. Why would you choose AssumeRole?
+## 10. Why would you choose AssumeRole?
 
 Imagine Account B owns hundreds of S3 buckets.
 
@@ -595,7 +595,7 @@ and gets the permissions associated with that role.
 
 ---
 
-# 11. Important correction to your original statement
+## 11. Important correction to your original statement
 
 You said:
 
@@ -648,7 +648,7 @@ And **bucket policy may or may not be necessary**, depending on the resulting pr
 
 ---
 
-# 12. One very useful exam/interview table
+## 12. One very useful exam/interview table
 
 | Scenario                                  | IAM Policy | Bucket Policy               | AssumeRole |
 | ----------------------------------------- | ---------- | --------------------------- | ---------- |

@@ -16,6 +16,7 @@
 
 The important thing is that these are **not permissions themselves**. They are **guardrails** that can override/prevent certain public-access configurations.
 
+
 ![Image](https://images.openai.com/static-rsc-4/iKKw4KLmWtktfHPukQ8tgKO9uPRA7J73QaV54W1WHUz-iIxLWNFuHzh0qFx44dWJXRo4OcfzYArGCIZhojwzLeQliijoPNjYiC6nKTlFkLj55Za4SVbiNTlyS1ezChV0NgyuRuUiKOxVZwC1362N13ZhYQ-J69nZOPTc2fiqzWvdrnosJsY8fMugcYUmV2hr?purpose=fullsize)
 
 ![Image](https://images.openai.com/static-rsc-4/MKszEzSUJT0D2a0Z1a3E64LZBkj41-Hy136i8Q75dErGwiIgvaHHGUiWeB9_K1Ez9lBbmHqTlhv0JeTfLgnX8kwDvqQr-JGcWx3u4qGdhGAqBYC3bqHXorMuOqYTgW6dF1rIA8sfDIksQ7-vIiLda5NzACPfgh7M3X7uzKuH59yxhgV39liIMFB8bXTxirB1?purpose=fullsize)
@@ -31,6 +32,9 @@ The important thing is that these are **not permissions themselves**. They are *
 # 1. The 4 Block Public Access options
 
 In the S3 console you'll see:
+
+<img width="1853" height="774" alt="image" src="https://github.com/user-attachments/assets/09945d26-3acf-41f7-bf33-093b1e23d1c0" />
+
 
 ```text
 Block public access

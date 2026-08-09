@@ -611,9 +611,6 @@ v2 ← not necessarily locked
 v1 ← not necessarily locked
 ```
 
-So if you have versioning enabled and upload the same object three times, **each new version can have its own Object Lock/retention state**.
-
-   ```
 
 ---
 

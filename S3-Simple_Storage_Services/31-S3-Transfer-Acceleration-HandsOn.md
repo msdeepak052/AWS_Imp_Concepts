@@ -31,17 +31,12 @@ Or, in the AWS SDKs, simply setting the `useAccelerateEndpoint` (or equivalent) 
 
 ---
 
-## 4. Check whether acceleration will actually help, before committing
-
-AWS provides a **Speed Comparison tool** directly in the console (bucket → **Transfer acceleration** tab) that uploads a test file both via the direct endpoint and the accelerated endpoint **from your current location**, side by side — since the benefit of acceleration depends entirely on **how far the client is from the bucket's Region**; a client already close to (or in the same Region as) the bucket may see little to no improvement, or even a very marginal overhead.
-
-> 🎯 **Exam tip:** "clients scattered globally are uploading large files to a single centralized bucket, and uploads are slow" is the signature **Transfer Acceleration** scenario — as opposed to "we need users in multiple Regions to have low-latency **reads** of static content," which points to **CloudFront** (a distinct, read-side caching solution covered in this repo's `CDN` folder) instead. Acceleration is specifically an **upload (and general transfer)** speed optimization via AWS's backbone, not a caching layer.
-
----
-
 ## 5. Cost
 
 Transfer Acceleration has its **own per-GB charge**, on top of standard S3 storage/request pricing — it's billed based on actual accelerated data transferred, and (per Section 4) should be verified as actually beneficial for the real client geography before being enabled broadly, rather than turned on reflexively.
+
+
+<img width="977" height="674" alt="image" src="https://github.com/user-attachments/assets/61d55ac3-8355-4a59-9346-1440242ce599" />
 
 ---
 

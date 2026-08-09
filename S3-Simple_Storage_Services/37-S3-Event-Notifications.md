@@ -8,6 +8,9 @@
 
 **S3 can automatically send a notification** whenever a specified event occurs on a bucket — most commonly `s3:ObjectCreated:*` (any kind of upload) or `s3:ObjectRemoved:*` (any kind of delete) — to one of **three** destination types, letting downstream systems react immediately instead of polling the bucket for changes.
 
+<img width="1536" height="1024" alt="S3-Event" src="https://github.com/user-attachments/assets/6ada9a3d-caa0-46c8-9f3f-30b5752df211" />
+
+
 > 🧠 **Mental model:** this is the same "let something happen automatically in response to an event" philosophy as a Lifecycle rule (Notes 07-08) reacting to *age*, except here the trigger is a *specific action* (a new object landing, an object disappearing) happening *right now*, not a scheduled age threshold.
 
 ---

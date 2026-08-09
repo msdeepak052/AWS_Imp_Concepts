@@ -8,6 +8,9 @@
 
 A large, shared bucket used by many different applications or teams eventually accumulates a **single, sprawling bucket policy** (Note 12) with statements for every consumer — one app needs read access to `logs/`, another needs read/write to `uploads/`, a third needs read-only to `reports/`, and so on, all crammed into one JSON document that everyone touching the bucket has to understand, and that becomes increasingly risky to edit (one mistake can affect every consumer at once).
 
+![Uploading S3AcessPoint.png…]()
+
+
 > 🧠 **Mental model:** a single bucket policy trying to serve ten different applications is like one shared front door with one incredibly complicated lock, where the key-cutting instructions for every single tenant are all written on the same one sheet of paper — easy to make a mistake that affects someone else's access entirely by accident.
 
 ---

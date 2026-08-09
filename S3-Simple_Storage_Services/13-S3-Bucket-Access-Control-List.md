@@ -10,7 +10,7 @@ An **ACL** is a short, coarse-grained permission list attached to a **bucket or 
 
 <img width="1536" height="1024" alt="S3ACL" src="https://github.com/user-attachments/assets/137ab973-76bc-4762-9046-8751bd6d3aaa" />
 
-<img width="1536" height="1024" alt="S3ACL2" src="https://github.com/user-attachments/assets/0b25ea6e-0b93-4469-ad96-7526c94cda23" />
+<img width="1536" height="1024" alt="S3ACL3" src="https://github.com/user-attachments/assets/d118e500-a617-42b5-a6ef-6973c6f9e2d9" />
 
 
 <img width="1537" height="469" alt="image" src="https://github.com/user-attachments/assets/14ba35c0-f1d8-4b65-904f-609059b6ed63" />

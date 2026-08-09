@@ -8,6 +8,11 @@
 
 Browsers enforce a **same-origin policy**: JavaScript running on a page from `https://app.cloudmart.example` is, by default, **blocked** from making a fetch/XHR request to a different **origin** — defined as the combination of scheme + domain + port — such as `https://demo-assets-bucket.s3.amazonaws.com`, even if that S3 bucket is genuinely public and would otherwise happily return the data to a direct browser navigation or a `curl` request.
 
+<img width="874" height="558" alt="image" src="https://github.com/user-attachments/assets/0c1c3193-8177-42d3-9fc1-6a32de471014" />
+
+> Source: https://miro.medium.com/v2/1*7qWIqs8e1yrd9_s2AAHjoA.png
+
+
 <img width="1536" height="1024" alt="S3CORS" src="https://github.com/user-attachments/assets/227c8ddb-a460-4d3b-aa87-f02a0a67fd24" />
 
 

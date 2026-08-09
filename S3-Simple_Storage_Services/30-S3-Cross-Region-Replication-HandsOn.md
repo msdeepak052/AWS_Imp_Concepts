@@ -513,6 +513,9 @@ Don't memorize the JSON. Remember:
 
 If a replication rule is added to a bucket that already has years of existing objects, those pre-existing objects are **not** retroactively replicated by the standard rule alone — checking **Replicate existing objects** at rule-creation time (Section 3, step 5) invokes **S3 Batch Replication**, a distinct one-time bulk job that walks the existing inventory and replicates everything that predates the rule.
 
+![Uploading image.png…]()
+
+
 ---
 
 ## 6. Verify

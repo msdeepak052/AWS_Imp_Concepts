@@ -8,6 +8,9 @@
 
 Browsers enforce a **same-origin policy**: JavaScript running on a page from `https://app.cloudmart.example` is, by default, **blocked** from making a fetch/XHR request to a different **origin** — defined as the combination of scheme + domain + port — such as `https://demo-assets-bucket.s3.amazonaws.com`, even if that S3 bucket is genuinely public and would otherwise happily return the data to a direct browser navigation or a `curl` request.
 
+<img width="1536" height="1024" alt="S3CORS" src="https://github.com/user-attachments/assets/227c8ddb-a460-4d3b-aa87-f02a0a67fd24" />
+
+
 > 🧠 **Mental model:** this restriction has nothing to do with S3's own permissions (Notes 09-13) — those already say the request is allowed. It's the **browser itself** refusing to hand the response back to the calling page's JavaScript, as a security measure against malicious cross-site scripts silently reading data from other origins on a user's behalf. **CORS** is the mechanism by which the *resource's own server* (S3, here) can explicitly tell the browser "it's fine, let JavaScript from this other origin read my response."
 
 ---

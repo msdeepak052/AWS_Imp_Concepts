@@ -2,6 +2,9 @@
 
 An **S3 presigned URL** lets you give someone **temporary access to a private S3 object** without giving them AWS credentials.
 
+<img width="1536" height="1024" alt="S32" src="https://github.com/user-attachments/assets/1adbc9d3-1902-427f-a6c3-80c820050174" />
+
+
 The most important idea is:
 
 > **The URL carries temporary, signed authorization for a specific S3 operation.**

@@ -17,16 +17,6 @@
 The important thing is that these are **not permissions themselves**. They are **guardrails** that can override/prevent certain public-access configurations.
 
 
-![Image](https://images.openai.com/static-rsc-4/iKKw4KLmWtktfHPukQ8tgKO9uPRA7J73QaV54W1WHUz-iIxLWNFuHzh0qFx44dWJXRo4OcfzYArGCIZhojwzLeQliijoPNjYiC6nKTlFkLj55Za4SVbiNTlyS1ezChV0NgyuRuUiKOxVZwC1362N13ZhYQ-J69nZOPTc2fiqzWvdrnosJsY8fMugcYUmV2hr?purpose=fullsize)
-
-![Image](https://images.openai.com/static-rsc-4/MKszEzSUJT0D2a0Z1a3E64LZBkj41-Hy136i8Q75dErGwiIgvaHHGUiWeB9_K1Ez9lBbmHqTlhv0JeTfLgnX8kwDvqQr-JGcWx3u4qGdhGAqBYC3bqHXorMuOqYTgW6dF1rIA8sfDIksQ7-vIiLda5NzACPfgh7M3X7uzKuH59yxhgV39liIMFB8bXTxirB1?purpose=fullsize)
-
-![Image](https://images.openai.com/static-rsc-4/bZDJ6Pm2xWy3ruMuAtUPshI4IEJPgwsWIjYJY9p2JzYrg6FhcxYJWMen30uKeA__j_E7kcysPt9vELGG7y2fO2o6cLCkbQqLZhBe-uIDmZ14VEh_XksMk6jHU_hmWYDdcLfVJmGBzIkAHs5iNa9Q74AVrOZzQ8n4MWzgJ_LHgMT8mH6qIl43GDv6rLUBRl6C?purpose=fullsize)
-
-![Image](https://images.openai.com/static-rsc-4/AadiTquzhmBcNKQ7BH4RuK_OWAQ__QL7ZJtG51plOAfle1FrBJ1ukEExhgrfK0UKIcz4OuaFRtIv9ZFm7CYn7A-jEIPp18BOPB_BxN1J2iPCOzAc2MXQXIxS-hsY4cVNT1Z4Fny0daJKullxqULMBKhFXQywjjhdzbzWMT7NDZmBcT3xBv_F1AvIZROOA0Lv?purpose=fullsize)
-
-![Image](https://images.openai.com/static-rsc-4/_CRyaZFgHSVy40M2NFLd3jr9G5qcCc1Y6LURN-2W7gEPN7x5y9Q4iUejKrD3OrMJxuBUC4h4SDqK8RYxXD2qdMj3laJJ9odhCGE0lWvPsvm_dneM8_b5_7BfhlkNgQAjvPRFlgRga-iL6rOGpcSC_ukMNlu3ATUcWC1YBz2iaOkijEp_SB33j6kNscPQ_yQ-?purpose=fullsize)
-
 ---
 
 # 1. The 4 Block Public Access options

@@ -6,6 +6,7 @@
 
 <img width="1024" height="1536" alt="S3LCR" src="https://github.com/user-attachments/assets/5278180c-1f0a-4da0-9473-69d958434a14" />
 
+<img width="1536" height="1024" alt="S3LCR2" src="https://github.com/user-attachments/assets/7af5e8f3-7006-4ccf-a92d-bb9c4e50b21f" />
 
 
 

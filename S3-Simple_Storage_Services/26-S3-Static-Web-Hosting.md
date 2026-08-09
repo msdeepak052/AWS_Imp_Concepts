@@ -14,6 +14,10 @@ A **static** website is one made entirely of files that don't change based on se
 
 ## 2. What static website hosting adds over a plain public bucket
 
+
+<img width="1024" height="1536" alt="S3SWH" src="https://github.com/user-attachments/assets/462adb59-f960-4e01-b0f9-54c87aae262d" />
+
+
 A bucket made public via Notes 23-25 already lets anyone fetch individual objects directly by key. **Enabling static website hosting** on top of that adds:
 
 - A dedicated **website endpoint** URL, in the format `http://<bucket-name>.s3-website-<region>.amazonaws.com` — distinct from the normal REST API endpoint used for `GetObject` calls.

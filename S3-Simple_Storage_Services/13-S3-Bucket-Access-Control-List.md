@@ -8,6 +8,12 @@
 
 An **ACL** is a short, coarse-grained permission list attached to a **bucket or an individual object**, predating both IAM and bucket policies. It grants one of a small, fixed set of permissions (`READ`, `WRITE`, `READ_ACP`/`WRITE_ACP` — read/write the ACL itself, `FULL_CONTROL`) to one of a small set of grantee types:
 
+<img width="1536" height="1024" alt="S3ACL" src="https://github.com/user-attachments/assets/137ab973-76bc-4762-9046-8751bd6d3aaa" />
+
+
+<img width="1537" height="469" alt="image" src="https://github.com/user-attachments/assets/14ba35c0-f1d8-4b65-904f-609059b6ed63" />
+
+
 | Grantee type | What it means |
 |---|---|
 | A **specific AWS account** (by canonical ID or email) | Grant access to one named account |

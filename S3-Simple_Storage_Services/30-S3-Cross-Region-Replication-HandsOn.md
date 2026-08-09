@@ -29,7 +29,7 @@
 
 <details>
 
-Yes. If you choose **"Choose from existing IAM role"** instead of letting S3 create one, you need an IAM role that S3 can assume and that has permissions on both the **source and destination buckets**.
+If you choose **"Choose from existing IAM role"** instead of letting S3 create one, you need an IAM role that S3 can assume and that has permissions on both the **source and destination buckets**.
 
 For your example:
 

@@ -11,6 +11,9 @@
 
 These are independent — a bucket can (and should) have both, but they solve different threats: in-transit protects against network interception; at-rest protects against someone gaining access to the underlying storage media directly.
 
+<img width="1536" height="1024" alt="S3ENC1" src="https://github.com/user-attachments/assets/9c4a9b1e-0e93-4644-91b0-72e4694cfbce" />
+
+
 ---
 
 ## 2. Every object in S3 is encrypted at rest today

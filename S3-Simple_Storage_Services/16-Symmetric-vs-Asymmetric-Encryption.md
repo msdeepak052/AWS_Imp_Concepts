@@ -11,6 +11,9 @@
 - **Fast and efficient** — well suited to encrypting large volumes of data quickly, which is exactly why it's what actually encrypts your object data under the hood in S3 (via AES-256), regardless of which SSE method (S3, KMS, C) manages the key.
 - **The catch**: the key must be shared between whoever encrypts and whoever decrypts, which means securely **distributing and protecting that one key** becomes the central challenge.
 
+<img width="1402" height="1122" alt="S3ENC2" src="https://github.com/user-attachments/assets/183ae80c-0d24-45eb-8adc-cdcff6b21454" />
+
+
 > 🧠 **Mental model:** symmetric encryption is like a single physical key that both locks and unlocks the same padlock — simple and fast, but you have to get a copy of that exact key to anyone who legitimately needs to open the lock, and protect it carefully so no one else does.
 
 ---

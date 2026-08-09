@@ -15,6 +15,9 @@
 
 > 🧠 **Mental model:** Note 07's transitions move data to cheaper storage; this note's expirations **remove it entirely**. A mature lifecycle policy almost always uses both together: transition current versions down the cost ladder while they're still "current," and aggressively expire non-current versions and abandoned multipart uploads that serve no ongoing purpose.
 
+<img width="1536" height="1024" alt="S3LCR3" src="https://github.com/user-attachments/assets/ef402870-fbcf-4bd6-8507-69bb1bc73e43" />
+
+
 ---
 
 ## 2. Expire current versions

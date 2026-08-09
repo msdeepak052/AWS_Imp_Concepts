@@ -324,12 +324,13 @@ Instead, S3 creates something called a:
 So you get:
 
 ```text
+
 application.log
 
 DELETE MARKER ← CURRENT
-v3
-v2
-v1
+v3              ← NONCURRENT
+v2              ← NONCURRENT
+v1              ← NONCURRENT
 ```
 
 Notice something important:

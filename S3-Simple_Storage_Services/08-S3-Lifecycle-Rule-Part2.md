@@ -229,14 +229,55 @@ application.log
 Day 30
 DELETED
 ```
+---
 
-But with **Versioning enabled**, S3 doesn't simply erase the underlying version.
+The key is to understand **what S3 Versioning actually does when you delete an object**.
 
-Instead, S3 creates a **delete marker**.
+Let's go step by step with a real example.
 
-Example:
+---
 
-Before expiration:
+# 1. First, Versioning is enabled
+
+Suppose you have:
+
+```text
+my-bucket/
+└── application.log
+```
+
+Versioning is enabled.
+
+You upload the file for the first time:
+
+```text
+application.log
+    │
+    └── v1
+```
+
+S3 considers `v1` the **current version**.
+
+---
+
+# 2. You upload the same file again
+
+Suppose you modify `application.log` and upload it again.
+
+S3 **doesn't overwrite v1**.
+
+Instead:
+
+```text
+application.log
+
+v2 ← CURRENT
+v1
+```
+
+The newest version is always the **current version**.
+
+Now upload it a third time:
 
 ```text
 application.log
@@ -246,7 +287,41 @@ v2
 v1
 ```
 
-Lifecycle expiration happens:
+So:
+
+* `v3` = current version
+* `v2` = noncurrent version
+* `v1` = noncurrent version
+
+---
+
+# 3. Now someone deletes `application.log`
+
+This is where it gets interesting.
+
+You might expect:
+
+```text
+DELETE application.log
+
+        ↓
+
+v3
+v2
+v1
+
+        ↓
+
+Everything deleted
+```
+
+**That's NOT what happens when Versioning is enabled.**
+
+Instead, S3 creates something called a:
+
+> **Delete Marker**
+
+So you get:
 
 ```text
 application.log
@@ -257,31 +332,431 @@ v2
 v1
 ```
 
-Now if you access:
+Notice something important:
+
+### S3 did NOT delete v3.
+
+It simply put a **delete marker on top of the versions**.
+
+---
+
+# 4. What is a Delete Marker?
+
+Think of it like a sign saying:
+
+> "This object has been deleted."
+
+The delete marker becomes the **current version**.
+
+So:
 
 ```text
-GET application.log
+              CURRENT
+                 ↓
+        ┌─────────────────┐
+        │  DELETE MARKER   │
+        ├─────────────────┤
+        │      v3          │
+        ├─────────────────┤
+        │      v2          │
+        ├─────────────────┤
+        │      v1          │
+        └─────────────────┘
 ```
 
-S3 behaves as though the object doesn't exist because the delete marker is current.
+The actual data versions can still exist underneath.
 
-But:
+---
+
+# 5. What happens with GET?
+
+Now someone runs:
+
+```bash
+aws s3api get-object \
+  --bucket my-bucket \
+  --key application.log \
+  output.log
+```
+
+S3 looks at:
 
 ```text
+application.log
+
+DELETE MARKER ← CURRENT
 v3
 v2
 v1
 ```
 
-can still physically exist.
+Since the **current version is a delete marker**, S3 says effectively:
 
-That's why you often combine:
+> "This object doesn't currently exist."
+
+You will normally get:
 
 ```text
-Expire current versions
-+
-Permanently delete noncurrent versions
+404 Not Found
 ```
+
+or an equivalent `NoSuchKey`-type response.
+
+---
+
+# 6. But is v3 actually gone?
+
+**No.**
+
+This is the important part.
+
+The data is still there:
+
+```text
+DELETE MARKER ← CURRENT
+v3             ← still exists
+v2             ← still exists
+v1             ← still exists
+```
+
+If you know the specific version ID, you can request that version.
+
+For example:
+
+```bash
+aws s3api get-object \
+  --bucket my-bucket \
+  --key application.log \
+  --version-id <v3-version-id> \
+  output.log
+```
+
+S3 can return **v3**.
+
+So:
+
+```text
+Normal GET
+    │
+    ▼
+Delete marker is current
+    │
+    ▼
+Object appears deleted
+```
+
+But:
+
+```text
+GET with v3 version ID
+    │
+    ▼
+S3 finds v3
+    │
+    ▼
+Returns the old object
+```
+
+That's why we say the delete marker is a **logical deletion**, while the old versions may still physically exist.
+
+---
+
+# 7. Now imagine Lifecycle expiration
+
+Suppose you create this lifecycle rule:
+
+> **Expire current versions after 30 days**
+
+Assume:
+
+```text
+Day 0
+
+application.log
+
+v3 ← CURRENT
+v2
+v1
+```
+
+After 30 days, the lifecycle expiration occurs.
+
+Because Versioning is enabled, S3 effectively creates a delete marker:
+
+```text
+application.log
+
+DELETE MARKER ← CURRENT
+v3
+v2
+v1
+```
+
+Again:
+
+**v3 isn't automatically permanently deleted.**
+
+This is the part that often confuses people.
+
+---
+
+# 8. So why do we need "Permanently delete noncurrent versions"?
+
+Because now your bucket could look like:
+
+```text
+application.log
+
+DELETE MARKER
+v3
+v2
+v1
+```
+
+And if this happens for thousands or millions of objects:
+
+```text
+object1
+ ├── delete marker
+ ├── v3
+ ├── v2
+ └── v1
+
+object2
+ ├── delete marker
+ ├── v4
+ ├── v3
+ ├── v2
+ └── v1
+
+object3
+ ├── delete marker
+ ├── v2
+ └── v1
+
+...
+```
+
+Those old versions can continue consuming S3 storage.
+
+So you might create another lifecycle action:
+
+> **Permanently delete noncurrent versions after 90 days.**
+
+Then S3 evaluates the age of those old versions.
+
+For example:
+
+```text
+application.log
+
+DELETE MARKER ← current
+
+v3 ← noncurrent for 20 days
+v2 ← noncurrent for 100 days
+v1 ← noncurrent for 200 days
+```
+
+Rule:
+
+```text
+Delete noncurrent versions
+after 90 days
+```
+
+Result:
+
+```text
+application.log
+
+DELETE MARKER ← current
+
+v3 ← KEEP
+v2 ← DELETE
+v1 ← DELETE
+```
+
+So now:
+
+```text
+DELETE MARKER
+v3
+```
+
+---
+
+# 9. What about the Delete Marker itself?
+
+You can also configure:
+
+> **Delete expired object delete markers**
+
+Suppose all the old versions have already been permanently removed:
+
+```text
+application.log
+
+DELETE MARKER ← current
+```
+
+There is no old version underneath it anymore.
+
+The delete marker may now be unnecessary.
+
+S3 can remove that delete marker through lifecycle cleanup.
+
+Then:
+
+```text
+application.log
+
+nothing
+```
+
+---
+
+# 10. Complete lifecycle example
+
+This is the important picture to remember:
+
+```text
+                    Versioning enabled
+                           │
+                           ▼
+                 application.log
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+            v1            v2            v3
+          old            old          CURRENT
+```
+
+Someone deletes the object / lifecycle expires it:
+
+```text
+                 application.log
+                        │
+                        ▼
+              DELETE MARKER ← CURRENT
+              ────────────────────────
+              v3 ← NONCURRENT
+              v2 ← NONCURRENT
+              v1 ← NONCURRENT
+```
+
+Then lifecycle can clean up the old versions:
+
+```text
+              DELETE MARKER ← CURRENT
+              ────────────────────────
+              v3 ← still retained
+              v2 ← deleted
+              v1 ← deleted
+```
+
+Eventually:
+
+```text
+              DELETE MARKER
+              ─────────────
+              v3 → deleted
+```
+
+And finally, if the delete marker qualifies for cleanup:
+
+```text
+              nothing
+```
+
+---
+
+# The BIG distinction
+
+Think of these as **three different operations**:
+
+### `Expire current versions`
+
+```text
+CURRENT OBJECT
+      ↓
+Delete marker
+```
+
+It makes the object **appear deleted**.
+
+---
+
+### `Permanently delete noncurrent versions`
+
+```text
+OLD VERSION
+    ↓
+    X
+physically removed
+```
+
+It actually removes the old version.
+
+---
+
+### `Delete expired object delete markers`
+
+```text
+DELETE MARKER
+      ↓
+      X
+removed
+```
+
+It cleans up the marker itself when it is an expired delete marker.
+
+---
+
+## One final mental model
+
+Think of Versioned S3 like this:
+
+```text
+                  S3 VERSION HISTORY
+
+             ┌─────────────────────┐
+             │ DELETE MARKER       │ ← Current
+             ├─────────────────────┤
+             │ v3                  │ ← Old data
+             ├─────────────────────┤
+             │ v2                  │ ← Old data
+             ├─────────────────────┤
+             │ v1                  │ ← Old data
+             └─────────────────────┘
+```
+
+**Delete marker = "Hide this object from normal access."**
+
+**Noncurrent-version deletion = "Actually remove the old data."**
+
+That's why a common lifecycle strategy is:
+
+```text
+Current object
+     │
+     │ after 30 days
+     ▼
+Expire
+     │
+     ▼
+Delete marker
+     │
+     │ old versions retained for 90 days
+     ▼
+Delete noncurrent versions
+     │
+     ▼
+Old data physically removed
+```
+
+So **"object deleted" in a versioned S3 bucket does NOT necessarily mean "all its data has been physically deleted."** That's the core concept.
+
+
 
 ---
 

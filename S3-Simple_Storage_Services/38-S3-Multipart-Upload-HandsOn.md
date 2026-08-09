@@ -10,6 +10,9 @@ Recall from Note 02: a single `PUT` request is capped at **5 GB**, and any objec
 
 > 🧠 **Mental model:** instead of mailing one enormous, fragile package that has to arrive perfectly intact in one attempt, multipart upload mails several smaller, independently-trackable boxes — if one box gets lost or damaged in transit, you only need to resend *that* box, not the entire shipment.
 
+<img width="1536" height="1024" alt="S3MPU" src="https://github.com/user-attachments/assets/36d7c8ac-ef86-42fe-b439-daebe0a5fb51" />
+
+
 ---
 
 ## 2. Benefits beyond just "getting past the size limit"

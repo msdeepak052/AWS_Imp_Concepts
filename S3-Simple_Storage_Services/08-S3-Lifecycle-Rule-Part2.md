@@ -30,7 +30,7 @@
 
 ---
 
-# S3 Lifecycle Rule Actions
+## S3 Lifecycle Rule Actions
 
 There are **6 different actions**. They operate on either the **current version**, **noncurrent versions**, or special S3 objects such as delete markers and incomplete multipart uploads.
 
